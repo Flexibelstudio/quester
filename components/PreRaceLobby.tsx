@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { Clock, MapPin, Volume2, ShieldCheck, Zap, Users, Radio } from 'lucide-react';
+import { Clock, MapPin, Volume2, ShieldCheck, Zap, Users, Radio, Snowflake, Bell, Gift } from 'lucide-react';
 import { RaceEvent } from '../types';
+import { SnowfallOverlay } from './SnowfallOverlay';
 
 interface PreRaceLobbyProps {
     raceData: RaceEvent;
@@ -57,65 +58,105 @@ export const PreRaceLobby: React.FC<PreRaceLobbyProps> = ({ raceData, onReady, t
     const isZombie = raceData.category === 'Survival Run';
     const isXmas = raceData.category === 'Christmas Hunt';
 
+    // THEME CONFIGURATION
+    const theme = isXmas ? {
+        bg: 'bg-gradient-to-b from-sky-300 via-sky-100 to-white',
+        text: 'text-slate-800',
+        subText: 'text-slate-600',
+        accent: 'text-red-600',
+        timerColor: 'text-sky-700',
+        cardBg: 'bg-white/60 border-sky-200',
+        iconGps: <Gift className="w-6 h-6 text-red-500" />,
+        iconAudio: <Bell className="w-6 h-6 text-yellow-500" />,
+        gpsLabel: 'Släden Redo',
+        audioLabel: 'Bjällror Hörbara'
+    } : isZombie ? {
+        bg: 'bg-red-950',
+        text: 'text-white',
+        subText: 'text-white/60',
+        accent: 'text-red-500',
+        timerColor: 'text-white',
+        cardBg: 'bg-red-900/50 border-red-500',
+        iconGps: <MapPin className="w-6 h-6 text-red-400" />,
+        iconAudio: <Volume2 className="w-6 h-6 text-gray-300" />,
+        gpsLabel: 'GPS Redo',
+        audioLabel: 'Ljud På'
+    } : {
+        bg: 'bg-slate-900',
+        text: 'text-white',
+        subText: 'text-white/60',
+        accent: 'text-blue-500',
+        timerColor: 'text-white',
+        cardBg: 'bg-gray-800/50 border-gray-700',
+        iconGps: <MapPin className="w-6 h-6 text-green-400" />,
+        iconAudio: <Volume2 className="w-6 h-6 text-gray-300" />,
+        gpsLabel: 'GPS Redo',
+        audioLabel: 'Ljud På'
+    };
+
     return (
-        <div className={`fixed inset-0 z-[5000] flex flex-col items-center justify-center p-6 text-center overflow-hidden ${isZombie ? 'bg-red-950' : isXmas ? 'bg-blue-950' : 'bg-slate-900'}`}>
+        <div className={`fixed inset-0 z-[5000] flex flex-col items-center justify-center p-6 text-center overflow-hidden ${theme.bg} ${theme.text}`}>
             
             {/* Background Effects */}
-            <div className="absolute inset-0 opacity-20 pointer-events-none">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent opacity-10 animate-pulse"></div>
-            </div>
+            {isXmas ? (
+                <SnowfallOverlay intensity="normal" />
+            ) : (
+                <div className="absolute inset-0 opacity-20 pointer-events-none">
+                    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent opacity-10 animate-pulse"></div>
+                </div>
+            )}
 
             {/* Content */}
             <div className="relative z-10 max-w-md w-full flex flex-col items-center">
                 
                 {/* Event Badge */}
-                <div className={`mb-8 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.2em] border backdrop-blur-md ${isZombie ? 'bg-red-900/50 border-red-500 text-red-200' : 'bg-blue-900/50 border-blue-500 text-blue-200'}`}>
+                <div className={`mb-8 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.2em] border backdrop-blur-md shadow-lg ${isXmas ? 'bg-white/80 border-sky-300 text-sky-700' : isZombie ? 'bg-red-900/50 border-red-500 text-red-200' : 'bg-blue-900/50 border-blue-500 text-blue-200'}`}>
                     {raceData.category.toUpperCase()}
                 </div>
 
-                <h1 className="text-4xl md:text-6xl font-black text-white mb-2 tracking-tighter drop-shadow-2xl">
+                <h1 className={`text-4xl md:text-6xl font-black mb-2 tracking-tighter drop-shadow-sm ${theme.text}`}>
                     {raceData.name}
                 </h1>
-                <p className="text-white/60 font-medium mb-12">
-                    Välkommen, <span className="text-white font-bold">{teamName}</span>
+                <p className={`${theme.subText} font-medium mb-12`}>
+                    Välkommen, <span className={`font-bold ${theme.accent}`}>{teamName}</span>
                 </p>
 
                 {/* The Timer */}
                 <div className="mb-12 relative">
-                    <div className={`absolute -inset-4 rounded-full blur-2xl opacity-20 ${isZombie ? 'bg-red-500' : 'bg-blue-500'} animate-pulse`}></div>
-                    <div className="text-7xl md:text-8xl font-mono font-black text-white tabular-nums tracking-tight relative z-10">
+                    {!isXmas && <div className={`absolute -inset-4 rounded-full blur-2xl opacity-20 ${isZombie ? 'bg-red-500' : 'bg-blue-500'} animate-pulse`}></div>}
+                    <div className={`text-7xl md:text-8xl font-mono font-black tabular-nums tracking-tight relative z-10 drop-shadow-md ${theme.timerColor}`}>
                         {timeLeft}
                     </div>
-                    <div className="text-xs font-bold text-white/40 uppercase tracking-widest mt-2">
+                    <div className={`text-xs font-bold uppercase tracking-widest mt-2 ${theme.subText}`}>
                         {isCountingDown ? 'Tid till start' : 'Status'}
                     </div>
                 </div>
 
                 {/* Tech Checks */}
                 <div className="grid grid-cols-2 gap-4 w-full mb-8">
-                    <div className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition-colors ${checks.gps ? 'bg-green-900/20 border-green-500/30 text-green-400' : 'bg-red-900/20 border-red-500/30 text-red-400'}`}>
-                        <MapPin className="w-6 h-6" />
-                        <span className="text-xs font-bold uppercase">{checks.gps ? 'GPS Redo' : 'Ingen GPS'}</span>
+                    <div className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition-colors shadow-sm ${checks.gps ? (isXmas ? 'bg-white/80 border-green-400 text-green-700' : 'bg-green-900/20 border-green-500/30 text-green-400') : theme.cardBg}`}>
+                        {theme.iconGps}
+                        <span className="text-xs font-bold uppercase">{checks.gps ? theme.gpsLabel : 'Söker GPS...'}</span>
                     </div>
-                    <div className="p-4 rounded-2xl border bg-gray-800/50 border-gray-700 flex flex-col items-center gap-2 text-gray-300">
-                        <Volume2 className="w-6 h-6" />
-                        <span className="text-xs font-bold uppercase">Ljud På</span>
+                    <div className={`p-4 rounded-2xl border flex flex-col items-center gap-2 shadow-sm ${theme.cardBg}`}>
+                        {theme.iconAudio}
+                        <span className="text-xs font-bold uppercase">{theme.audioLabel}</span>
                     </div>
                 </div>
 
                 {/* Waiting Animation */}
-                <div className="flex items-center gap-2 text-white/30 text-sm animate-pulse">
-                    <Radio className="w-4 h-4" />
-                    <span>Inväntar startsignal från HQ...</span>
+                <div className={`flex items-center gap-2 text-sm animate-pulse ${theme.subText}`}>
+                    {isXmas ? <Snowflake className="w-4 h-4 text-sky-400" /> : <Radio className="w-4 h-4" />}
+                    <span>{isXmas ? 'Värmer upp chokladen...' : 'Inväntar startsignal från HQ...'}</span>
                 </div>
 
                 {/* Manual Override (For Self-Start modes that haven't triggered yet) */}
                 {raceData.startMode === 'self_start' && (
                     <button 
                         onClick={onReady}
-                        className="mt-8 w-full py-4 bg-white text-black font-black text-lg rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform flex items-center justify-center gap-2"
+                        className={`mt-8 w-full py-4 font-black text-lg rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center justify-center gap-2 ${isXmas ? 'bg-red-600 text-white hover:bg-red-500' : 'bg-white text-black'}`}
                     >
-                        <Zap className="w-5 h-5 fill-black" /> STARTA NU
+                        <Zap className={`w-5 h-5 ${isXmas ? 'fill-white' : 'fill-black'}`} /> STARTA NU
                     </button>
                 )}
             </div>

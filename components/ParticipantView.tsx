@@ -341,54 +341,54 @@ const MissionBriefingDialog: React.FC<{
             title: "NÖDMEDDELANDE",
             content: (
                 <div className="space-y-4">
-                    <p className="text-yellow-100 leading-relaxed text-sm md:text-base border-l-4 border-red-600 pl-4 italic">
+                    <p className="text-slate-700 leading-relaxed text-sm md:text-base border-l-4 border-red-500 pl-4 italic">
                         {raceData.description || "Grinchen har stulit julklapparna! Hela julen är i fara. Vi behöver din hjälp!"}
                     </p>
-                    <div className="bg-red-950/40 p-4 rounded-xl border-2 border-red-800/50 flex items-start gap-3">
-                        <div className="bg-red-900 rounded-full p-2">
-                            <Snowflake className="w-5 h-5 text-white shrink-0 animate-spin-slow" />
+                    <div className="bg-white/80 p-4 rounded-xl border-2 border-red-200 shadow-sm flex items-start gap-3">
+                        <div className="bg-red-100 rounded-full p-2">
+                            <Snowflake className="w-5 h-5 text-red-500 shrink-0 animate-spin-slow" />
                         </div>
                         <div>
-                            <div className="text-xs font-black text-red-300 uppercase tracking-wider mb-1">Från Tomteverkstaden</div>
-                            <div className="text-sm text-white font-medium">"Spring ut, fånga tjuven, ta paketet!"</div>
+                            <div className="text-xs font-black text-red-500 uppercase tracking-wider mb-1">Från Tomteverkstaden</div>
+                            <div className="text-sm text-slate-700 font-bold">"Spring ut, fånga tjuven, ta paketet!"</div>
                         </div>
                     </div>
                 </div>
             ),
-            icon: <Gift className="w-6 h-6 text-yellow-400" />
+            icon: <Gift className="w-6 h-6 text-red-500" />
         },
         {
             title: "SÄCK & SLÄDE",
             content: (
                 <ul className="space-y-3">
-                    <li className="flex items-center gap-3 bg-red-900/20 p-3 rounded-xl border border-red-800/30">
-                        <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white font-bold border-2 border-red-400 shadow-lg">1</div>
-                        <span className="text-sm text-gray-200 font-bold">Du kan max bära <span className="text-yellow-400 font-bold">3 PAKET</span> åt gången.</span>
+                    <li className="flex items-center gap-3 bg-white/70 p-3 rounded-xl border border-sky-100 shadow-sm">
+                        <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white font-bold border-2 border-red-300 shadow-sm">1</div>
+                        <span className="text-sm text-slate-700 font-bold">Du kan max bära <span className="text-red-500 font-black">3 PAKET</span> åt gången.</span>
                     </li>
-                    <li className="flex items-center gap-3 bg-green-900/20 p-3 rounded-xl border border-green-800/30">
-                        <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white font-bold border-2 border-green-400 shadow-lg">2</div>
-                        <span className="text-sm text-gray-200 font-bold">Spring tillbaka till <span className="text-green-400">SLÄDEN</span> (Start) för att lämna paketen och få poäng!</span>
+                    <li className="flex items-center gap-3 bg-white/70 p-3 rounded-xl border border-sky-100 shadow-sm">
+                        <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold border-2 border-green-300 shadow-sm">2</div>
+                        <span className="text-sm text-slate-700 font-bold">Spring tillbaka till <span className="text-green-600">SLÄDEN</span> (Start) för att lämna paketen och få poäng!</span>
                     </li>
                 </ul>
             ),
-            icon: <ShoppingBag className="w-6 h-6 text-yellow-400" />
+            icon: <ShoppingBag className="w-6 h-6 text-red-500" />
         },
         {
             title: "HÅLL VÄRMEN",
             content: (
                 <div className="space-y-4">
-                    <div className="bg-blue-900/30 p-4 rounded-xl border border-blue-800 text-center">
-                        <Thermometer className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                        <div className="text-xs font-black text-blue-200 uppercase tracking-widest">Frys inte ihjäl!</div>
-                        <div className="text-[10px] text-gray-300 mt-1">Stå vid en <span className="text-orange-400 font-bold">ELDSTAD 🔥</span> eller släden för att tina upp.</div>
+                    <div className="bg-sky-50/80 p-4 rounded-xl border border-sky-200 text-center">
+                        <Thermometer className="w-8 h-8 text-sky-500 mx-auto mb-2" />
+                        <div className="text-xs font-black text-sky-700 uppercase tracking-widest">Frys inte ihjäl!</div>
+                        <div className="text-[10px] text-sky-600 mt-1">Stå vid en <span className="text-orange-500 font-bold">ELDSTAD 🔥</span> eller släden för att tina upp.</div>
                     </div>
-                    <div className="p-3 bg-red-900/30 border border-red-500/30 rounded-xl flex gap-3 items-center">
-                        <ShieldCheck className="w-5 h-5 text-red-300 shrink-0" />
-                        <span className="text-xs text-red-100">Tomten ser allt. Spring inte ut i gatan och var snäll mot andra nissar.</span>
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex gap-3 items-center">
+                        <ShieldCheck className="w-5 h-5 text-red-400 shrink-0" />
+                        <span className="text-xs text-red-700">Tomten ser allt. Spring inte ut i gatan och var snäll mot andra nissar.</span>
                     </div>
                 </div>
             ),
-            icon: <Sparkles className="w-6 h-6 text-blue-300" />
+            icon: <Sparkles className="w-6 h-6 text-sky-500" />
         }
     ];
 
@@ -396,41 +396,59 @@ const MissionBriefingDialog: React.FC<{
     const current = steps[step];
     
     // Theme colors
-    const activeColor = isChristmas ? 'bg-red-600' : 'bg-red-600';
-    const hoverColor = isChristmas ? 'hover:bg-red-500' : 'hover:bg-red-500';
-    const shadowColor = isChristmas ? 'shadow-red-900/40' : 'shadow-red-900/40';
+    const theme = isChristmas ? {
+        bg: 'bg-white/95 border-sky-300 shadow-sky-900/20',
+        headerBg: 'bg-gradient-to-r from-sky-100 to-white border-sky-200',
+        titleText: 'text-slate-800',
+        subText: 'text-slate-500',
+        contentBg: 'bg-sky-50/30',
+        footerBg: 'bg-white border-sky-100',
+        btnNext: 'bg-red-500 hover:bg-red-600 text-white border-red-400 shadow-red-200',
+        progressBar: 'bg-sky-200',
+        progressActive: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]',
+        snow: true
+    } : {
+        bg: 'bg-gray-900 border-gray-700 shadow-2xl',
+        headerBg: 'bg-gray-950 border-gray-800',
+        titleText: 'text-white',
+        subText: 'text-gray-600',
+        contentBg: 'bg-black/20',
+        footerBg: 'bg-gray-950 border-gray-800',
+        btnNext: 'bg-red-600 hover:bg-red-500 text-white border-red-800',
+        progressBar: 'bg-gray-800',
+        progressActive: 'bg-red-600',
+        snow: false
+    };
 
     return (
-        <div className="fixed inset-0 z-[5000] bg-black flex flex-col items-center justify-center p-4">
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 pointer-events-none"></div>
-            <div className={`absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,${isChristmas ? 'rgba(20,50,20,0.95)' : 'rgba(0,0,0,0.8)'}_100%)] pointer-events-none`}></div>
-            {isChristmas && <SnowfallOverlay />}
+        <div className="fixed inset-0 z-[5000] bg-black/80 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+            {theme.snow && <SnowfallOverlay intensity="normal" />}
             
-            <div className={`w-full max-w-md border-2 rounded-3xl overflow-hidden shadow-2xl relative flex flex-col h-[75vh] md:h-auto animate-in zoom-in duration-300 ${isChristmas ? 'bg-slate-900 border-red-700 shadow-red-900/50' : 'bg-gray-900 border-gray-700'}`}>
+            <div className={`w-full max-w-md border-2 rounded-3xl overflow-hidden shadow-2xl relative flex flex-col h-[75vh] md:h-auto animate-in zoom-in duration-300 ${theme.bg}`}>
                 {/* Header */}
-                <div className={`p-6 border-b flex justify-between items-center relative overflow-hidden ${isChristmas ? 'bg-red-950 border-red-800' : 'bg-gray-950 border-gray-800'}`}>
-                    {isChristmas && <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/snow.png')] opacity-10"></div>}
+                <div className={`p-6 border-b flex justify-between items-center relative overflow-hidden ${theme.headerBg}`}>
+                    {theme.snow && <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/snow.png')] opacity-10"></div>}
                     <div className="relative z-10">
-                        <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isChristmas ? 'text-yellow-500' : 'text-gray-500'}`}>{isChristmas ? 'SANTA PROTOCOL V.24' : 'MISSION BRIEFING'}</div>
-                        <h2 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                        <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isChristmas ? 'text-red-500' : 'text-gray-500'}`}>{isChristmas ? 'SANTA PROTOCOL V.24' : 'MISSION BRIEFING'}</div>
+                        <h2 className={`text-2xl font-black uppercase tracking-tighter flex items-center gap-2 ${theme.titleText}`}>
                             {current.icon} {current.title}
                         </h2>
                     </div>
-                    <div className={`font-mono font-bold text-xl relative z-10 ${isChristmas ? 'text-red-200' : 'text-gray-600'}`}>
+                    <div className={`font-mono font-bold text-xl relative z-10 ${theme.subText}`}>
                         0{step + 1}<span className="opacity-50">/03</span>
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 p-6 overflow-y-auto bg-black/20">
+                <div className={`flex-1 p-6 overflow-y-auto ${theme.contentBg}`}>
                     {current.content}
                 </div>
 
                 {/* Footer Controls */}
-                <div className={`p-6 border-t ${isChristmas ? 'bg-red-950 border-red-900' : 'bg-gray-950 border-gray-800'}`}>
+                <div className={`p-6 border-t ${theme.footerBg}`}>
                     <div className="flex gap-2 mb-4">
                         {steps.map((_, i) => (
-                            <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i <= step ? (isChristmas ? 'bg-yellow-400 shadow-[0_0_10px_yellow]' : 'bg-red-600') : 'bg-gray-800'}`}></div>
+                            <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i <= step ? theme.progressActive : theme.progressBar}`}></div>
                         ))}
                     </div>
                     
@@ -439,7 +457,7 @@ const MissionBriefingDialog: React.FC<{
                             if (step < steps.length - 1) setStep(s => s + 1);
                             else onDeploy();
                         }}
-                        className={`w-full py-4 text-white font-black text-lg uppercase tracking-widest rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 ${activeColor} ${hoverColor} ${shadowColor} ${isChristmas ? 'border border-red-400' : ''}`}
+                        className={`w-full py-4 font-black text-lg uppercase tracking-widest rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 border ${theme.btnNext}`}
                     >
                         {step < steps.length - 1 ? (
                             <>NÄSTA <ChevronRight className="w-5 h-5" /></>
@@ -1366,11 +1384,10 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
 
   if (authStep === 'login' || authStep === 'profile' || authStep === 'lobby') {
       return (
-        <div className={`h-full w-full flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans ${isZombieMode ? 'bg-black text-green-500 font-mono' : isChristmasMode ? 'bg-slate-900 text-white' : 'bg-slate-950'}`}>
-             <div className={`absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] ${isChristmasMode ? 'from-blue-900/30 via-slate-900 to-black' : 'from-blue-900/20 via-slate-950 to-slate-950'} pointer-events-none`}></div>
+        <div className={`h-full w-full flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans ${isZombieMode ? 'bg-black text-green-500 font-mono' : isChristmasMode ? 'bg-sky-200 text-slate-800' : 'bg-slate-950'}`}>
+             <div className={`absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] ${isChristmasMode ? 'from-white via-sky-100 to-sky-200' : 'from-blue-900/20 via-slate-950 to-slate-950'} pointer-events-none`}></div>
              {isZombieMode && <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 pointer-events-none"></div>}
-             {isChristmasMode && <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/snow.png')]"></div>}
-             {isChristmasMode && <SnowfallOverlay />}
+             {isChristmasMode && <SnowfallOverlay intensity="normal" />}
 
              {/* EXIT BUTTON */}
              <button 
@@ -1378,7 +1395,9 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                 className={`absolute top-6 left-6 z-50 p-3 rounded-full transition-all duration-200 group ${
                     isZombieMode 
                     ? 'bg-red-950/30 text-red-500 border border-red-900/50 hover:bg-red-900/50 hover:scale-110' 
-                    : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:scale-110'
+                    : isChristmasMode 
+                        ? 'bg-white/50 text-slate-600 border border-white hover:bg-white hover:text-slate-900 hover:scale-110 shadow-sm'
+                        : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:scale-110'
                 }`}
                 title="Gå tillbaka"
              >
@@ -1387,37 +1406,37 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
 
              {authStep === 'login' && (
                  <div className="relative z-10 w-full max-w-sm">
-                     <h1 className={`text-4xl font-black text-center mb-8 ${isZombieMode ? 'text-red-600 drop-shadow-[0_0_10px_rgba(255,0,0,0.8)] tracking-widest' : isChristmasMode ? 'text-yellow-400 drop-shadow-md italic' : 'text-white'}`}>{raceData.name}</h1>
-                     <input value={accessCodeInput} onChange={e => setAccessCodeInput(e.target.value)} className={`w-full border rounded-xl py-4 text-center text-xl tracking-[0.5em] font-mono uppercase mb-4 ${isZombieMode ? 'bg-black border-red-900 text-red-500 placeholder-red-900 focus:border-red-500' : 'bg-slate-900/80 border-slate-700 text-white'}`} placeholder="KOD" />
+                     <h1 className={`text-4xl font-black text-center mb-8 ${isZombieMode ? 'text-red-600 drop-shadow-[0_0_10px_rgba(255,0,0,0.8)] tracking-widest' : isChristmasMode ? 'text-slate-900 drop-shadow-sm' : 'text-white'}`}>{raceData.name}</h1>
+                     <input value={accessCodeInput} onChange={e => setAccessCodeInput(e.target.value)} className={`w-full border rounded-xl py-4 text-center text-xl tracking-[0.5em] font-mono uppercase mb-4 ${isZombieMode ? 'bg-black border-red-900 text-red-500 placeholder-red-900 focus:border-red-500' : isChristmasMode ? 'bg-white border-sky-300 text-slate-800 placeholder-slate-400 focus:border-sky-500 shadow-sm' : 'bg-slate-900/80 border-slate-700 text-white'}`} placeholder="KOD" />
                      {loginError && <p className="text-red-500 text-center text-sm mb-4">Fel kod</p>}
-                     <button onClick={() => handleAuthStart('guest')} className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all ${isZombieMode ? 'bg-red-900/50 hover:bg-red-800 text-red-100 border border-red-600 animate-pulse' : isChristmasMode ? 'bg-red-600 hover:bg-red-500 text-white border border-red-400 shadow-red-900/50' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}>{isZombieMode ? 'ENTER SURVIVAL MODE' : isChristmasMode ? 'HJÄLP TOMTEN NU' : 'GÅ MED'}</button>
-                     <div className="mt-8 text-center opacity-50 hover:opacity-100 transition-opacity"><p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Developer Access</p><div className="text-xs font-mono text-gray-500 bg-black/20 rounded p-2 inline-block border border-white/5">Code: <span className="text-white font-bold select-all">{raceData.accessCode || 'QUEST123'}</span><span className="mx-2">|</span>Magic: <span className="text-blue-400 font-bold" title="Use DEV, TEST or JUL">DEV</span></div></div>
+                     <button onClick={() => handleAuthStart('guest')} className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all ${isZombieMode ? 'bg-red-900/50 hover:bg-red-800 text-red-100 border border-red-600 animate-pulse' : isChristmasMode ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-200' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}>{isZombieMode ? 'ENTER SURVIVAL MODE' : isChristmasMode ? 'HJÄLP TOMTEN NU' : 'GÅ MED'}</button>
+                     <div className="mt-8 text-center opacity-50 hover:opacity-100 transition-opacity"><p className={`text-[10px] uppercase tracking-widest mb-1 ${isChristmasMode ? 'text-slate-500' : 'text-gray-400'}`}>Developer Access</p><div className={`text-xs font-mono rounded p-2 inline-block border ${isChristmasMode ? 'bg-white/50 text-slate-600 border-sky-200' : 'bg-black/20 text-gray-500 border-white/5'}`}>Code: <span className={`${isChristmasMode ? 'text-slate-900' : 'text-white'} font-bold select-all`}>{raceData.accessCode || 'QUEST123'}</span><span className="mx-2">|</span>Magic: <span className="text-blue-400 font-bold" title="Use DEV, TEST or JUL">DEV</span></div></div>
                  </div>
              )}
              {authStep === 'profile' && (
                  <div className="relative z-10 w-full max-w-sm">
-                     <h2 className="text-2xl font-bold text-white text-center mb-6">Vem är du?</h2>
+                     <h2 className={`text-2xl font-bold text-center mb-6 ${isChristmasMode ? 'text-slate-800' : 'text-white'}`}>Vem är du?</h2>
                      <div className="space-y-4">
-                         <input value={teamNameInput} onChange={e => setTeamNameInput(e.target.value)} className="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-4 px-4 text-white" placeholder="Ditt Namn" />
-                         {(isZombieMode || isChristmasMode) && (<div><label className="block text-xs font-bold text-gray-400 uppercase mb-2 pl-1">För Topplistan (Frivilligt)</label><div className="grid grid-cols-2 gap-3"><div className="relative"><Building2 className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" /><input value={orgInput} onChange={e => setOrgInput(e.target.value)} className="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-4 pl-10 pr-4 text-white text-sm" placeholder="Skola/Org" /></div><div className="relative"><Users className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" /><input value={subGroupInput} onChange={e => setSubGroupInput(e.target.value)} className="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-4 pl-10 pr-4 text-white text-sm" placeholder="Klass/Lag" /></div></div><p className="text-[10px] text-gray-500 mt-1 pl-1">Ex: "Centralskolan" och "9B" för att synas unikt i listan.</p></div>)}
+                         <input value={teamNameInput} onChange={e => setTeamNameInput(e.target.value)} className={`w-full border rounded-xl py-4 px-4 ${isChristmasMode ? 'bg-white text-slate-800 border-sky-300 placeholder-slate-400' : 'bg-slate-900/80 border-slate-700 text-white'}`} placeholder="Ditt Namn" />
+                         {(isZombieMode || isChristmasMode) && (<div><label className={`block text-xs font-bold uppercase mb-2 pl-1 ${isChristmasMode ? 'text-slate-500' : 'text-gray-400'}`}>För Topplistan (Frivilligt)</label><div className="grid grid-cols-2 gap-3"><div className="relative"><Building2 className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" /><input value={orgInput} onChange={e => setOrgInput(e.target.value)} className={`w-full border rounded-xl py-4 pl-10 pr-4 text-sm ${isChristmasMode ? 'bg-white text-slate-800 border-sky-300' : 'bg-slate-900/80 border-slate-700 text-white'}`} placeholder="Skola/Org" /></div><div className="relative"><Users className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" /><input value={subGroupInput} onChange={e => setSubGroupInput(e.target.value)} className={`w-full border rounded-xl py-4 pl-10 pr-4 text-sm ${isChristmasMode ? 'bg-white text-slate-800 border-sky-300' : 'bg-slate-900/80 border-slate-700 text-white'}`} placeholder="Klass/Lag" /></div></div><p className="text-[10px] text-gray-500 mt-1 pl-1">Ex: "Centralskolan" och "9B" för att synas unikt i listan.</p></div>)}
                      </div>
                      <button onClick={handleProfileComplete} className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all mt-6">KLAR</button>
                  </div>
              )}
              {authStep === 'lobby' && (
                  <div className="relative z-10 w-full max-w-sm text-center">
-                     <h2 className="text-xl text-gray-400 mb-2">Välkommen</h2>
+                     <h2 className={`text-xl mb-2 ${isChristmasMode ? 'text-slate-600' : 'text-gray-400'}`}>Välkommen</h2>
                      <div className="flex justify-center mb-4">
-                         <div className="w-24 h-24 rounded-full border-4 border-white/20 bg-gray-800 overflow-hidden shadow-2xl relative">
+                         <div className={`w-24 h-24 rounded-full border-4 overflow-hidden shadow-2xl relative ${isChristmasMode ? 'border-white bg-sky-100' : 'border-white/20 bg-gray-800'}`}>
                              {profileImage ? (
                                 <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                              ) : (
-                                <User className="w-12 h-12 text-gray-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                                <User className={`w-12 h-12 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${isChristmasMode ? 'text-slate-400' : 'text-gray-500'}`} />
                              )}
                          </div>
                      </div>
-                     <h1 className={`text-4xl font-black mb-8 ${isZombieMode ? 'text-red-500' : 'text-white'}`}>{teamNameInput}</h1>
-                     <button onClick={handleEnterRace} className={`w-full font-black py-4 rounded-xl shadow-lg hover:scale-105 transition-transform ${isZombieMode ? 'text-black bg-red-600 border border-red-400' : isChristmasMode ? 'bg-green-600 text-white border-green-400 shadow-green-900/50' : 'bg-white text-black'}`}>{isZombieMode ? 'START SURVIVAL' : isChristmasMode ? 'STARTA JAKTEN' : 'ÖPPNA KARTAN'}</button>
+                     <h1 className={`text-4xl font-black mb-8 ${isZombieMode ? 'text-red-500' : isChristmasMode ? 'text-slate-900' : 'text-white'}`}>{teamNameInput}</h1>
+                     <button onClick={handleEnterRace} className={`w-full font-black py-4 rounded-xl shadow-lg hover:scale-105 transition-transform ${isZombieMode ? 'text-black bg-red-600 border border-red-400' : isChristmasMode ? 'bg-red-600 text-white hover:bg-red-500 shadow-red-200' : 'bg-white text-black'}`}>{isZombieMode ? 'START SURVIVAL' : isChristmasMode ? 'STARTA JAKTEN' : 'ÖPPNA KARTAN'}</button>
                  </div>
              )}
         </div>
@@ -1524,19 +1543,19 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
 
         {!hasStarted && hasSeenBriefing && (
             <div className="absolute inset-0 z-[4000] flex flex-col items-center justify-center pointer-events-none">
-                <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700 shadow-2xl rounded-3xl p-8 max-w-sm w-full mx-4 text-center pointer-events-auto animate-in zoom-in duration-300">
+                <div className={`backdrop-blur-md border shadow-2xl rounded-3xl p-8 max-w-sm w-full mx-4 text-center pointer-events-auto animate-in zoom-in duration-300 ${isChristmasMode ? 'bg-white/95 border-sky-300 text-slate-800' : 'bg-slate-900/95 border-slate-700 text-white'}`}>
                     {raceData.startMode === 'self_start' ? (
                         <>
-                            <div className="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(22,163,74,0.5)] animate-pulse border-4 border-green-400">
-                                <PlayCircle className="w-10 h-10 text-white" />
+                            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse border-4 ${isChristmasMode ? 'bg-green-500 text-white border-green-300 shadow-green-200' : 'bg-green-600 text-white border-green-400 shadow-[0_0_30px_rgba(22,163,74,0.5)]'}`}>
+                                <PlayCircle className="w-10 h-10" />
                             </div>
-                            <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-2">Redo för start?</h2>
-                            <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+                            <h2 className="text-3xl font-black uppercase tracking-tight mb-2">Redo för start?</h2>
+                            <p className="text-sm mb-8 leading-relaxed opacity-80">
                                 Ta dig till startpunkten och starta klockan när du är redo. Tiden börjar ticka direkt.
                             </p>
                             <button 
                                 onClick={handleSelfStart}
-                                className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-black text-lg uppercase tracking-widest rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
+                                className={`w-full py-4 font-black text-lg uppercase tracking-widest rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 ${isChristmasMode ? 'bg-red-600 text-white hover:bg-red-500' : 'bg-green-600 text-white hover:bg-green-500'}`}
                             >
                                 <Play className="w-6 h-6 fill-white" /> STARTA LOPPET
                             </button>
@@ -1546,13 +1565,13 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                             <div className="w-20 h-20 bg-yellow-600/30 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-yellow-500">
                                 <Clock className="w-10 h-10 text-yellow-500" />
                             </div>
-                            <h3 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Inväntar Start</h3>
-                            <p className="text-sm text-slate-400 mb-6">
+                            <h3 className="text-2xl font-black uppercase tracking-widest mb-2">Inväntar Start</h3>
+                            <p className="text-sm opacity-70 mb-6">
                                 Du kan inte ta kontroller förrän startskottet går. Gör dig redo vid startlinjen!
                             </p>
                             {startTime && startTime > Date.now() && (
-                                <div className="bg-black/40 rounded-xl p-4 border border-white/10">
-                                    <div className="text-xs font-bold text-gray-500 uppercase mb-1">Starttid</div>
+                                <div className={`rounded-xl p-4 border ${isChristmasMode ? 'bg-slate-100 border-slate-200' : 'bg-black/40 border-white/10'}`}>
+                                    <div className="text-xs font-bold uppercase mb-1 opacity-60">Starttid</div>
                                     <div className="text-4xl font-mono font-black text-yellow-400 tracking-tight">
                                         {new Date(startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                     </div>
@@ -1566,16 +1585,18 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
 
         {(isZombieMode || isChristmasMode) && !audioEnabled && hasSeenBriefing && (
             <div className="absolute inset-0 z-[4000] flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
-                <div className="text-center max-w-sm animate-in zoom-in duration-300">
-                    <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border-2 animate-pulse ${isChristmasMode ? 'bg-red-900/30 border-red-500' : 'bg-red-900/30 border-red-500'}`}>
-                        {isChristmasMode ? <Volume2 className="w-10 h-10 text-red-500" /> : <Volume2 className="w-10 h-10 text-red-500" />}
+                <div className={`text-center max-w-sm animate-in zoom-in duration-300 p-8 rounded-3xl shadow-2xl border-2 ${isChristmasMode ? 'bg-white text-slate-800 border-sky-300' : 'bg-slate-900 text-white border-red-500'}`}>
+                    <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border-4 animate-pulse ${isChristmasMode ? 'bg-yellow-100 border-yellow-400 text-yellow-600' : 'bg-red-900/30 border-red-500 text-red-500'}`}>
+                        <Volume2 className="w-10 h-10" />
                     </div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">Audio Required</h2>
-                    <p className="text-gray-400 mb-8 font-mono text-sm">
-                        {isChristmasMode ? 'Aktivera den magiska radarn för att hitta paketen.' : 'Tap to activate survival audio systems.'}
+                    <h2 className="text-2xl font-black uppercase tracking-widest mb-2">
+                        {isChristmasMode ? 'AKTIVERA MAGISK HÖRSEL' : 'AUDIO REQUIRED'}
+                    </h2>
+                    <p className={`mb-8 font-mono text-sm opacity-80 ${isChristmasMode ? 'text-slate-600' : 'text-gray-400'}`}>
+                        {isChristmasMode ? 'För att höra tomtens bjällror och hitta paketen måste du slå på ljudet.' : 'Tap to activate survival audio systems.'}
                     </p>
-                    <button onClick={toggleAudio} className={`w-full py-4 text-black font-black uppercase tracking-[0.2em] rounded-xl active:scale-95 transition-all flex items-center justify-center gap-3 ${isChristmasMode ? 'bg-red-600 hover:bg-red-500 shadow-[0_0_30px_rgba(220,38,38,0.5)]' : 'bg-red-600 hover:bg-red-500 shadow-[0_0_30px_rgba(220,38,38,0.5)]'}`}>
-                        <Play className="w-5 h-5 fill-black" /> {isChristmasMode ? 'STARTA RADAR' : 'ENGAGE'}
+                    <button onClick={toggleAudio} className={`w-full py-4 font-black uppercase tracking-[0.2em] rounded-xl active:scale-95 transition-all flex items-center justify-center gap-3 shadow-lg ${isChristmasMode ? 'bg-red-500 hover:bg-red-400 text-white' : 'bg-red-600 hover:bg-red-500 text-black'}`}>
+                        <Play className="w-5 h-5 fill-current" /> {isChristmasMode ? 'STARTA RADAR' : 'ENGAGE'}
                     </button>
                 </div>
             </div>
