@@ -79,10 +79,10 @@ export const ChristmasHuntButton: React.FC<ChristmasHuntButtonProps> = ({
       },
       (err) => {
         console.error(err);
-        setError("Kunde inte hitta din plats (GPS Timeout).");
+        setError("GPS access denied.");
         setLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 6000 } // Timeout added
+      { enableHighAccuracy: true }
     );
   };
 

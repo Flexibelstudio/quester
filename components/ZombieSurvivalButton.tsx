@@ -77,10 +77,10 @@ export const ZombieSurvivalButton: React.FC<ZombieSurvivalButtonProps> = ({
       },
       (err) => {
         console.error(err);
-        setError("Kunde inte hitta din plats (GPS Timeout).");
+        setError("GPS access denied.");
         setLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 6000 } // Timeout added to prevent freeze
+      { enableHighAccuracy: true }
     );
   };
 
