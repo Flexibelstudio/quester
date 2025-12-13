@@ -476,42 +476,65 @@ const FinishDialog: React.FC<{
     totalPoints: number;
     elapsedTime: string;
     onRate: (score: number, comment: string) => void;
-}> = ({ isOpen, totalPoints, elapsedTime, onRate }) => {
+    isChristmas?: boolean; // Added isChristmas prop
+}> = ({ isOpen, totalPoints, elapsedTime, onRate, isChristmas }) => {
     const [score, setScore] = useState(0);
     const [comment, setComment] = useState('');
     if (!isOpen) return null;
+
+    // Theme Config
+    const theme = isChristmas ? {
+        bg: 'bg-white border-sky-300 shadow-sky-900/20',
+        headerText: 'text-slate-800',
+        subText: 'text-slate-500',
+        cardBg: 'bg-sky-50 border-sky-100',
+        accentText: 'text-red-500',
+        button: 'bg-red-500 hover:bg-red-600 text-white shadow-red-200',
+        inputBg: 'bg-white border-sky-200 text-slate-800',
+        star: 'fill-yellow-400 text-yellow-400'
+    } : {
+        bg: 'bg-slate-900 border-slate-700',
+        headerText: 'text-white',
+        subText: 'text-slate-400',
+        cardBg: 'bg-slate-800',
+        accentText: 'text-yellow-400',
+        button: 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/40',
+        inputBg: 'bg-slate-950 border-slate-700 text-white',
+        star: 'fill-yellow-400 text-yellow-400'
+    };
+
     return (
         <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-            <div className="bg-slate-900 border border-slate-700 w-full max-w-md rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+            <div className={`${theme.bg} border w-full max-w-md rounded-3xl p-6 shadow-2xl relative overflow-hidden`}>
+                <div className={`absolute top-0 left-0 right-0 h-2 ${isChristmas ? 'bg-gradient-to-r from-red-500 via-white to-red-500' : 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500'}`}></div>
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/20 text-green-400 border border-green-500/50 mb-4 animate-bounce">
-                        <Flag className="w-10 h-10" />
+                    <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 animate-bounce border-2 ${isChristmas ? 'bg-red-100 text-red-500 border-red-200' : 'bg-green-500/20 text-green-400 border-green-500/50'}`}>
+                        {isChristmas ? <Gift className="w-10 h-10" /> : <Flag className="w-10 h-10" />}
                     </div>
-                    <h2 className="text-3xl font-black text-white italic uppercase">Målgång!</h2>
-                    <p className="text-slate-400 text-sm">Bra jobbat, du har slutfört loppet.</p>
+                    <h2 className={`text-3xl font-black italic uppercase ${theme.headerText}`}>{isChristmas ? 'GOD JUL!' : 'MÅLGÅNG!'}</h2>
+                    <p className={`${theme.subText} text-sm`}>{isChristmas ? 'Snyggt jobbat, alla klappar är räddade!' : 'Bra jobbat, du har slutfört loppet.'}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4 mb-8">
-                    <div className="bg-slate-800 p-4 rounded-xl text-center">
-                         <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Total Tid</div>
-                         <div className="text-2xl font-mono text-white font-bold">{elapsedTime}</div>
+                    <div className={`${theme.cardBg} p-4 rounded-xl text-center`}>
+                         <div className={`text-xs uppercase font-bold tracking-wider mb-1 ${theme.subText}`}>Total Tid</div>
+                         <div className={`text-2xl font-mono font-bold ${theme.headerText}`}>{elapsedTime}</div>
                     </div>
-                    <div className="bg-slate-800 p-4 rounded-xl text-center">
-                         <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Poäng</div>
-                         <div className="text-2xl font-mono text-yellow-400 font-bold">{totalPoints}</div>
+                    <div className={`${theme.cardBg} p-4 rounded-xl text-center`}>
+                         <div className={`text-xs uppercase font-bold tracking-wider mb-1 ${theme.subText}`}>Poäng</div>
+                         <div className={`text-2xl font-mono font-bold ${theme.accentText}`}>{totalPoints}</div>
                     </div>
                 </div>
-                <div className="border-t border-slate-800 pt-6">
-                    <h3 className="text-center text-sm font-bold text-white uppercase tracking-wider mb-4">Vad tyckte du om loppet?</h3>
+                <div className={`border-t pt-6 ${isChristmas ? 'border-sky-100' : 'border-slate-800'}`}>
+                    <h3 className={`text-center text-sm font-bold uppercase tracking-wider mb-4 ${theme.headerText}`}>Vad tyckte du om loppet?</h3>
                     <div className="flex justify-center gap-2 mb-4">
                         {[1, 2, 3, 4, 5].map((s) => (
                             <button key={s} onClick={() => setScore(s)} className="p-2 transition-transform hover:scale-110 focus:outline-none">
-                                <Star className={`w-8 h-8 ${s <= score ? 'fill-yellow-400 text-yellow-400' : 'text-slate-600'}`} />
+                                <Star className={`w-8 h-8 ${s <= score ? theme.star : 'text-slate-300'}`} />
                             </button>
                         ))}
                     </div>
-                    <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Skriv en kommentar..." className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white text-sm mb-6 focus:ring-2 focus:ring-blue-500 outline-none resize-none h-20"/>
-                    <button onClick={() => onRate(score || 5, comment)} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-900/40 active:scale-95 transition-all uppercase tracking-widest">Spara & Avsluta</button>
+                    <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Skriv en kommentar..." className={`w-full rounded-xl p-3 text-sm mb-6 focus:ring-2 focus:ring-blue-500 outline-none resize-none h-20 border ${theme.inputBg}`}/>
+                    <button onClick={() => onRate(score || 5, comment)} className={`w-full font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all uppercase tracking-widest ${theme.button}`}>Spara & Avsluta</button>
                 </div>
             </div>
         </div>
@@ -532,30 +555,54 @@ const GameMenu: React.FC<{
 
     // Logic to prevent pausing instant games
     const isSystemEvent = ['Survival Run', 'Christmas Hunt'].includes(raceCategory);
+    const isChristmas = raceCategory === 'Christmas Hunt';
+
+    // Theme Config
+    const theme = isChristmas ? {
+        bg: 'bg-white border-sky-300 shadow-sky-900/20',
+        text: 'text-slate-800',
+        subText: 'text-slate-500',
+        cardBg: 'bg-sky-50 border-sky-100',
+        button: 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200',
+        closeBtn: 'bg-slate-100 hover:bg-slate-200 text-slate-600',
+        activeToggle: 'bg-green-500 text-white',
+        inactiveToggle: 'bg-slate-200 text-slate-500',
+        giveUpBtn: 'bg-red-50 text-red-500 hover:bg-red-100 border-red-100'
+    } : {
+        bg: 'bg-slate-900 border-slate-700',
+        text: 'text-white',
+        subText: 'text-gray-400',
+        cardBg: 'bg-slate-800/50 border-slate-700',
+        button: 'bg-slate-800 hover:bg-slate-700 text-white border-slate-600',
+        closeBtn: 'bg-slate-800 hover:bg-slate-700 text-white',
+        activeToggle: 'bg-green-600 text-white',
+        inactiveToggle: 'bg-slate-700 text-slate-400',
+        giveUpBtn: 'bg-red-900/30 text-red-400 hover:bg-red-900/50 border-red-900/50'
+    };
 
     return (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
-            <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh]">
+            <div className={`${theme.bg} border w-full max-w-sm rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh]`}>
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-black text-white uppercase tracking-wider">Meny</h2>
-                    <button onClick={onClose} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 text-white">
+                    <h2 className={`text-xl font-black uppercase tracking-wider ${theme.text}`}>Meny</h2>
+                    <button onClick={onClose} className={`p-2 rounded-full ${theme.closeBtn}`}>
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar">
                     {/* Settings */}
-                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                    <div className={`${theme.cardBg} p-4 rounded-2xl border`}>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${audioEnabled ? 'bg-green-500/20 text-green-400' : 'bg-slate-700 text-slate-400'}`}>
+                                <div className={`p-2 rounded-lg ${audioEnabled ? 'bg-green-500/20 text-green-400' : `${theme.inactiveToggle}`}`}>
                                     {audioEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
                                 </div>
-                                <span className="font-bold text-slate-200">Ljud</span>
+                                <span className={`font-bold ${theme.text}`}>Ljud</span>
                             </div>
                             <button 
                                 onClick={onToggleAudio} 
-                                className={`px-3 py-1 rounded-full text-xs font-bold uppercase transition-colors ${audioEnabled ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-400'}`}
+                                className={`px-3 py-1 rounded-full text-xs font-bold uppercase transition-colors ${audioEnabled ? theme.activeToggle : theme.inactiveToggle}`}
                             >
                                 {audioEnabled ? 'PÅ' : 'AV'}
                             </button>
@@ -563,21 +610,21 @@ const GameMenu: React.FC<{
                     </div>
 
                     {/* Info */}
-                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
-                        <div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
+                    <div className={`${theme.cardBg} p-4 rounded-2xl border`}>
+                        <div className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-widest ${theme.subText}`}>
                             <FileText className="w-3 h-3" /> Uppdraget
                         </div>
-                        <p className="text-sm text-slate-300 leading-relaxed max-h-32 overflow-y-auto pr-2">
+                        <p className={`text-sm leading-relaxed max-h-32 overflow-y-auto pr-2 ${isChristmas ? 'text-slate-600' : 'text-slate-300'}`}>
                             {raceDescription || "Ingen beskrivning tillgänglig."}
                         </p>
                     </div>
 
                     {/* Actions */}
-                    <div className="space-y-3 pt-4 border-t border-slate-800">
+                    <div className={`space-y-3 pt-4 border-t ${isChristmas ? 'border-sky-100' : 'border-slate-800'}`}>
                         {!isSystemEvent && (
                             <button 
                                 onClick={onPause}
-                                className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-colors border border-slate-600"
+                                className={`w-full py-4 font-bold rounded-xl flex items-center justify-center gap-3 transition-colors border ${theme.button}`}
                             >
                                 <PauseCircle className="w-5 h-5" />
                                 Pausa / Gå till Lobbyn
@@ -586,7 +633,7 @@ const GameMenu: React.FC<{
                         
                         <button 
                             onClick={onGiveUpRequest}
-                            className="w-full py-4 bg-red-900/30 hover:bg-red-900/50 text-red-400 font-bold rounded-xl flex items-center justify-center gap-3 transition-colors border border-red-900/50"
+                            className={`w-full py-4 font-bold rounded-xl flex items-center justify-center gap-3 transition-colors border ${theme.giveUpBtn}`}
                         >
                             <Flag className="w-5 h-5" />
                             Ge Upp (DNF)
@@ -1382,6 +1429,25 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
     return () => navigator.geolocation.clearWatch(watchId);
   }, [authStep, hasStarted, checkedInIds, raceData.checkpoints, isGameOver, isChristmasMode, isFinishDialogOpen, extractionPoint, isFrozen]); // Added isFrozen dependency to stop updates if frozen? No, location updates still happen, but checkin is blocked.
 
+  // --- DIALOG THEMES ---
+  const dialogTheme = isChristmasMode ? {
+      bg: 'bg-white border-sky-100',
+      title: 'text-slate-900',
+      text: 'text-slate-600',
+      iconBg: 'bg-red-50 border-red-100',
+      iconColor: 'text-red-500',
+      cancelBtn: 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200',
+      confirmBtn: 'bg-red-600 text-white hover:bg-red-500 shadow-lg shadow-red-200'
+  } : {
+      bg: 'bg-gray-900 border-red-900/50',
+      title: 'text-white',
+      text: 'text-gray-400',
+      iconBg: 'bg-red-900/20 border-red-500/20',
+      iconColor: 'text-red-500',
+      cancelBtn: 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700',
+      confirmBtn: 'bg-red-600 text-white hover:bg-red-500 shadow-lg shadow-red-900/30'
+  };
+
   if (authStep === 'login' || authStep === 'profile' || authStep === 'lobby') {
       return (
         <div className={`h-full w-full flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans ${isZombieMode ? 'bg-black text-green-500 font-mono' : isChristmasMode ? 'bg-sky-200 text-slate-800' : 'bg-slate-950'}`}>
@@ -1487,7 +1553,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
             </div>
         )}
 
-        <FinishDialog isOpen={isFinishDialogOpen} totalPoints={totalPoints} elapsedTime={elapsedString} onRate={handleRateAndExit} />
+        <FinishDialog isOpen={isFinishDialogOpen} totalPoints={totalPoints} elapsedTime={elapsedString} onRate={handleRateAndExit} isChristmas={isChristmasMode} />
         
         <GameMenu 
             isOpen={isMenuOpen} 
@@ -1503,25 +1569,25 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
         {/* --- CUSTOM GIVE UP DIALOG (Replaces Browser Confirm) --- */}
         {showGiveUpDialog && (
             <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                <div className="bg-gray-900 border border-red-900/50 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+                <div className={`w-full max-w-sm rounded-2xl p-6 shadow-2xl relative overflow-hidden border ${dialogTheme.bg}`}>
                     <div className="flex flex-col items-center text-center">
-                        <div className="w-16 h-16 bg-red-900/20 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
-                            <Flag className="w-8 h-8 text-red-500" />
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 border ${dialogTheme.iconBg}`}>
+                            <Flag className={`w-8 h-8 ${dialogTheme.iconColor}`} />
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">Ge upp loppet?</h3>
-                        <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-                            Är du säker? Ditt resultat kommer att registreras som <span className="text-red-400 font-bold">DNF</span> (Did Not Finish).
+                        <h3 className={`text-xl font-bold mb-2 ${dialogTheme.title}`}>Ge upp loppet?</h3>
+                        <p className={`text-sm mb-6 leading-relaxed ${dialogTheme.text}`}>
+                            Är du säker? Ditt resultat kommer att registreras som <span className="text-red-500 font-bold">DNF</span> (Did Not Finish).
                         </p>
                         <div className="flex gap-3 w-full">
                             <button 
                                 onClick={() => setShowGiveUpDialog(false)} 
-                                className="flex-1 py-3 rounded-xl font-bold text-gray-300 bg-gray-800 hover:bg-gray-700 transition-colors border border-gray-700"
+                                className={`flex-1 py-3 rounded-xl font-bold transition-colors ${dialogTheme.cancelBtn}`}
                             >
                                 Avbryt
                             </button>
                             <button 
                                 onClick={confirmGiveUp} 
-                                className="flex-1 py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-500 shadow-lg shadow-red-900/30 transition-colors"
+                                className={`flex-1 py-3 rounded-xl font-bold transition-colors ${dialogTheme.confirmBtn}`}
                             >
                                 Ge Upp
                             </button>
