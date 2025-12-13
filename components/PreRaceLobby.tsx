@@ -1,0 +1,124 @@
+
+import React, { useState, useEffect } from 'react';
+import { Clock, MapPin, Volume2, ShieldCheck, Zap, Users, Radio } from 'lucide-react';
+import { RaceEvent } from '../types';
+
+interface PreRaceLobbyProps {
+    raceData: RaceEvent;
+    onReady: () => void; // Called when countdown finishes or manual start
+    teamName: string;
+}
+
+export const PreRaceLobby: React.FC<PreRaceLobbyProps> = ({ raceData, onReady, teamName }) => {
+    const [timeLeft, setTimeLeft] = useState<string>('--:--:--');
+    const [isCountingDown, setIsCountingDown] = useState(false);
+    const [checks, setChecks] = useState({ gps: false, audio: false });
+
+    // Tech Check on Mount
+    useEffect(() => {
+        // Check GPS permissions
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                () => setChecks(prev => ({ ...prev, gps: true })),
+                () => setChecks(prev => ({ ...prev, gps: false }))
+            );
+        }
+        // Audio check is user-initiated usually, but we assume true for lobby visual
+        setChecks(prev => ({ ...prev, audio: true }));
+    }, []);
+
+    // Countdown Timer Logic
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = new Date().getTime();
+            const start = new Date(raceData.startDateTime).getTime();
+            const diff = start - now;
+
+            if (diff <= 0) {
+                // If manual start is enabled, we wait for the signal (which sets start time to NOW)
+                // If it's a fixed time start, we auto-start
+                if (raceData.startMode !== 'mass_start' || !raceData.manualStartEnabled) {
+                    onReady();
+                } else {
+                    setTimeLeft("VÄNTAR PÅ START");
+                }
+            } else {
+                setIsCountingDown(true);
+                const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+                setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [raceData.startDateTime, onReady]);
+
+    const isZombie = raceData.category === 'Survival Run';
+    const isXmas = raceData.category === 'Christmas Hunt';
+
+    return (
+        <div className={`fixed inset-0 z-[5000] flex flex-col items-center justify-center p-6 text-center overflow-hidden ${isZombie ? 'bg-red-950' : isXmas ? 'bg-blue-950' : 'bg-slate-900'}`}>
+            
+            {/* Background Effects */}
+            <div className="absolute inset-0 opacity-20 pointer-events-none">
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent opacity-10 animate-pulse"></div>
+            </div>
+
+            {/* Content */}
+            <div className="relative z-10 max-w-md w-full flex flex-col items-center">
+                
+                {/* Event Badge */}
+                <div className={`mb-8 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.2em] border backdrop-blur-md ${isZombie ? 'bg-red-900/50 border-red-500 text-red-200' : 'bg-blue-900/50 border-blue-500 text-blue-200'}`}>
+                    {raceData.category.toUpperCase()}
+                </div>
+
+                <h1 className="text-4xl md:text-6xl font-black text-white mb-2 tracking-tighter drop-shadow-2xl">
+                    {raceData.name}
+                </h1>
+                <p className="text-white/60 font-medium mb-12">
+                    Välkommen, <span className="text-white font-bold">{teamName}</span>
+                </p>
+
+                {/* The Timer */}
+                <div className="mb-12 relative">
+                    <div className={`absolute -inset-4 rounded-full blur-2xl opacity-20 ${isZombie ? 'bg-red-500' : 'bg-blue-500'} animate-pulse`}></div>
+                    <div className="text-7xl md:text-8xl font-mono font-black text-white tabular-nums tracking-tight relative z-10">
+                        {timeLeft}
+                    </div>
+                    <div className="text-xs font-bold text-white/40 uppercase tracking-widest mt-2">
+                        {isCountingDown ? 'Tid till start' : 'Status'}
+                    </div>
+                </div>
+
+                {/* Tech Checks */}
+                <div className="grid grid-cols-2 gap-4 w-full mb-8">
+                    <div className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition-colors ${checks.gps ? 'bg-green-900/20 border-green-500/30 text-green-400' : 'bg-red-900/20 border-red-500/30 text-red-400'}`}>
+                        <MapPin className="w-6 h-6" />
+                        <span className="text-xs font-bold uppercase">{checks.gps ? 'GPS Redo' : 'Ingen GPS'}</span>
+                    </div>
+                    <div className="p-4 rounded-2xl border bg-gray-800/50 border-gray-700 flex flex-col items-center gap-2 text-gray-300">
+                        <Volume2 className="w-6 h-6" />
+                        <span className="text-xs font-bold uppercase">Ljud På</span>
+                    </div>
+                </div>
+
+                {/* Waiting Animation */}
+                <div className="flex items-center gap-2 text-white/30 text-sm animate-pulse">
+                    <Radio className="w-4 h-4" />
+                    <span>Inväntar startsignal från HQ...</span>
+                </div>
+
+                {/* Manual Override (For Self-Start modes that haven't triggered yet) */}
+                {raceData.startMode === 'self_start' && (
+                    <button 
+                        onClick={onReady}
+                        className="mt-8 w-full py-4 bg-white text-black font-black text-lg rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform flex items-center justify-center gap-2"
+                    >
+                        <Zap className="w-5 h-5 fill-black" /> STARTA NU
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};

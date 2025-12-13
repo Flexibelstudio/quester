@@ -1,0 +1,8 @@
+{
+  "name": "NYA QUESTER",
+  "description": "An AI-powered assistant for organizers to plan, structure, and manage adventure race events with map visualization and technical guidance.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ]
+}

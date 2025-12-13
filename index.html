@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Quester</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0f172a" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <style>
+      html, body, #root {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #0f172a; /* Slate 950 */
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      }
+      
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.2); 
+        border-radius: 10px;
+      }
+      
+      /* Leaflet overrides */
+      .leaflet-container {
+        background: #0f172a;
+        width: 100%;
+        height: 100%;
+        font-family: inherit;
+      }
+      
+      .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+        background: rgba(15, 23, 42, 0.90);
+        color: white;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+      }
+      
+      /* UI Components */
+      .glass-panel {
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      }
+
+      .glass-button {
+        background: rgba(15, 23, 42, 0.9);
+        color: white;
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .glass-button:hover {
+        background: rgba(30, 41, 59, 1);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.5);
+      }
+      .glass-button:active {
+        background: rgba(15, 23, 42, 1);
+        transform: scale(0.96) translateY(0);
+      }
+
+      /* Floating Dock Animation */
+      .dock-item {
+        transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      .dock-item:hover {
+        transform: translateY(-4px) scale(1.05);
+      }
+
+      /* Animations */
+      @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
+        100% { transform: translateY(0px); }
+      }
+      
+      @keyframes pulse-ring {
+        0% { transform: scale(0.33); opacity: 1; }
+        80%, 100% { transform: scale(1); opacity: 0; }
+      }
+
+      @keyframes slide-up {
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      
+      /* Zombie Survival Specifics */
+      @keyframes zombie-pulse {
+        0% { filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.5)); transform: scale(1); }
+        50% { filter: drop-shadow(0 0 12px rgba(239, 68, 68, 1)); transform: scale(1.2); }
+        100% { filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.5)); transform: scale(1); }
+      }
+
+      .animate-float {
+        animation: float 4s ease-in-out infinite;
+      }
+      
+      .zombie-marker-icon {
+        animation: zombie-pulse 2s infinite ease-in-out;
+      }
+
+      /* Winter Wonderland Map Filters */
+      .winter-mode .leaflet-tile-pane {
+        /* High brightness + Cool Blue Tint + Lower Contrast creates a snowy look on standard maps */
+        filter: grayscale(100%) brightness(115%) contrast(90%) sepia(30%) hue-rotate(180deg) saturate(150%);
+        transition: filter 1.5s ease;
+      }
+      
+      /* Snowfall Animation */
+      @keyframes snowfall {
+        0% { transform: translateY(-20px); }
+        100% { transform: translateY(105vh); }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "leaflet/": "https://aistudiocdn.com/leaflet@^1.9.4/",
+    "leaflet": "https://aistudiocdn.com/leaflet@^1.9.4",
+    "react-leaflet": "https://aistudiocdn.com/react-leaflet@^5.0.0",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-slate-950 text-gray-100 font-sans antialiased selection:bg-blue-500 selection:text-white">
+    <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('SW registered: ', registration);
+            })
+            .catch(registrationError => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
