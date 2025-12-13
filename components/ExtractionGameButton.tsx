@@ -51,10 +51,10 @@ export const ExtractionGameButton: React.FC<ExtractionGameButtonProps> = ({ onGa
       },
       (err) => {
         console.error(err);
-        setError("GPS access denied.");
+        setError("Kunde inte hitta din plats (GPS Timeout).");
         setLoading(false);
       },
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true, timeout: 6000 } // Timeout added
     );
   };
 

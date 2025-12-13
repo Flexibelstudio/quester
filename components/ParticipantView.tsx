@@ -134,12 +134,35 @@ const createRoamingZombieIcon = (rotation: number, isStunned: boolean) => L.divI
 // (These can also be extracted, but kept here for now as they are distinct overlays)
 const MissionBriefingDialog: React.FC<{ raceData: RaceEvent; onDeploy: () => void; isOpen: boolean; }> = ({ raceData, onDeploy, isOpen }) => {
     if (!isOpen) return null;
+    const isZombie = raceData.category === 'Survival Run';
+    const isXmas = raceData.category === 'Christmas Hunt';
+    
     return (
-        <div className="fixed inset-0 z-[5000] bg-black flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-md bg-gray-900 border border-gray-700 p-6 rounded-2xl text-white text-center">
-                <h2 className="text-2xl font-bold mb-4">{raceData.name}</h2>
-                <p className="mb-6">{raceData.description}</p>
-                <button onClick={onDeploy} className="w-full bg-red-600 py-3 rounded-lg font-bold">START MISSION</button>
+        <div className={`fixed inset-0 z-[5000] flex flex-col items-center justify-center p-4 ${isZombie ? 'bg-black' : 'bg-slate-950'}`}>
+            <div className={`w-full max-w-md border p-8 rounded-3xl text-center shadow-2xl animate-in zoom-in-95 duration-500 ${isZombie ? 'bg-red-950/20 border-red-900' : 'bg-slate-900 border-slate-700'}`}>
+                {isZombie ? (
+                    <Skull className="w-16 h-16 text-red-500 mx-auto mb-6 animate-pulse" />
+                ) : isXmas ? (
+                    <Gift className="w-16 h-16 text-blue-400 mx-auto mb-6" />
+                ) : (
+                    <MapPin className="w-16 h-16 text-blue-500 mx-auto mb-6" />
+                )}
+                
+                <h2 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter">{raceData.name}</h2>
+                <div className="w-16 h-1 bg-white/20 mx-auto mb-6 rounded-full"></div>
+                
+                <div className="text-gray-300 text-lg leading-relaxed mb-8 max-h-[40vh] overflow-y-auto custom-scrollbar">
+                    {raceData.description || "Gör dig redo för uppdraget. Hitta checkpoints och samla poäng."}
+                </div>
+                
+                <button 
+                    onClick={onDeploy} 
+                    className={`w-full py-4 rounded-xl font-bold text-lg tracking-wider shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] ${
+                        isZombie ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/40' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/40'
+                    }`}
+                >
+                    {isZombie ? 'STARTA UPPDRAG' : 'STARTA JAKTEN'}
+                </button>
             </div>
         </div>
     );
@@ -188,7 +211,11 @@ const MapController: React.FC<{ centerPos: [number, number] | null, doCenter: bo
 export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onExit, onUpdateResult, onRateEvent, initialJoinCode, isTestMode, userProfile }) => {
   
   // --- STATE ---
-  const [authStep, setAuthStep] = useState<'login' | 'profile' | 'lobby' | 'race'>(isTestMode ? 'race' : (userProfile && userProfile.id !== 'guest' ? 'lobby' : 'login'));
+  // Added 'briefing' step to flow
+  const [authStep, setAuthStep] = useState<'login' | 'profile' | 'briefing' | 'lobby' | 'race'>(
+      isTestMode ? 'race' : (userProfile && userProfile.id !== 'guest' ? 'briefing' : 'login')
+  );
+  
   const [participantId, setParticipantId] = useState<string>(isTestMode ? 'test-user' : userProfile?.id || '');
   const [teamNameInput, setTeamNameInput] = useState(isTestMode ? 'Test Runner' : userProfile?.name || '');
   
@@ -203,7 +230,6 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   
   // Modals & UI
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [hasSeenBriefing, setHasSeenBriefing] = useState(false);
   const [showGiveUpDialog, setShowGiveUpDialog] = useState(false);
   const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
   const [notificationToast, setNotificationToast] = useState<{title: string, message: string, type: 'success' | 'danger' | 'info'} | null>(null);
@@ -273,7 +299,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   useEffect(() => {
       // GPS Tracker
       // We run this even in Lobby (authStep === 'lobby') to ensure GPS is warmed up, but we don't game-check
-      if ((authStep !== 'race' && authStep !== 'lobby') || !navigator.geolocation || isGameOver) return;
+      if ((authStep !== 'race' && authStep !== 'lobby' && authStep !== 'briefing') || !navigator.geolocation || isGameOver) return;
       
       const watchId = navigator.geolocation.watchPosition((p) => {
           setUserLocation([p.coords.latitude, p.coords.longitude]);
@@ -302,13 +328,23 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   // --- RENDER ---
 
   if (authStep === 'login' || authStep === 'profile') {
-      // ... (Login Screen Logic - Omitted for brevity as it was not the target of refactor, but would remain here) ...
       return <div className="p-10 text-white bg-slate-900 h-full flex items-center justify-center">
-          <button onClick={() => { setAuthStep('lobby'); }} className="bg-blue-600 px-8 py-4 rounded-xl font-bold">Gå till Startfållan</button>
+          <button onClick={() => { setAuthStep('briefing'); }} className="bg-blue-600 px-8 py-4 rounded-xl font-bold">Gå till Startfållan</button>
       </div>;
   }
 
-  // LOBBY VIEW (New)
+  // BRIEFING VIEW (Restored)
+  if (authStep === 'briefing') {
+      return (
+          <MissionBriefingDialog 
+              isOpen={true} 
+              raceData={raceData} 
+              onDeploy={() => setAuthStep('lobby')} 
+          />
+      );
+  }
+
+  // LOBBY VIEW
   if (authStep === 'lobby' || (authStep === 'race' && !hasStarted)) {
       return (
           <PreRaceLobby 
