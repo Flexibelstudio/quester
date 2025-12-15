@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { RaceEvent, WinCondition, CheckpointOrder, TerrainType, StartMode, UserProfile } from '../types';
+import { RaceEvent, WinCondition, CheckpointOrder, TerrainType, StartMode, UserProfile, ScoreModel, LeaderboardMode } from '../types';
 import { RACE_CATEGORIES, EVENT_TYPES, DEFAULT_COORDINATES } from '../constants';
-import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info } from 'lucide-react';
+import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info, Eye, EyeOff } from 'lucide-react';
 
 interface RaceCreationWizardProps {
   onCancel: () => void;
@@ -17,15 +17,23 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: '',
+    category: '', // Moved to Step 1
     eventType: 'Lopp',
     language: 'sv',
-    startCity: '', // Added startCity
+    startCity: '',
+    
+    // Logic Settings (Controlled by Archetype in Step 2)
     winCondition: 'fastest_time' as WinCondition,
-    checkpointOrder: 'free' as CheckpointOrder,
+    checkpointOrder: 'sequential' as CheckpointOrder,
+    scoreModel: 'basic' as ScoreModel,
+    timeLimitMinutes: 60, // Default for Rogaining
+    
+    // Other Settings
     terrainType: 'trail' as TerrainType,
     startMode: 'mass_start' as StartMode,
     manualStartEnabled: true,
+    leaderboardMode: 'global' as LeaderboardMode,
+    
     // Default to 24 hours from now to indicate planning mode
     startDateTime: new Date(Date.now() + 86400 * 1000).toISOString().slice(0, 16),
     accessCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
@@ -51,8 +59,9 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
     }
   }, []);
 
-  const isStep1Valid = formData.name.length > 0 && formData.description.length > 0;
-  const isStep2Valid = formData.category.length > 0;
+  const isStep1Valid = formData.name.length > 0 && formData.description.length > 0 && formData.category.length > 0;
+  // Step 2 is always valid as it has defaults, but we ensure logic is sound
+  const isStep2Valid = true;
 
   const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => setStep(prev => prev - 1);
@@ -87,8 +96,39 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
     onComplete(partialData);
   };
 
-  // Helper to determine if the "Annat" input should be shown/active
+  // Helper for Custom Category
   const isCustomCategory = formData.category === 'Annat' || (formData.category !== '' && !RACE_CATEGORIES.includes(formData.category));
+
+  // Archetype Selection Logic
+  const selectArchetype = (type: 'classic' | 'rogaining' | 'adventure') => {
+      if (type === 'classic') {
+          setFormData({
+              ...formData,
+              winCondition: 'fastest_time',
+              checkpointOrder: 'sequential',
+              scoreModel: 'basic'
+          });
+      } else if (type === 'rogaining') {
+          setFormData({
+              ...formData,
+              winCondition: 'most_points',
+              checkpointOrder: 'free',
+              scoreModel: 'rogaining'
+          });
+      } else if (type === 'adventure') {
+          setFormData({
+              ...formData,
+              winCondition: 'most_points',
+              checkpointOrder: 'free',
+              scoreModel: 'basic'
+          });
+      }
+  };
+
+  // Determine active archetype for UI highlight
+  const activeArchetype = 
+      formData.scoreModel === 'rogaining' ? 'rogaining' :
+      formData.winCondition === 'most_points' ? 'adventure' : 'classic';
 
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-gray-950 p-4 animate-in fade-in duration-300">
@@ -115,10 +155,10 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                  {step}
              </div>
              <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                 {step === 1 ? 'Starta ditt Äventyr' : step === 2 ? 'Regler & Format' : 'Startmetod & Åtkomst'}
+                 {step === 1 ? 'Starta ditt Äventyr' : step === 2 ? 'Välj Spelupplägg' : 'Start & Synlighet'}
              </h2>
              <p className="text-gray-400 text-sm mt-1">
-                 {step === 1 ? 'Namn och typ av aktivitet' : step === 2 ? 'Hur vinner man?' : 'Bestäm datum senare i inställningarna'}
+                 {step === 1 ? 'Namn, plats och kategori' : step === 2 ? 'Bestäm reglerna för hur man vinner' : 'Hur får deltagarna tillgång?'}
              </p>
          </div>
 
@@ -159,10 +199,51 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                              </div>
                         </div>
                      </div>
+
+                     {/* Moved Category Selection to Step 1 */}
+                     <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Kategori</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {RACE_CATEGORIES.slice(0, 5).map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setFormData({...formData, category: cat})}
+                                    className={`px-3 py-2 rounded-lg border text-xs font-bold transition-all ${
+                                        formData.category === cat
+                                        ? 'bg-blue-600 border-blue-500 text-white' 
+                                        : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
+                                    }`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => setFormData({...formData, category: 'Annat'})}
+                                className={`px-3 py-2 rounded-lg border text-xs font-bold transition-all ${
+                                    isCustomCategory
+                                    ? 'bg-blue-600 border-blue-500 text-white' 
+                                    : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
+                                }`}
+                            >
+                                Annat...
+                            </button>
+                        </div>
+                        {isCustomCategory && (
+                            <div className="mt-3">
+                                <input 
+                                    type="text"
+                                    value={formData.category === 'Annat' ? '' : formData.category}
+                                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                                    placeholder="Skriv din kategori..."
+                                    className="w-full bg-gray-950 border border-blue-500/50 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                            </div>
+                        )}
+                     </div>
                      
                      <div className="grid grid-cols-2 gap-6">
                         <div className="col-span-2 sm:col-span-1">
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Språk (AI & Innehåll)</label>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Språk (Innehåll)</label>
                             <div className="relative">
                                 <Languages className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
                                 <select 
@@ -172,14 +253,10 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                                 >
                                     <option value="sv">Svenska</option>
                                     <option value="en">English</option>
-                                    <option value="de">Deutsch</option>
-                                    <option value="es">Español</option>
-                                    <option value="fr">Français</option>
                                 </select>
                              </div>
                         </div>
                         <div className="col-span-2 sm:col-span-1">
-                            {/* Location Input */}
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Startort / Stad</label>
                             <div className="relative">
                                 <MapPin className={`absolute left-3 top-3.5 w-5 h-5 ${userLocation ? 'text-green-500' : 'text-gray-500'}`} />
@@ -190,10 +267,6 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                                     placeholder={userLocation ? "Din nuvarande plats" : "T.ex. Stockholm"}
                                     className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                                 />
-                            </div>
-                            <div className="flex items-center gap-1.5 mt-2 text-[10px] text-blue-300 bg-blue-900/20 p-1.5 rounded border border-blue-900/50">
-                                <Info className="w-3 h-3" />
-                                <span>Du placerar den <strong>exakta</strong> startnålen på kartan i nästa steg.</span>
                             </div>
                         </div>
                      </div>
@@ -206,166 +279,124 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                                 value={formData.description}
                                 onChange={(e) => setFormData({...formData, description: e.target.value})}
                                 placeholder="Beskriv området, syftet och vad deltagarna kan förvänta sig..."
-                                className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[120px] resize-none transition-all"
+                                className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[100px] resize-none transition-all"
                             />
                          </div>
                      </div>
                  </div>
              )}
 
-             {/* STEP 2: RULES */}
+             {/* STEP 2: ARCHETYPES (RULES) */}
              {step === 2 && (
-                 <div className="space-y-8 animate-in slide-in-from-right-8 duration-300">
-                     {/* Category */}
-                     <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Välj Kategori</label>
-                        <div className="grid grid-cols-2 gap-3">
-                            {RACE_CATEGORIES.map(cat => {
-                                // Determine if this specific button should look selected
-                                const isSelected = formData.category === cat || (cat === 'Annat' && isCustomCategory);
-                                
-                                return (
-                                    <button
-                                        key={cat}
-                                        onClick={() => setFormData({...formData, category: cat})}
-                                        className={`p-3 rounded-lg border text-sm font-medium text-left transition-all ${
-                                            isSelected
-                                            ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20' 
-                                            : 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-750 hover:border-gray-600'
-                                        }`}
-                                    >
-                                        {cat}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        {/* Custom Category Input */}
-                        {isCustomCategory && (
-                            <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                <label className="block text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">Specificera din kategori</label>
-                                <div className="relative">
-                                    <PenTool className="absolute left-3 top-3.5 text-gray-500 w-4 h-4" />
-                                    <input 
-                                        type="text"
-                                        value={formData.category === 'Annat' ? '' : formData.category}
-                                        onChange={(e) => setFormData({...formData, category: e.target.value})}
-                                        placeholder="Skriv vad du vill..."
-                                        className="w-full bg-gray-950 border border-blue-500/50 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                                        autoFocus
-                                    />
-                                </div>
-                            </div>
-                        )}
+                 <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
+                     
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                         
+                         {/* 1. CLASSIC RACE */}
+                         <button
+                            onClick={() => selectArchetype('classic')}
+                            className={`relative flex flex-col items-center text-center p-6 rounded-2xl border-2 transition-all duration-300 group hover:-translate-y-1 ${
+                                activeArchetype === 'classic'
+                                ? 'bg-blue-900/20 border-blue-500 shadow-xl shadow-blue-900/20'
+                                : 'bg-gray-950 border-gray-800 hover:border-gray-600'
+                            }`}
+                         >
+                             {activeArchetype === 'classic' && (
+                                 <div className="absolute top-3 right-3 text-blue-500"><CheckCircle2 className="w-6 h-6" /></div>
+                             )}
+                             <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 ${activeArchetype === 'classic' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-500'}`}>
+                                 <Flag className="w-7 h-7" />
+                             </div>
+                             <h3 className={`text-lg font-bold mb-2 ${activeArchetype === 'classic' ? 'text-white' : 'text-gray-300'}`}>Banlopp</h3>
+                             <p className="text-xs text-gray-400 leading-relaxed">
+                                 Klassiskt lopp. Snabbast tid från start till mål vinner. Du måste ta alla checkpoints i ordning.
+                             </p>
+                             <div className="mt-4 flex gap-2 justify-center">
+                                 <span className="text-[10px] font-bold uppercase px-2 py-1 bg-gray-800 rounded text-gray-400">Sekventiell</span>
+                                 <span className="text-[10px] font-bold uppercase px-2 py-1 bg-gray-800 rounded text-gray-400">På Tid</span>
+                             </div>
+                         </button>
+
+                         {/* 2. ROGAINING */}
+                         <button
+                            onClick={() => selectArchetype('rogaining')}
+                            className={`relative flex flex-col items-center text-center p-6 rounded-2xl border-2 transition-all duration-300 group hover:-translate-y-1 ${
+                                activeArchetype === 'rogaining'
+                                ? 'bg-yellow-900/20 border-yellow-500 shadow-xl shadow-yellow-900/20'
+                                : 'bg-gray-950 border-gray-800 hover:border-gray-600'
+                            }`}
+                         >
+                             {activeArchetype === 'rogaining' && (
+                                 <div className="absolute top-3 right-3 text-yellow-500"><CheckCircle2 className="w-6 h-6" /></div>
+                             )}
+                             <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 ${activeArchetype === 'rogaining' ? 'bg-yellow-600 text-black' : 'bg-gray-800 text-gray-500'}`}>
+                                 <Timer className="w-7 h-7" />
+                             </div>
+                             <h3 className={`text-lg font-bold mb-2 ${activeArchetype === 'rogaining' ? 'text-white' : 'text-gray-300'}`}>Poängjakt</h3>
+                             <p className="text-xs text-gray-400 leading-relaxed">
+                                 Samla max poäng på begränsad tid. Valfri ordning. Strategi avgör. Minuspoäng vid sen målgång.
+                             </p>
+                             <div className="mt-4 flex gap-2 justify-center">
+                                 <span className="text-[10px] font-bold uppercase px-2 py-1 bg-gray-800 rounded text-gray-400">Fri Ordning</span>
+                                 <span className="text-[10px] font-bold uppercase px-2 py-1 bg-gray-800 rounded text-gray-400">Tidsgräns</span>
+                             </div>
+                         </button>
+
+                         {/* 3. ADVENTURE */}
+                         <button
+                            onClick={() => selectArchetype('adventure')}
+                            className={`relative flex flex-col items-center text-center p-6 rounded-2xl border-2 transition-all duration-300 group hover:-translate-y-1 ${
+                                activeArchetype === 'adventure'
+                                ? 'bg-purple-900/20 border-purple-500 shadow-xl shadow-purple-900/20'
+                                : 'bg-gray-950 border-gray-800 hover:border-gray-600'
+                            }`}
+                         >
+                             {activeArchetype === 'adventure' && (
+                                 <div className="absolute top-3 right-3 text-purple-500"><CheckCircle2 className="w-6 h-6" /></div>
+                             )}
+                             <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 ${activeArchetype === 'adventure' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-500'}`}>
+                                 <Compass className="w-7 h-7" />
+                             </div>
+                             <h3 className={`text-lg font-bold mb-2 ${activeArchetype === 'adventure' ? 'text-white' : 'text-gray-300'}`}>Äventyr</h3>
+                             <p className="text-xs text-gray-400 leading-relaxed">
+                                 Lös uppdrag och quiz i egen takt. Ingen tidsstress. Fokus på upplevelsen och poängen.
+                             </p>
+                             <div className="mt-4 flex gap-2 justify-center">
+                                 <span className="text-[10px] font-bold uppercase px-2 py-1 bg-gray-800 rounded text-gray-400">Fri Ordning</span>
+                                 <span className="text-[10px] font-bold uppercase px-2 py-1 bg-gray-800 rounded text-gray-400">Ingen Tid</span>
+                             </div>
+                         </button>
                      </div>
 
-                     {/* Terrain Preference */}
-                     <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Terrängtyp</label>
-                        <div className="grid grid-cols-3 gap-3">
-                            <button
-                                onClick={() => setFormData({...formData, terrainType: 'trail'})}
-                                className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all ${
-                                    formData.terrainType === 'trail'
-                                    ? 'bg-green-900/30 border-green-500 text-white'
-                                    : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-700'
-                                }`}
-                            >
-                                <Route className={`w-6 h-6 mb-2 ${formData.terrainType === 'trail' ? 'text-green-400' : 'text-gray-600'}`} />
-                                <span className="text-xs font-bold">Stig / Väg</span>
-                                <span className="text-[10px] opacity-70 mt-1">Lättåtkomligt</span>
-                            </button>
-
-                            <button
-                                onClick={() => setFormData({...formData, terrainType: 'mixed'})}
-                                className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all ${
-                                    formData.terrainType === 'mixed'
-                                    ? 'bg-yellow-900/30 border-yellow-500 text-white'
-                                    : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-700'
-                                }`}
-                            >
-                                <Trees className={`w-6 h-6 mb-2 ${formData.terrainType === 'mixed' ? 'text-yellow-400' : 'text-gray-600'}`} />
-                                <span className="text-xs font-bold">Blandat</span>
-                                <span className="text-[10px] opacity-70 mt-1">Stig & Terräng</span>
-                            </button>
-
-                            <button
-                                onClick={() => setFormData({...formData, terrainType: 'off_road'})}
-                                className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all ${
-                                    formData.terrainType === 'off_road'
-                                    ? 'bg-red-900/30 border-red-500 text-white'
-                                    : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-700'
-                                }`}
-                            >
-                                <Mountain className={`w-6 h-6 mb-2 ${formData.terrainType === 'off_road' ? 'text-red-400' : 'text-gray-600'}`} />
-                                <span className="text-xs font-bold">Obanat</span>
-                                <span className="text-[10px] opacity-70 mt-1">Djup skog</span>
-                            </button>
-                        </div>
-                     </div>
-
-                     <div className="grid grid-cols-2 gap-6">
-                        {/* Win Condition */}
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Vinstvillkor</label>
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    onClick={() => setFormData({...formData, winCondition: 'fastest_time'})}
-                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                                        formData.winCondition === 'fastest_time'
-                                        ? 'bg-blue-900/20 border-blue-500 text-white'
-                                        : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-700'
-                                    }`}
-                                >
-                                    <Timer className={`w-5 h-5 ${formData.winCondition === 'fastest_time' ? 'text-blue-400' : 'text-gray-600'}`} />
-                                    <span className="text-xs font-bold">Snabbast Tid</span>
-                                </button>
-                                
-                                <button
-                                    onClick={() => setFormData({...formData, winCondition: 'most_points'})}
-                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                                        formData.winCondition === 'most_points'
-                                        ? 'bg-yellow-900/20 border-yellow-500 text-white'
-                                        : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-700'
-                                    }`}
-                                >
-                                    <Trophy className={`w-5 h-5 ${formData.winCondition === 'most_points' ? 'text-yellow-400' : 'text-gray-600'}`} />
-                                    <span className="text-xs font-bold">Poängjakt</span>
-                                </button>
-                            </div>
-                        </div>
-
-                         {/* Checkpoint Order */}
-                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Banläggning</label>
-                            <div className="flex flex-col gap-3">
-                                <button onClick={() => setFormData({...formData, checkpointOrder: 'free'})} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                                    formData.checkpointOrder === 'free'
-                                    ? 'bg-gray-800 border-gray-600 text-white'
-                                    : 'bg-gray-950 border-gray-800 text-gray-500'
-                                }`}>
-                                    <Shuffle className="w-5 h-5" />
-                                    <span className="text-xs font-bold">Fri Ordning</span>
-                                </button>
-
-                                <button onClick={() => setFormData({...formData, checkpointOrder: 'sequential'})} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                                    formData.checkpointOrder === 'sequential'
-                                    ? 'bg-gray-800 border-gray-600 text-white'
-                                    : 'bg-gray-950 border-gray-800 text-gray-500'
-                                }`}>
-                                    <Route className="w-5 h-5" />
-                                    <span className="text-xs font-bold">Sekventiell (1-2-3)</span>
-                                </button>
-                            </div>
+                     {/* Rogaining Settings (Conditional) */}
+                     {activeArchetype === 'rogaining' && (
+                         <div className="bg-yellow-900/10 border border-yellow-500/30 p-4 rounded-xl flex items-center justify-between animate-in slide-in-from-top-2 duration-300">
+                             <div className="flex items-center gap-3">
+                                 <Clock className="w-6 h-6 text-yellow-500" />
+                                 <div>
+                                     <h4 className="text-sm font-bold text-yellow-100">Inställningar för Poängjakt</h4>
+                                     <p className="text-xs text-yellow-200/70">Hur länge får deltagarna vara ute?</p>
+                                 </div>
+                             </div>
+                             <div className="flex items-center gap-2">
+                                 <input 
+                                    type="number"
+                                    value={formData.timeLimitMinutes}
+                                    onChange={(e) => setFormData({...formData, timeLimitMinutes: parseInt(e.target.value) || 60})}
+                                    className="w-20 bg-gray-900 border border-yellow-500/50 rounded-lg p-2 text-center text-white font-bold"
+                                 />
+                                 <span className="text-sm font-bold text-gray-400">minuter</span>
+                             </div>
                          </div>
-                     </div>
+                     )}
                  </div>
              )}
 
-             {/* STEP 3: SETTINGS (Date removed) */}
+             {/* STEP 3: START & ACCESS */}
              {step === 3 && (
                  <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
                       
-                      {/* START MODE SELECTION */}
+                      {/* START MODE */}
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Hur ska aktiviteten starta?</label>
                         <div className="grid grid-cols-2 gap-4">
@@ -418,6 +449,7 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                           </div>
                       )}
 
+                      {/* ACCESS CODE */}
                       <div>
                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Accesskod (för deltagare)</label>
                          <div className="relative">
@@ -432,11 +464,48 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                          </div>
                       </div>
 
-                      <div className="pt-4 border-t border-gray-800 space-y-4">
+                      {/* LEADERBOARD & VISIBILITY */}
+                      <div className="space-y-4 pt-4 border-t border-gray-800">
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Synlighet & Resultat</label>
+                          
+                          {/* Leaderboard Toggle */}
+                          <div className="grid grid-cols-2 gap-4">
+                              <button
+                                onClick={() => setFormData({...formData, leaderboardMode: 'global'})}
+                                className={`flex flex-col p-3 rounded-xl border transition-all text-left ${
+                                    formData.leaderboardMode === 'global'
+                                    ? 'bg-indigo-900/20 border-indigo-500'
+                                    : 'bg-gray-950 border-gray-800 hover:border-gray-700'
+                                }`}
+                              >
+                                  <div className="flex items-center gap-2 mb-2">
+                                      <Eye className={`w-4 h-4 ${formData.leaderboardMode === 'global' ? 'text-indigo-400' : 'text-gray-500'}`} />
+                                      <span className={`text-sm font-bold ${formData.leaderboardMode === 'global' ? 'text-white' : 'text-gray-400'}`}>Publik Topplista</span>
+                                  </div>
+                                  <span className="text-[10px] text-gray-500 leading-tight">Alla ser allas resultat. Bra för tävlingar.</span>
+                              </button>
+
+                              <button
+                                onClick={() => setFormData({...formData, leaderboardMode: 'private'})}
+                                className={`flex flex-col p-3 rounded-xl border transition-all text-left ${
+                                    formData.leaderboardMode === 'private'
+                                    ? 'bg-indigo-900/20 border-indigo-500'
+                                    : 'bg-gray-950 border-gray-800 hover:border-gray-700'
+                                }`}
+                              >
+                                  <div className="flex items-center gap-2 mb-2">
+                                      <EyeOff className={`w-4 h-4 ${formData.leaderboardMode === 'private' ? 'text-indigo-400' : 'text-gray-500'}`} />
+                                      <span className={`text-sm font-bold ${formData.leaderboardMode === 'private' ? 'text-white' : 'text-gray-400'}`}>Privat Resultat</span>
+                                  </div>
+                                  <span className="text-[10px] text-gray-500 leading-tight">Deltagare ser bara sin egen tid. Ingen ranking.</span>
+                              </button>
+                          </div>
+
+                          {/* Public Event Toggle */}
                           <label className="flex items-center justify-between cursor-pointer p-4 bg-gray-950 border border-gray-800 rounded-xl hover:border-gray-700 transition-colors">
                               <div>
-                                  <div className="font-bold text-white mb-1">Publikt Event</div>
-                                  <div className="text-xs text-gray-500">Synligt för alla i "Utforska"-vyn</div>
+                                  <div className="font-bold text-white mb-1">Visa i Utforska</div>
+                                  <div className="text-xs text-gray-500">Gör eventet sökbart för alla (Publikt)</div>
                               </div>
                               <div className={`w-12 h-7 rounded-full p-1 transition-colors ${formData.isPublic ? 'bg-blue-600' : 'bg-gray-700'}`}>
                                   <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform ${formData.isPublic ? 'translate-x-5' : 'translate-x-0'}`}></div>
