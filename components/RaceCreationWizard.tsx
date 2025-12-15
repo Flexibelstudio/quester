@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { RaceEvent, WinCondition, CheckpointOrder, TerrainType, StartMode, UserProfile, ScoreModel, LeaderboardMode } from '../types';
 import { RACE_CATEGORIES, EVENT_TYPES, DEFAULT_COORDINATES } from '../constants';
-import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info, Eye, EyeOff, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info, Eye, EyeOff, ChevronDown, CheckCircle2, Lock, Globe, Users } from 'lucide-react';
 
 interface RaceCreationWizardProps {
   onCancel: () => void;
@@ -17,7 +17,7 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: '', // Moved to Step 1
+    category: '', 
     eventType: 'Lopp',
     language: 'sv',
     startCity: '',
@@ -386,14 +386,78 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                  </div>
              )}
 
-             {/* STEP 3: START & ACCESS */}
+             {/* STEP 3: RESTRUCTURED FOR CLARITY */}
              {step === 3 && (
-                 <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
+                 <div className="space-y-8 animate-in slide-in-from-right-8 duration-300">
                       
-                      {/* START MODE */}
+                      {/* SECTION A: ACCESS & VISIBILITY */}
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Hur ska aktiviteten starta?</label>
-                        <div className="grid grid-cols-2 gap-4">
+                          <div className="flex items-center gap-2 mb-3">
+                              <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase">A</span>
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tillgång & Synlighet</label>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                              <button
+                                onClick={() => setFormData({...formData, isPublic: false})}
+                                className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all ${
+                                    !formData.isPublic
+                                    ? 'bg-red-900/20 border-red-500 text-white shadow-lg shadow-red-900/10'
+                                    : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-700'
+                                }`}
+                              >
+                                  <Lock className={`w-6 h-6 mb-2 ${!formData.isPublic ? 'text-red-400' : 'text-gray-600'}`} />
+                                  <span className="text-sm font-bold">Privat Event</span>
+                                  <span className="text-[10px] opacity-70 mt-1 text-center">Kräver kod. Syns ej i listan.</span>
+                              </button>
+
+                              <button
+                                onClick={() => setFormData({...formData, isPublic: true})}
+                                className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all ${
+                                    formData.isPublic
+                                    ? 'bg-green-900/20 border-green-500 text-white shadow-lg shadow-green-900/10'
+                                    : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-700'
+                                }`}
+                              >
+                                  <Globe className={`w-6 h-6 mb-2 ${formData.isPublic ? 'text-green-400' : 'text-gray-600'}`} />
+                                  <span className="text-sm font-bold">Publikt Event</span>
+                                  <span className="text-[10px] opacity-70 mt-1 text-center">Öppet för alla. Syns i Utforska.</span>
+                              </button>
+                          </div>
+
+                          {/* Access Code logic display */}
+                          {!formData.isPublic ? (
+                              <div className="relative animate-in fade-in slide-in-from-top-1">
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Accesskod (Dela denna)</label>
+                                <Key className="absolute left-3 top-8 text-gray-500 w-5 h-5 z-10" />
+                                <input
+                                    type="text"
+                                    value={formData.accessCode}
+                                    onChange={(e) => setFormData({...formData, accessCode: e.target.value.toUpperCase()})}
+                                    maxLength={8}
+                                    className="w-full bg-gray-900 border border-red-500/50 rounded-xl py-3 pl-10 pr-4 text-white font-mono uppercase tracking-widest text-center focus:outline-none focus:ring-1 focus:ring-red-500"
+                                />
+                              </div>
+                          ) : (
+                              <div className="p-3 bg-green-900/10 border border-green-500/20 rounded-xl text-center animate-in fade-in slide-in-from-top-1">
+                                  <p className="text-xs text-green-300">
+                                      <CheckCircle2 className="w-3 h-3 inline mr-1" />
+                                      Deltagare kan gå med direkt via listan.
+                                  </p>
+                              </div>
+                          )}
+                      </div>
+
+                      <div className="h-px bg-gray-800 w-full"></div>
+
+                      {/* SECTION B: START METHOD */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                              <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase">B</span>
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Startmetod</label>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-4">
                             <button
                                 onClick={() => setFormData({...formData, startMode: 'mass_start'})}
                                 className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all ${
@@ -402,119 +466,91 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                                     : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-700'
                                 }`}
                             >
-                                <Clock className={`w-8 h-8 mb-2 ${formData.startMode === 'mass_start' ? 'text-blue-400' : 'text-gray-600'}`} />
+                                <Clock className={`w-6 h-6 mb-2 ${formData.startMode === 'mass_start' ? 'text-blue-400' : 'text-gray-600'}`} />
                                 <span className="text-sm font-bold">Gemensam Start</span>
-                                <span className="text-[10px] opacity-70 mt-1 text-center">Alla startar samtidigt från samma plats.</span>
+                                <span className="text-[10px] opacity-70 mt-1 text-center">Alla startar samtidigt.</span>
                             </button>
 
                             <button
                                 onClick={() => setFormData({...formData, startMode: 'self_start'})}
                                 className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all ${
                                     formData.startMode === 'self_start'
-                                    ? 'bg-green-900/30 border-green-500 text-white shadow-lg shadow-green-900/20'
+                                    ? 'bg-purple-900/30 border-purple-500 text-white shadow-lg shadow-purple-900/20'
                                     : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-700'
                                 }`}
                             >
-                                <MousePointer2 className={`w-8 h-8 mb-2 ${formData.startMode === 'self_start' ? 'text-green-400' : 'text-gray-600'}`} />
+                                <MousePointer2 className={`w-6 h-6 mb-2 ${formData.startMode === 'self_start' ? 'text-purple-400' : 'text-gray-600'}`} />
                                 <span className="text-sm font-bold">Fri Start (GPS)</span>
-                                <span className="text-[10px] opacity-70 mt-1 text-center">Deltagaren startar själv sin tid vid startpunkten.</span>
+                                <span className="text-[10px] opacity-70 mt-1 text-center">Starta när man är på plats.</span>
                             </button>
                         </div>
+
+                        {/* Manual Start Toggle (Only for Mass Start) */}
+                        {formData.startMode === 'mass_start' && (
+                            <div className="p-3 bg-blue-900/10 border border-blue-500/20 rounded-xl animate-in fade-in slide-in-from-top-1">
+                                    <label className="flex items-center gap-3 cursor-pointer">
+                                        <div className="relative">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={formData.manualStartEnabled}
+                                                onChange={(e) => setFormData({...formData, manualStartEnabled: e.target.checked})}
+                                                className="sr-only peer"
+                                            />
+                                            <div className="w-10 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-bold text-white">Tillåt manuell startknapp</div>
+                                            <div className="text-xs text-gray-500">Arrangören får en knapp för att starta loppet</div>
+                                        </div>
+                                    </label>
+                            </div>
+                        )}
                       </div>
 
-                      {/* Manual Start Toggle */}
-                      {formData.startMode === 'mass_start' && (
-                          <div className="p-4 bg-gray-950 border border-gray-800 rounded-xl">
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <div className="relative">
-                                        <input 
-                                            type="checkbox" 
-                                            checked={formData.manualStartEnabled}
-                                            onChange={(e) => setFormData({...formData, manualStartEnabled: e.target.checked})}
-                                            className="sr-only peer"
-                                        />
-                                        <div className="w-10 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                    </div>
-                                    <div>
-                                        <div className="text-sm font-bold text-white">Tillåt manuell startknapp</div>
-                                        <div className="text-xs text-gray-500">Arrangören kan starta loppet när som helst via en knapp</div>
-                                    </div>
-                                </label>
-                          </div>
-                      )}
+                      <div className="h-px bg-gray-800 w-full"></div>
 
-                      {/* ACCESS CODE */}
+                      {/* SECTION C: LEADERBOARD */}
                       <div>
-                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Accesskod (för deltagare)</label>
-                         <div className="relative">
-                            <Key className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
-                            <input
-                                type="text"
-                                value={formData.accessCode}
-                                onChange={(e) => setFormData({...formData, accessCode: e.target.value.toUpperCase()})}
-                                maxLength={8}
-                                className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white font-mono uppercase tracking-widest text-center focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                            />
-                         </div>
-                      </div>
-
-                      {/* LEADERBOARD & VISIBILITY */}
-                      <div className="space-y-4 pt-4 border-t border-gray-800">
-                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Synlighet & Resultat</label>
+                          <div className="flex items-center gap-2 mb-3">
+                              <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase">C</span>
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Resultatlista</label>
+                          </div>
                           
-                          {/* Leaderboard Toggle */}
                           <div className="grid grid-cols-2 gap-4">
                               <button
                                 onClick={() => setFormData({...formData, leaderboardMode: 'global'})}
                                 className={`flex flex-col p-3 rounded-xl border transition-all text-left ${
                                     formData.leaderboardMode === 'global'
-                                    ? 'bg-indigo-900/20 border-indigo-500'
+                                    ? 'bg-yellow-900/20 border-yellow-500'
                                     : 'bg-gray-950 border-gray-800 hover:border-gray-700'
                                 }`}
                               >
                                   <div className="flex items-center gap-2 mb-2">
-                                      <Eye className={`w-4 h-4 ${formData.leaderboardMode === 'global' ? 'text-indigo-400' : 'text-gray-500'}`} />
+                                      <Trophy className={`w-4 h-4 ${formData.leaderboardMode === 'global' ? 'text-yellow-400' : 'text-gray-500'}`} />
                                       <span className={`text-sm font-bold ${formData.leaderboardMode === 'global' ? 'text-white' : 'text-gray-400'}`}>Publik Topplista</span>
                                   </div>
-                                  <span className="text-[10px] text-gray-500 leading-tight">Alla ser allas resultat. Bra för tävlingar.</span>
+                                  <span className="text-[10px] text-gray-500 leading-tight">Alla ser allas resultat. Tävling.</span>
                               </button>
 
                               <button
                                 onClick={() => setFormData({...formData, leaderboardMode: 'private'})}
                                 className={`flex flex-col p-3 rounded-xl border transition-all text-left ${
                                     formData.leaderboardMode === 'private'
-                                    ? 'bg-indigo-900/20 border-indigo-500'
+                                    ? 'bg-gray-800 border-gray-500'
                                     : 'bg-gray-950 border-gray-800 hover:border-gray-700'
                                 }`}
                               >
                                   <div className="flex items-center gap-2 mb-2">
-                                      <EyeOff className={`w-4 h-4 ${formData.leaderboardMode === 'private' ? 'text-indigo-400' : 'text-gray-500'}`} />
+                                      <EyeOff className={`w-4 h-4 ${formData.leaderboardMode === 'private' ? 'text-white' : 'text-gray-500'}`} />
                                       <span className={`text-sm font-bold ${formData.leaderboardMode === 'private' ? 'text-white' : 'text-gray-400'}`}>Privat Resultat</span>
                                   </div>
-                                  <span className="text-[10px] text-gray-500 leading-tight">Deltagare ser bara sin egen tid. Ingen ranking.</span>
+                                  <span className="text-[10px] text-gray-500 leading-tight">Ser bara sin egen tid. Utmaning.</span>
                               </button>
                           </div>
 
-                          {/* Public Event Toggle */}
-                          <label className="flex items-center justify-between cursor-pointer p-4 bg-gray-950 border border-gray-800 rounded-xl hover:border-gray-700 transition-colors">
-                              <div>
-                                  <div className="font-bold text-white mb-1">Visa i Utforska</div>
-                                  <div className="text-xs text-gray-500">Gör eventet sökbart för alla (Publikt)</div>
-                              </div>
-                              <div className={`w-12 h-7 rounded-full p-1 transition-colors ${formData.isPublic ? 'bg-blue-600' : 'bg-gray-700'}`}>
-                                  <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform ${formData.isPublic ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                              </div>
-                              <input 
-                                type="checkbox" 
-                                className="hidden" 
-                                checked={formData.isPublic}
-                                onChange={(e) => setFormData({...formData, isPublic: e.target.checked})}
-                              />
-                          </label>
-
                           {/* ADMIN ONLY: OFFICIAL QUESTER EVENT TOGGLE */}
                           {user?.role === 'admin' && (
-                              <label className="flex items-center justify-between cursor-pointer p-4 bg-indigo-900/10 border border-indigo-500/30 rounded-xl hover:bg-indigo-900/20 transition-colors">
+                              <label className="flex items-center justify-between cursor-pointer p-4 mt-6 bg-indigo-900/10 border border-indigo-500/30 rounded-xl hover:bg-indigo-900/20 transition-colors">
                                   <div className="flex items-center gap-3">
                                       <div className="p-2 bg-indigo-600 rounded-full">
                                           <ShieldCheck className="w-4 h-4 text-white" />
