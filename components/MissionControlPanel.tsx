@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { RaceEvent, ChatMessage, Checkpoint, EventStatus, QuizData } from '../types';
+import React, { useState } from 'react';
+import { RaceEvent, Checkpoint, EventStatus } from '../types';
 import { 
-  ChevronLeft, Settings, MapPin, Flag, Plus, Globe, 
-  CheckCircle2, Circle, Bot, Send, Sparkles, Trash2, Edit2, 
-  LayoutList, ListTodo, X, PanelLeftClose, PanelLeftOpen,
-  Hammer, Wand2, Skull, BookOpen, FileSpreadsheet, ChevronDown, ChevronRight, PlayCircle, MousePointer2, AlertCircle, ArrowRight
+  ChevronLeft, Flag, Plus, Globe, 
+  CheckCircle2, Circle, Sparkles, Trash2, Edit2, 
+  LayoutList, ListTodo, PanelLeftClose, PanelLeftOpen,
+  Hammer, Wand2, Skull, BookOpen, ChevronDown, ChevronRight, PlayCircle, MousePointer2
 } from 'lucide-react';
 
 interface CheckpointConfig {
@@ -21,16 +21,13 @@ interface MissionControlPanelProps {
   onExit: () => void;
   onEditCheckpoint: (id: string) => void;
   onDeleteCheckpoint: (id: string) => void;
-  messages: ChatMessage[];
-  onSendMessage: (text: string) => void;
-  isChatLoading: boolean;
   activeTool: string;
   setActiveTool: (tool: 'none' | 'start' | 'finish' | 'checkpoint') => void;
   onPublish: () => void;
   className?: string;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  // New props for Builder & Content Studio
+  // Props for Builder & Content Studio
   cpConfig: CheckpointConfig;
   setCpConfig: (config: CheckpointConfig) => void;
   onGenerateContent: (prompt: string) => void;
@@ -98,12 +95,10 @@ const StorySection: React.FC<{ onApply: (updates: Partial<RaceEvent>) => void, r
         if (!text.trim()) return;
         const chapters = text.split(/\n\s*\n/).filter(t => t.trim().length > 0);
         const newCheckpoints = [...raceData.checkpoints];
-        // Logic to overwrite or append checkpoints with story text
         chapters.forEach((chapter, i) => {
             if (i < newCheckpoints.length) {
                 newCheckpoints[i] = { ...newCheckpoints[i], description: chapter, name: `Kapitel ${i+1}` };
             } else {
-                // Add new CP near start if run out of existing
                 newCheckpoints.push({
                     id: `story-${Date.now()}-${i}`,
                     name: `Kapitel ${i+1}`,
@@ -134,9 +129,6 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
   onExit,
   onEditCheckpoint,
   onDeleteCheckpoint,
-  messages,
-  onSendMessage,
-  isChatLoading,
   activeTool,
   setActiveTool,
   onPublish,
@@ -147,14 +139,7 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
   onGenerateContent
 }) => {
   const [activeTab, setActiveTab] = useState<'guide' | 'build' | 'layers'>('build');
-  const [chatInput, setChatInput] = useState('');
   const [expandedContent, setExpandedContent] = useState<string | null>(null);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll chat
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isOpen]);
 
   // Checklist State
   const hasStart = raceData.startLocation.lat !== 59.3293;
@@ -170,12 +155,6 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
       <span className={`text-sm font-medium ${done ? 'text-gray-400 line-through' : 'text-gray-200'}`}>{label}</span>
     </button>
   );
-
-  const handleSend = () => {
-    if (!chatInput.trim()) return;
-    onSendMessage(chatInput);
-    setChatInput('');
-  };
 
   const AccordionItem = ({ id, title, icon, children, colorClass }: any) => (
       <div className="border border-slate-800 rounded-xl overflow-hidden mb-2 bg-slate-900/30">
@@ -339,23 +318,6 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
               ))}
             </div>
           )}
-        </div>
-
-        {/* --- AI COPILOT --- */}
-        <div className="border-t border-slate-800 bg-slate-900 p-4 flex flex-col h-[200px]">
-          <div className="flex items-center gap-2 mb-2 text-xs font-bold text-purple-400 uppercase tracking-wider"><Bot className="w-4 h-4" /> AI Copilot</div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 mb-2 pr-2">
-            {messages.length === 0 && <div className="text-xs text-gray-500 italic mt-4 text-center">"Be mig skapa en bana..."</div>}
-            {messages.map((msg) => (
-              <div key={msg.id} className={`text-xs rounded-lg p-2 ${msg.role === 'user' ? 'bg-blue-600/20 text-blue-100 ml-8 border border-blue-500/20' : 'bg-slate-800 text-gray-300 mr-8 border border-slate-700'}`}>{msg.text}</div>
-            ))}
-            {isChatLoading && <div className="text-xs text-gray-500 flex gap-1 items-center animate-pulse"><Sparkles className="w-3 h-3" /> Tänker...</div>}
-            <div ref={chatEndRef} />
-          </div>
-          <div className="relative">
-            <input value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder="Vad ska vi bygga?" className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-4 pr-10 py-2 text-sm text-white focus:outline-none focus:border-purple-500" />
-            <button onClick={handleSend} disabled={!chatInput.trim() || isChatLoading} className="absolute right-2 top-1.5 p-1 bg-purple-600 hover:bg-purple-500 text-white rounded transition-colors disabled:opacity-50"><Send className="w-3 h-3" /></button>
-          </div>
         </div>
       </aside>
     </>

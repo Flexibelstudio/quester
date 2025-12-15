@@ -67,9 +67,7 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
     name: 'Ny CP'
   });
 
-  // AI & Chat State
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  // AI State (Used for AILoader message & Content Generation)
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [aiLoaderMessage, setAiLoaderMessage] = useState("Skriver innehåll...");
   const [analysisData, setAnalysisData] = useState<RaceAnalysis | null>(null);
@@ -110,54 +108,14 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
     );
   }, [userProfile.tier, tierConfigs, onUpdateRace]);
 
-  // Initial Chat Message
+  // Initial Session (Silent)
   useEffect(() => {
     if (geminiServiceRef.current && isOnline) {
       geminiServiceRef.current.startNewSession(userProfile.tier);
-      if (!isLocationSet) {
-           setMessages([{ id: '1', role: 'model', text: `👋 Hej! Använd panelen till vänster för att bygga din bana.` }]);
-      } else {
-           setMessages([{ id: '1', role: 'model', text: `Jag är redo. Vad vill du skapa idag?` }]);
-      }
     }
-  }, [isOnline, userProfile.tier, isLocationSet]); 
+  }, [isOnline, userProfile.tier]); 
 
   // --- HANDLERS ---
-
-  const handleSendMessage = async (text: string) => {
-    if (!text.trim() || !geminiServiceRef.current) return;
-    if (!isLocationSet) {
-        alert("Sätt start/mål först.");
-        return;
-    }
-    
-    setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', text }]);
-    setIsLoading(true);
-
-    const checkpointContext = JSON.stringify(
-        raceData.checkpoints.map(cp => ({
-            id: cp.id,
-            name: cp.name,
-            desc: cp.description
-        }))
-    );
-
-    const contextPrompt = `
-      CURRENT STATE:
-      Checkpoints List: ${checkpointContext}
-      Start Coordinates: ${raceData.startLocation.lat}, ${raceData.startLocation.lng}
-      USER REQUEST: "${text}"
-    `;
-
-    try {
-      const responseText = await geminiServiceRef.current.sendMessage(contextPrompt);
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText }]);
-    } catch (e) {
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "AI Error." }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleContentGeneration = async (prompt: string) => {
     if (!geminiServiceRef.current || !isOnline) return;
@@ -179,20 +137,16 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
         `;
     } else {
         setAiLoaderMessage("Genererar innehåll...");
-        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', text: `🪄 AI Generator körs...` }]);
     }
     
-    setIsLoading(true);
     setIsGeneratingContent(true); 
     
     try {
         const fullPrompt = `CONTEXT: User Location ${raceData.startLocation.lat},${raceData.startLocation.lng}. TASK: ${prompt}`;
-        const responseText = await geminiServiceRef.current.sendMessage(fullPrompt);
-        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText }]);
+        await geminiServiceRef.current.sendMessage(fullPrompt);
     } catch (e) {
         console.error(e);
     } finally {
-        setIsLoading(false);
         setIsGeneratingContent(false);
     }
   };
@@ -263,9 +217,6 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
             onExit={onExit}
             onEditCheckpoint={(id) => { const cp = raceData.checkpoints.find(c => c.id === id); if(cp) setEditingCheckpoint(cp); }}
             onDeleteCheckpoint={(id) => onUpdateRace({ checkpoints: raceData.checkpoints.filter(cp => cp.id !== id) })}
-            messages={messages}
-            onSendMessage={handleSendMessage}
-            isChatLoading={isLoading}
             activeTool={activeTool}
             setActiveTool={setActiveTool}
             onPublish={handlePublish}
