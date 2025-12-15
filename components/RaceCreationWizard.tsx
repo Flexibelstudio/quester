@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { RaceEvent, WinCondition, CheckpointOrder, TerrainType, StartMode, UserProfile, ScoreModel, LeaderboardMode } from '../types';
 import { RACE_CATEGORIES, EVENT_TYPES, DEFAULT_COORDINATES } from '../constants';
-import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info, Eye, EyeOff } from 'lucide-react';
+import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info, Eye, EyeOff, ChevronDown, CheckCircle2 } from 'lucide-react';
 
 interface RaceCreationWizardProps {
   onCancel: () => void;
@@ -200,42 +200,36 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                         </div>
                      </div>
 
-                     {/* Moved Category Selection to Step 1 */}
+                     {/* Updated Category Selection (Dropdown) */}
                      <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Kategori</label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {RACE_CATEGORIES.slice(0, 5).map(cat => (
-                                <button
-                                    key={cat}
-                                    onClick={() => setFormData({...formData, category: cat})}
-                                    className={`px-3 py-2 rounded-lg border text-xs font-bold transition-all ${
-                                        formData.category === cat
-                                        ? 'bg-blue-600 border-blue-500 text-white' 
-                                        : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
-                                    }`}
-                                >
-                                    {cat}
-                                </button>
-                            ))}
-                            <button
-                                onClick={() => setFormData({...formData, category: 'Annat'})}
-                                className={`px-3 py-2 rounded-lg border text-xs font-bold transition-all ${
-                                    isCustomCategory
-                                    ? 'bg-blue-600 border-blue-500 text-white' 
-                                    : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
-                                }`}
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Kategori</label>
+                        <div className="relative">
+                            <Compass className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
+                            <select 
+                                value={RACE_CATEGORIES.includes(formData.category) ? formData.category : (formData.category ? 'Annat' : '')}
+                                onChange={(e) => setFormData({...formData, category: e.target.value === 'Annat' ? '' : e.target.value})}
+                                className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-10 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all appearance-none cursor-pointer"
                             >
-                                Annat...
-                            </button>
+                                <option value="" disabled>Välj kategori...</option>
+                                {RACE_CATEGORIES.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                                <ChevronDown className="w-4 h-4" />
+                            </div>
                         </div>
+
+                        {/* Custom Input if 'Annat' is selected (or active custom value) */}
                         {isCustomCategory && (
-                            <div className="mt-3">
+                            <div className="mt-3 animate-in fade-in slide-in-from-top-1">
                                 <input 
                                     type="text"
                                     value={formData.category === 'Annat' ? '' : formData.category}
                                     onChange={(e) => setFormData({...formData, category: e.target.value})}
                                     placeholder="Skriv din kategori..."
-                                    className="w-full bg-gray-950 border border-blue-500/50 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full bg-gray-900 border border-blue-500/50 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    autoFocus
                                 />
                             </div>
                         )}
