@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RaceEvent, WinCondition, CheckpointOrder, TerrainType, StartMode, UserProfile, ScoreModel, LeaderboardMode } from '../types';
 import { RACE_CATEGORIES, EVENT_TYPES, DEFAULT_COORDINATES } from '../constants';
 import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info, Eye, EyeOff, ChevronDown, CheckCircle2, Lock, Globe, Users } from 'lucide-react';
@@ -13,6 +13,7 @@ interface RaceCreationWizardProps {
 export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel, onComplete, user }) => {
   const [step, setStep] = useState(1);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -58,6 +59,13 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
         );
     }
   }, []);
+
+  // Scroll to top when changing steps
+  useEffect(() => {
+    if (contentRef.current) {
+        contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [step]);
 
   const isStep1Valid = formData.name.length > 0 && formData.description.length > 0 && formData.category.length > 0;
   // Step 2 is always valid as it has defaults, but we ensure logic is sound
@@ -163,7 +171,7 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
          </div>
 
          {/* Body Content */}
-         <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
+         <div ref={contentRef} className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar scroll-smooth">
              
              {/* STEP 1: BASICS */}
              {step === 1 && (
@@ -364,7 +372,10 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
 
                      {/* Rogaining Settings (Conditional) */}
                      {activeArchetype === 'rogaining' && (
-                         <div className="bg-yellow-900/10 border border-yellow-500/30 p-4 rounded-xl flex items-center justify-between animate-in slide-in-from-top-2 duration-300">
+                         <div className="relative bg-yellow-900/10 border border-yellow-500/30 p-4 rounded-xl flex items-center justify-between animate-in slide-in-from-top-2 duration-300 mt-2">
+                             {/* Connector Arrow */}
+                             <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-yellow-900/10 border-t border-l border-yellow-500/30 transform rotate-45 hidden md:block"></div>
+                             
                              <div className="flex items-center gap-3">
                                  <Clock className="w-6 h-6 text-yellow-500" />
                                  <div>
