@@ -12,7 +12,8 @@ import { UpgradeDialog } from './components/UpgradeDialog';
 import { LandingPage } from './components/LandingPage';
 import { OrganizerView } from './components/OrganizerView';
 import { ProfileDialog } from './components/ProfileDialog';
-import { ErrorBoundary } from './components/ErrorBoundary'; // Added
+import { EventSettingsDialog } from './components/EventSettingsDialog'; // Hoisted
+import { ErrorBoundary } from './components/ErrorBoundary'; 
 import { WifiOff, Loader2 } from 'lucide-react';
 import { accessControlService } from './services/accessControl';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -28,6 +29,9 @@ function AppContent() {
   const [previousViewMode, setPreviousViewMode] = useState<ViewMode>('landing');
   const [allEvents, setAllEvents] = useState<RaceEvent[]>([]);
   const [raceData, setRaceData] = useState<RaceEvent>(INITIAL_RACE_STATE);
+  
+  // Dashboard Settings State
+  const [dashboardSettingsEvent, setDashboardSettingsEvent] = useState<RaceEvent | null>(null);
   
   // Dynamic Tier Configuration
   const [tierConfigs, setTierConfigs] = useState<Record<UserTier, TierConfig>>(INITIAL_TIER_CONFIGS);
@@ -229,6 +233,14 @@ function AppContent() {
       setTimeout(() => document.title = originalText, 2000);
   };
 
+  const handleDashboardSettingsSave = async (updates: Partial<RaceEvent>) => {
+      if (!dashboardSettingsEvent) return;
+      const updatedEvent = { ...dashboardSettingsEvent, ...updates };
+      await api.events.saveEvent(updatedEvent);
+      await refreshEvents(); // Refresh dashboard list
+      setDashboardSettingsEvent(null);
+  };
+
   const handleExitOrganizer = async () => {
       if (hasUnsavedChanges) {
           if (!window.confirm('Du har osparade ändringar. Är du säker på att du vill lämna?')) {
@@ -295,6 +307,17 @@ function AppContent() {
           />
       )}
 
+      {/* Dashboard Specific Settings Dialog */}
+      {dashboardSettingsEvent && (
+          <EventSettingsDialog
+              isOpen={!!dashboardSettingsEvent}
+              raceData={dashboardSettingsEvent}
+              onClose={() => setDashboardSettingsEvent(null)}
+              onSave={handleDashboardSettingsSave}
+              onDelete={() => handleDeleteEvent(dashboardSettingsEvent.id)}
+          />
+      )}
+
       {renderOfflineBanner()}
 
       {viewMode === 'landing' && (
@@ -303,14 +326,11 @@ function AppContent() {
             onSelectTier={(t) => { 
                 // PREVENT DOWNGRADE LOGIC
                 const isGuest = safeProfile.id === 'guest';
-                // Define hierarchy: Scout < Creator < Master
                 const tierLevels: Record<string, number> = { 'SCOUT': 0, 'CREATOR': 1, 'MASTER': 2 };
                 
                 const currentLevel = tierLevels[safeProfile.tier] || 0;
                 const newLevel = tierLevels[t] || 0;
 
-                // Only update tier if user is guest OR if they are upgrading to a higher level.
-                // If clicking a lower or equal level, just go to dashboard without changing plan.
                 if (isGuest || newLevel > currentLevel) {
                     updateUserTier(t); 
                 }
@@ -365,6 +385,7 @@ function AppContent() {
             }}
             onDirectRaceCreate={handleDirectRaceCreate}
             onOpenProfile={() => setIsProfileOpen(true)}
+            onOpenSettings={(e) => setDashboardSettingsEvent(e)}
           />
         </>
       )}
@@ -406,13 +427,11 @@ function AppContent() {
                 setViewMode(previousViewMode);
             }} 
             onUpdateResult={async (res) => {
-                // UPDATE LOCAL STATE FOR INSTANT UI
                 const currentResults = raceData.results || [];
                 const idx = currentResults.findIndex(r => r.id === res.id);
                 const newResults = idx !== -1 ? currentResults.map((r, i) => i === idx ? res : r) : [...currentResults, res];
                 setRaceData({ ...raceData, results: newResults });
 
-                // SAVE SAFELY TO DB (Atomic Update)
                 if (!isTestRun) {
                     await api.events.saveResult(raceData.id, res);
                 }

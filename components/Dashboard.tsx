@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { RaceEvent, UserTier, TierConfig, EventStatus, UserProfile } from '../types';
-import { Plus, Map, Calendar, Users, Trophy, Trash2, ArrowRight, Settings2, PlayCircle, Compass, Star, ShieldAlert, Zap, Share2, Archive, CheckCircle2, User, MapPin, Crown, LayoutTemplate } from 'lucide-react';
+import { Plus, Map, Calendar, Users, Trophy, Trash2, ArrowRight, Settings2, PlayCircle, Compass, Star, ShieldAlert, Zap, Share2, Archive, CheckCircle2, User, MapPin, Crown, LayoutTemplate, PenTool } from 'lucide-react';
 import { ShareDialog } from './ShareDialog';
 
 interface DashboardProps {
@@ -17,6 +17,7 @@ interface DashboardProps {
   onUpgradeClick: () => void;
   onDirectRaceCreate?: (event: RaceEvent) => void;
   onOpenProfile: () => void;
+  onOpenSettings: (event: RaceEvent) => void; // New prop
 }
 
 const RatingDisplay: React.FC<{ ratings?: { score: number }[] }> = ({ ratings }) => {
@@ -45,7 +46,7 @@ const StatusBadge: React.FC<{ status: EventStatus }> = ({ status }) => {
     }
 };
 
-export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProfile, tierConfigs, onSelectEvent, onCreateEvent, onDeleteEvent, onOpenParticipant, onOpenSystemAdmin, onUpgradeClick, onOpenProfile }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProfile, tierConfigs, onSelectEvent, onCreateEvent, onDeleteEvent, onOpenParticipant, onOpenSystemAdmin, onUpgradeClick, onOpenProfile, onOpenSettings }) => {
   const [shareEvent, setShareEvent] = useState<RaceEvent | null>(null);
 
   // Avatar or generic icon with DiceBear Fallback
@@ -128,7 +129,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProf
             <div key={event.id} className={`bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden hover:border-gray-600 transition-all hover:shadow-2xl hover:-translate-y-1 group relative ${event.status === 'archived' ? 'opacity-60 hover:opacity-100' : ''}`}>
               
               {/* Card Header/Image */}
-              <div className="h-48 bg-slate-800 relative overflow-hidden">
+              <div className="h-48 bg-slate-800 relative overflow-hidden cursor-pointer" onClick={() => onSelectEvent(event)}>
                 {event.coverImage ? (
                     <>
                         <img src={event.coverImage} alt="Cover" className="absolute inset-0 w-full h-full object-cover z-0" />
@@ -175,7 +176,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProf
               {/* Content */}
               <div className="p-6">
                 <div className="flex justify-between items-start">
-                    <h2 className="text-2xl font-bold text-white mb-2 line-clamp-1 group-hover:text-blue-400 transition-colors">{event.name}</h2>
+                    <h2 className="text-2xl font-bold text-white mb-2 line-clamp-1 group-hover:text-blue-400 transition-colors cursor-pointer" onClick={() => onSelectEvent(event)}>{event.name}</h2>
                     <RatingDisplay ratings={event.ratings} />
                 </div>
 
@@ -213,22 +214,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProf
                   </div>
               </div>
 
-              {/* Actions */}
+              {/* Actions - UPDATED LAYOUT */}
               <div className="p-4 flex gap-3">
                   <button 
-                    onClick={() => onSelectEvent(event)}
-                    className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors border border-gray-700"
+                    onClick={() => onOpenSettings(event)}
+                    className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors border border-gray-700"
                   >
-                      <Settings2 className="w-4 h-4" /> Hantera
+                      <Settings2 className="w-4 h-4" /> Inställningar
                   </button>
-                  {event.status !== 'archived' && (
-                      <button 
-                        onClick={() => onOpenParticipant(event)}
-                        className="flex-1 bg-blue-900/20 hover:bg-blue-900/40 text-blue-300 border border-blue-900/50 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors"
-                      >
-                          <PlayCircle className="w-4 h-4" /> Delta
-                      </button>
-                  )}
+                  <button 
+                    onClick={() => onSelectEvent(event)}
+                    className="flex-[1.5] bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors"
+                  >
+                      <Map className="w-4 h-4" /> Designa Bana
+                  </button>
               </div>
             </div>
           ))}

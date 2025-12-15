@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { GeminiService } from '../services/gemini';
 import { accessControlService } from '../services/accessControl';
@@ -13,7 +14,7 @@ import { ContentGeneratorDialog } from './ContentGeneratorDialog';
 import { ShareDialog } from './ShareDialog';
 import { AILoader } from './AILoader';
 import { OnboardingGuide } from './OnboardingGuide';
-import { Send, Bot, User, Settings, LayoutGrid, Save, PanelLeftClose, PanelLeftOpen, MousePointer2, PlayCircle, Flag, Plus, Sparkles, Lock, Wand2, Trophy, LogOut, Compass, Share2, X, List, Archive, CheckCircle2, Play, Rocket, ChevronLeft, Map, Grid3X3, ArrowUpRight, HelpCircle, BrainCircuit, Gamepad2, Clock, AlertTriangle } from 'lucide-react';
+import { Send, Bot, User, Settings, LayoutGrid, Save, PanelLeftClose, PanelLeftOpen, MousePointer2, PlayCircle, Flag, Plus, Sparkles, Lock, Wand2, Trophy, LogOut, Compass, Share2, X, List, Archive, CheckCircle2, Play, Rocket, ChevronLeft, Map, Grid3X3, ArrowUpRight, HelpCircle, BrainCircuit, Gamepad2, Clock, AlertTriangle, Globe } from 'lucide-react';
 
 interface OrganizerViewProps {
   raceData: RaceEvent;
@@ -41,15 +42,16 @@ interface CheckpointConfig {
 const StatusHeaderBadge: React.FC<{ status: EventStatus }> = ({ status }) => {
     let colorClass = 'bg-gray-800/80 text-gray-400 border-gray-600';
     let label = 'Utkast';
+    let icon = <Settings className="w-3 h-3" />;
     
-    if (status === 'active') { colorClass = 'bg-blue-500/20 text-blue-300 border-blue-500/50 animate-pulse'; label = 'Pågående'; }
-    else if (status === 'published') { colorClass = 'bg-green-500/20 text-green-300 border-green-500/50'; label = 'Publicerad'; }
-    else if (status === 'completed') { colorClass = 'bg-purple-500/20 text-purple-300 border-purple-500/50'; label = 'Avslutad'; }
-    else if (status === 'archived') { colorClass = 'bg-gray-800 text-gray-500 border-gray-700'; label = 'Arkiverad'; }
+    if (status === 'active') { colorClass = 'bg-blue-500/20 text-blue-300 border-blue-500/50 animate-pulse'; label = 'Pågående'; icon = <PlayCircle className="w-3 h-3" />; }
+    else if (status === 'published') { colorClass = 'bg-green-500/20 text-green-300 border-green-500/50'; label = 'Publicerad'; icon = <Globe className="w-3 h-3" />; }
+    else if (status === 'completed') { colorClass = 'bg-purple-500/20 text-purple-300 border-purple-500/50'; label = 'Avslutad'; icon = <CheckCircle2 className="w-3 h-3" />; }
+    else if (status === 'archived') { colorClass = 'bg-gray-800 text-gray-500 border-gray-700'; label = 'Arkiverad'; icon = <Archive className="w-3 h-3" />; }
 
     return (
-        <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-bold border backdrop-blur-sm ${colorClass}`}>
-            {label}
+        <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full uppercase font-bold border backdrop-blur-sm ${colorClass}`}>
+            {icon} {label}
         </span>
     );
 };
@@ -330,6 +332,33 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
     }
   };
 
+  // --- PUBLISH LOGIC ---
+  const handlePublish = async () => {
+      // 1. Validation
+      if (raceData.checkpoints.length === 0) {
+          alert("Du måste lägga till minst en checkpoint innan du kan publicera.");
+          return;
+      }
+      if (!isLocationSet) {
+          alert("Du måste ange start och mål.");
+          return;
+      }
+
+      const confirmMsg = "Är du redo att publicera? Detta gör eventet tillgängligt för deltagare med koden. \n\nDu kan fortfarande redigera banan, men ändringar syns direkt för aktiva deltagare.";
+      
+      if (confirm(confirmMsg)) {
+          // 2. Set Status to Published
+          onUpdateRace({ status: 'published' });
+          
+          // 3. Trigger Save (which handles the backend update)
+          // We wait a tiny bit to ensure the state update has processed before saving
+          setTimeout(() => {
+              onSave();
+              setIsShareOpen(true); // 4. Open Share Dialog immediately
+          }, 100);
+      }
+  };
+
   const handleManualStart = () => {
     if(confirm(`Vill du starta klockan för ALLA deltagare nu?`)) {
         // Set start time to NOW and generate an expiration date (30 days from now)
@@ -378,6 +407,10 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
       }
     }
   };
+
+  // Determine button state for Header
+  const canPublish = raceData.checkpoints.length > 0 && isLocationSet;
+  const isPublished = raceData.status === 'published' || raceData.status === 'active';
 
   return (
     <div className="flex flex-col h-full w-full bg-gray-950 text-gray-100 font-sans overflow-hidden relative selection:bg-blue-500/30">
@@ -506,12 +539,34 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
                     </button>
                 )}
                 
+                {/* PUBLISH / SHARE ACTION */}
+                {isPublished ? (
+                    <button 
+                        onClick={() => setIsShareOpen(true)}
+                        className="glass-button h-10 px-3 rounded-xl flex items-center gap-2 text-xs font-bold text-green-300 border-green-500/30 hover:bg-green-900/30"
+                    >
+                        <Share2 className="w-4 h-4" />
+                        <span className="hidden sm:inline">Dela Kod</span>
+                    </button>
+                ) : (
+                    <button 
+                        onClick={handlePublish}
+                        disabled={!canPublish}
+                        className={`h-10 px-4 rounded-xl flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-all shadow-lg ${canPublish ? 'bg-green-600 hover:bg-green-500 text-white animate-pulse' : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'}`}
+                        title={canPublish ? "Gör eventet live!" : "Lägg till start/mål och checkpoints först"}
+                    >
+                        <Globe className="w-4 h-4" />
+                        <span className="hidden sm:inline">Publicera</span>
+                    </button>
+                )}
+
                 <button 
                     onClick={() => { onSave(); }}
-                    className={`glass-button h-10 px-3 rounded-xl flex items-center gap-2 text-xs font-bold ${hasUnsavedChanges ? 'text-blue-300 border-blue-500/50' : 'text-gray-200'}`}
+                    className={`glass-button h-10 w-10 md:w-auto md:px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold ${hasUnsavedChanges ? 'text-blue-300 border-blue-500/50' : 'text-gray-400'}`}
+                    title="Spara utkast"
                 >
                     <Save className="w-4 h-4" />
-                    <span className="hidden sm:inline">{hasUnsavedChanges ? 'Spara' : 'Sparat'}</span>
+                    <span className="hidden sm:inline">Spara</span>
                 </button>
 
                  <button 
@@ -668,13 +723,6 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
                     title="Resultat"
                  >
                      <Trophy className="w-6 h-6" />
-                 </button>
-                 <button 
-                    onClick={() => setIsShareOpen(true)}
-                    className="glass-button h-12 w-12 rounded-2xl flex items-center justify-center text-indigo-400 hover:text-white shadow-lg"
-                    title="Dela"
-                 >
-                     <Share2 className="w-6 h-6" />
                  </button>
              </div>
         )}

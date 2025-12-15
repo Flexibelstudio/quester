@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RaceEvent, WinCondition, CheckpointOrder, TerrainType, StartMode, UserProfile, ScoreModel, LeaderboardMode } from '../types';
 import { RACE_CATEGORIES, EVENT_TYPES, DEFAULT_COORDINATES } from '../constants';
-import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info, Eye, EyeOff, ChevronDown, CheckCircle2, Lock, Globe, Users, Loader2 } from 'lucide-react';
+import { api } from '../services/dataService';
+import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info, Eye, EyeOff, ChevronDown, CheckCircle2, Lock, Globe, Users, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
 
 interface RaceCreationWizardProps {
   onCancel: () => void;
@@ -14,11 +15,14 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
   const [step, setStep] = useState(1);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    coverImage: '',
     category: '', 
     eventType: 'Lopp',
     language: 'sv',
@@ -75,14 +79,32 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
   const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => setStep(prev => prev - 1);
   
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setIsUploading(true);
+      try {
+          // Upload to a temp path, using timestamp to ensure uniqueness
+          const path = `event-covers/temp-${Date.now()}`;
+          const url = await api.storage.uploadBlob(path, file);
+          setFormData(prev => ({ ...prev, coverImage: url }));
+      } catch (error) {
+          console.error("Upload failed", error);
+          alert("Kunde inte ladda upp bilden.");
+      } finally {
+          setIsUploading(false);
+      }
+  };
+
   const handleFinish = async () => {
     setIsGeocoding(true);
 
     // 1. Determine Start Location
-    // Priority: GPS -> Text Input Geocode -> Default (Stockholm)
+    // Priority: Text Input Geocode -> GPS -> Default (Stockholm)
     let startLoc = userLocation;
 
-    if (!startLoc && formData.startCity) {
+    if (formData.startCity) {
         try {
             // Fetch coordinates for the city name using OpenStreetMap Nominatim
             const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.startCity)}&limit=1`);
@@ -188,22 +210,49 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                  {step}
              </div>
              <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                 {step === 1 ? 'Starta ditt Äventyr' : step === 2 ? 'Välj Spelupplägg' : 'Start & Synlighet'}
+                 {step === 1 ? 'Koncept & Identitet' : step === 2 ? 'Välj Spelregler' : 'Logistik & Start'}
              </h2>
              <p className="text-gray-400 text-sm mt-1">
-                 {step === 1 ? 'Namn, plats och kategori' : step === 2 ? 'Bestäm reglerna för hur man vinner' : 'Hur får deltagarna tillgång?'}
+                 {step === 1 ? 'Sätt grunden för eventet' : step === 2 ? 'Hur vinner man?' : 'Var och när börjar äventyret?'}
              </p>
          </div>
 
          {/* Body Content */}
          <div ref={contentRef} className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar scroll-smooth">
              
-             {/* STEP 1: BASICS */}
+             {/* STEP 1: IDENTITY */}
              {step === 1 && (
                  <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
+                     
+                     {/* Cover Image Upload (Prominent) */}
+                     <div className="relative w-full h-40 rounded-2xl bg-gray-800 border-2 border-dashed border-gray-700 overflow-hidden group hover:border-blue-500 transition-all cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                          {formData.coverImage ? (
+                              <>
+                                <img src={formData.coverImage} alt="Cover" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                    <span className="text-sm font-bold text-white flex items-center gap-2"><Upload className="w-4 h-4" /> Byt Omslagsbild</span>
+                                </div>
+                              </>
+                          ) : (
+                              <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 gap-2 group-hover:text-blue-400">
+                                  {isUploading ? <Loader2 className="w-8 h-8 animate-spin" /> : <ImageIcon className="w-10 h-10" />}
+                                  <span className="text-sm font-bold uppercase tracking-wider">{isUploading ? 'Laddar upp...' : 'Ladda upp omslagsbild'}</span>
+                                  <span className="text-xs opacity-70">Gör eventet snyggt på dashboarden</span>
+                              </div>
+                          )}
+                          <input 
+                              type="file" 
+                              ref={fileInputRef}
+                              onChange={handleImageUpload}
+                              accept="image/*"
+                              className="hidden"
+                              disabled={isUploading}
+                          />
+                     </div>
+
                      <div className="grid grid-cols-2 gap-6">
                         <div className="col-span-2 sm:col-span-1">
-                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Vad ska aktiviteten heta?</label>
+                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Eventnamn</label>
                              <div className="relative">
                                 <Flag className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
                                 <input 
@@ -217,17 +266,16 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                              </div>
                         </div>
                         <div className="col-span-2 sm:col-span-1">
-                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Typ av aktivitet</label>
+                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Språk</label>
                              <div className="relative">
-                                <Tag className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
+                                <Languages className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
                                 <select 
-                                    value={formData.eventType}
-                                    onChange={(e) => setFormData({...formData, eventType: e.target.value})}
+                                    value={formData.language}
+                                    onChange={(e) => setFormData({...formData, language: e.target.value})}
                                     className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all appearance-none cursor-pointer"
                                 >
-                                    {EVENT_TYPES.map(type => (
-                                        <option key={type} value={type}>{type}</option>
-                                    ))}
+                                    <option value="sv">Svenska</option>
+                                    <option value="en">English</option>
                                 </select>
                              </div>
                         </div>
@@ -268,36 +316,6 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                         )}
                      </div>
                      
-                     <div className="grid grid-cols-2 gap-6">
-                        <div className="col-span-2 sm:col-span-1">
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Språk (Innehåll)</label>
-                            <div className="relative">
-                                <Languages className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
-                                <select 
-                                    value={formData.language}
-                                    onChange={(e) => setFormData({...formData, language: e.target.value})}
-                                    className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all appearance-none cursor-pointer"
-                                >
-                                    <option value="sv">Svenska</option>
-                                    <option value="en">English</option>
-                                </select>
-                             </div>
-                        </div>
-                        <div className="col-span-2 sm:col-span-1">
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Startort / Stad</label>
-                            <div className="relative">
-                                <MapPin className={`absolute left-3 top-3.5 w-5 h-5 ${userLocation ? 'text-green-500' : 'text-gray-500'}`} />
-                                <input 
-                                    type="text"
-                                    value={formData.startCity}
-                                    onChange={(e) => setFormData({...formData, startCity: e.target.value})}
-                                    placeholder={userLocation ? "Din nuvarande plats" : "T.ex. Stockholm"}
-                                    className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                                />
-                            </div>
-                        </div>
-                     </div>
-
                      <div>
                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Beskrivning</label>
                          <div className="relative">
@@ -422,15 +440,49 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                  </div>
              )}
 
-             {/* STEP 3: RESTRUCTURED FOR CLARITY */}
+             {/* STEP 3: LOGISTICS & CITY */}
              {step === 3 && (
                  <div className="space-y-8 animate-in slide-in-from-right-8 duration-300">
                       
-                      {/* SECTION A: ACCESS & VISIBILITY */}
+                      {/* START LOCATION & TIME */}
                       <div>
                           <div className="flex items-center gap-2 mb-3">
                               <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase">A</span>
-                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tillgång & Synlighet</label>
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Startplats & Tid</label>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 gap-4">
+                              <div className="relative">
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Startort (Söker automatiskt upp koords)</label>
+                                <MapPin className={`absolute left-3 top-8 w-5 h-5 ${userLocation ? 'text-green-500' : 'text-gray-500'}`} />
+                                <input 
+                                    type="text"
+                                    value={formData.startCity}
+                                    onChange={(e) => setFormData({...formData, startCity: e.target.value})}
+                                    placeholder={userLocation ? "Använder din GPS (eller skriv stad)" : "T.ex. Stockholm, Centralstationen"}
+                                    className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                                />
+                              </div>
+
+                              <div className="relative">
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Startdatum & Tid</label>
+                                <input
+                                    type="datetime-local"
+                                    value={formData.startDateTime}
+                                    onChange={(e) => setFormData({...formData, startDateTime: e.target.value})}
+                                    className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-all"
+                                />
+                              </div>
+                          </div>
+                      </div>
+
+                      <div className="h-px bg-gray-800 w-full"></div>
+
+                      {/* ACCESS */}
+                      <div>
+                          <div className="flex items-center gap-2 mb-3">
+                              <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase">B</span>
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tillgång</label>
                           </div>
                           
                           <div className="grid grid-cols-2 gap-4 mb-4">
@@ -443,8 +495,8 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                                 }`}
                               >
                                   <Lock className={`w-6 h-6 mb-2 ${!formData.isPublic ? 'text-red-400' : 'text-gray-600'}`} />
-                                  <span className="text-sm font-bold">Privat Event</span>
-                                  <span className="text-[10px] opacity-70 mt-1 text-center">Kräver kod. Syns ej i listan.</span>
+                                  <span className="text-sm font-bold">Privat</span>
+                                  <span className="text-[10px] opacity-70 mt-1 text-center">Kräver kod.</span>
                               </button>
 
                               <button
@@ -456,15 +508,14 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                                 }`}
                               >
                                   <Globe className={`w-6 h-6 mb-2 ${formData.isPublic ? 'text-green-400' : 'text-gray-600'}`} />
-                                  <span className="text-sm font-bold">Publikt Event</span>
-                                  <span className="text-[10px] opacity-70 mt-1 text-center">Öppet för alla. Syns i Utforska.</span>
+                                  <span className="text-sm font-bold">Publikt</span>
+                                  <span className="text-[10px] opacity-70 mt-1 text-center">Syns för alla.</span>
                               </button>
                           </div>
 
-                          {/* Access Code logic display */}
-                          {!formData.isPublic ? (
+                          {!formData.isPublic && (
                               <div className="relative animate-in fade-in slide-in-from-top-1">
-                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Accesskod (Dela denna)</label>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Accesskod</label>
                                 <Key className="absolute left-3 top-8 text-gray-500 w-5 h-5 z-10" />
                                 <input
                                     type="text"
@@ -474,138 +525,6 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                                     className="w-full bg-gray-900 border border-red-500/50 rounded-xl py-3 pl-10 pr-4 text-white font-mono uppercase tracking-widest text-center focus:outline-none focus:ring-1 focus:ring-red-500"
                                 />
                               </div>
-                          ) : (
-                              <div className="p-3 bg-green-900/10 border border-green-500/20 rounded-xl text-center animate-in fade-in slide-in-from-top-1">
-                                  <p className="text-xs text-green-300">
-                                      <CheckCircle2 className="w-3 h-3 inline mr-1" />
-                                      Deltagare kan gå med direkt via listan.
-                                  </p>
-                              </div>
-                          )}
-                      </div>
-
-                      <div className="h-px bg-gray-800 w-full"></div>
-
-                      {/* SECTION B: START METHOD */}
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                              <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase">B</span>
-                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Startmetod</label>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                            <button
-                                onClick={() => setFormData({...formData, startMode: 'mass_start'})}
-                                className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all ${
-                                    formData.startMode === 'mass_start'
-                                    ? 'bg-blue-900/30 border-blue-500 text-white shadow-lg shadow-blue-900/20'
-                                    : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-700'
-                                }`}
-                            >
-                                <Clock className={`w-6 h-6 mb-2 ${formData.startMode === 'mass_start' ? 'text-blue-400' : 'text-gray-600'}`} />
-                                <span className="text-sm font-bold">Gemensam Start</span>
-                                <span className="text-[10px] opacity-70 mt-1 text-center">Alla startar samtidigt.</span>
-                            </button>
-
-                            <button
-                                onClick={() => setFormData({...formData, startMode: 'self_start'})}
-                                className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all ${
-                                    formData.startMode === 'self_start'
-                                    ? 'bg-purple-900/30 border-purple-500 text-white shadow-lg shadow-purple-900/20'
-                                    : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-700'
-                                }`}
-                            >
-                                <MousePointer2 className={`w-6 h-6 mb-2 ${formData.startMode === 'self_start' ? 'text-purple-400' : 'text-gray-600'}`} />
-                                <span className="text-sm font-bold">Fri Start (GPS)</span>
-                                <span className="text-[10px] opacity-70 mt-1 text-center">Starta när man är på plats.</span>
-                            </button>
-                        </div>
-
-                        {/* Manual Start Toggle (Only for Mass Start) */}
-                        {formData.startMode === 'mass_start' && (
-                            <div className="p-3 bg-blue-900/10 border border-blue-500/20 rounded-xl animate-in fade-in slide-in-from-top-1">
-                                    <label className="flex items-center gap-3 cursor-pointer">
-                                        <div className="relative">
-                                            <input 
-                                                type="checkbox" 
-                                                checked={formData.manualStartEnabled}
-                                                onChange={(e) => setFormData({...formData, manualStartEnabled: e.target.checked})}
-                                                className="sr-only peer"
-                                            />
-                                            <div className="w-10 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                        </div>
-                                        <div>
-                                            <div className="text-sm font-bold text-white">Tillåt manuell startknapp</div>
-                                            <div className="text-xs text-gray-500">Arrangören får en knapp för att starta loppet</div>
-                                        </div>
-                                    </label>
-                            </div>
-                        )}
-                      </div>
-
-                      <div className="h-px bg-gray-800 w-full"></div>
-
-                      {/* SECTION C: LEADERBOARD */}
-                      <div>
-                          <div className="flex items-center gap-2 mb-3">
-                              <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase">C</span>
-                              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Resultatlista</label>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4">
-                              <button
-                                onClick={() => setFormData({...formData, leaderboardMode: 'global'})}
-                                className={`flex flex-col p-3 rounded-xl border transition-all text-left ${
-                                    formData.leaderboardMode === 'global'
-                                    ? 'bg-yellow-900/20 border-yellow-500'
-                                    : 'bg-gray-950 border-gray-800 hover:border-gray-700'
-                                }`}
-                              >
-                                  <div className="flex items-center gap-2 mb-2">
-                                      <Trophy className={`w-4 h-4 ${formData.leaderboardMode === 'global' ? 'text-yellow-400' : 'text-gray-500'}`} />
-                                      <span className={`text-sm font-bold ${formData.leaderboardMode === 'global' ? 'text-white' : 'text-gray-400'}`}>Publik Topplista</span>
-                                  </div>
-                                  <span className="text-[10px] text-gray-500 leading-tight">Alla ser allas resultat. Tävling.</span>
-                              </button>
-
-                              <button
-                                onClick={() => setFormData({...formData, leaderboardMode: 'private'})}
-                                className={`flex flex-col p-3 rounded-xl border transition-all text-left ${
-                                    formData.leaderboardMode === 'private'
-                                    ? 'bg-gray-800 border-gray-500'
-                                    : 'bg-gray-950 border-gray-800 hover:border-gray-700'
-                                }`}
-                              >
-                                  <div className="flex items-center gap-2 mb-2">
-                                      <EyeOff className={`w-4 h-4 ${formData.leaderboardMode === 'private' ? 'text-white' : 'text-gray-500'}`} />
-                                      <span className={`text-sm font-bold ${formData.leaderboardMode === 'private' ? 'text-white' : 'text-gray-400'}`}>Privat Resultat</span>
-                                  </div>
-                                  <span className="text-[10px] text-gray-500 leading-tight">Ser bara sin egen tid. Utmaning.</span>
-                              </button>
-                          </div>
-
-                          {/* ADMIN ONLY: OFFICIAL QUESTER EVENT TOGGLE */}
-                          {user?.role === 'admin' && (
-                              <label className="flex items-center justify-between cursor-pointer p-4 mt-6 bg-indigo-900/10 border border-indigo-500/30 rounded-xl hover:bg-indigo-900/20 transition-colors">
-                                  <div className="flex items-center gap-3">
-                                      <div className="p-2 bg-indigo-600 rounded-full">
-                                          <ShieldCheck className="w-4 h-4 text-white" />
-                                      </div>
-                                      <div>
-                                          <div className="font-bold text-indigo-300 mb-1">Skapa som Quester Original</div>
-                                          <div className="text-xs text-indigo-400/70">Officiellt event från plattformen</div>
-                                      </div>
-                                  </div>
-                                  <div className={`w-12 h-7 rounded-full p-1 transition-colors ${formData.createAsOfficial ? 'bg-indigo-500' : 'bg-gray-700'}`}>
-                                      <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform ${formData.createAsOfficial ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                                  </div>
-                                  <input 
-                                    type="checkbox" 
-                                    className="hidden" 
-                                    checked={formData.createAsOfficial}
-                                    onChange={(e) => setFormData({...formData, createAsOfficial: e.target.checked})}
-                                  />
-                              </label>
                           )}
                       </div>
                  </div>
@@ -640,7 +559,7 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                     className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-green-900/30 animate-pulse disabled:opacity-50 disabled:animate-none"
                  >
                      {isGeocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} 
-                     {isGeocoding ? 'Hittar plats...' : `Skapa ${formData.eventType}`}
+                     {isGeocoding ? 'Hittar plats...' : `Skapa Event`}
                  </button>
              )}
          </div>
