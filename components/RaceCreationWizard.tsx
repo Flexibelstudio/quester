@@ -614,21 +614,39 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
 
                           {/* Leaderboard Mode */}
                           <div>
-                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2 ml-1">Resultatlista</label>
-                              <div className="flex gap-2 p-1 bg-gray-950 border border-gray-800 rounded-xl">
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2 ml-1">Resultatvisning</label>
+                              <div className="flex gap-2 p-1 bg-gray-950 border border-gray-800 rounded-xl mb-2">
                                   <button 
                                       onClick={() => setFormData({...formData, leaderboardMode: 'global'})}
                                       className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${formData.leaderboardMode === 'global' ? 'bg-yellow-600 text-white shadow' : 'text-gray-500 hover:bg-gray-900'}`}
                                   >
-                                      Publik Topplista (Tävling)
+                                      🏆 Topplista (Tävling)
                                   </button>
                                   <button 
                                       onClick={() => setFormData({...formData, leaderboardMode: 'private'})}
                                       className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${formData.leaderboardMode === 'private' ? 'bg-purple-600 text-white shadow' : 'text-gray-500 hover:bg-gray-900'}`}
                                   >
-                                      Privat Resultat (Utmaning)
+                                      👤 Enskilt Resultat (Utmaning)
                                   </button>
                               </div>
+                              
+                              {/* Dynamic Explanation */}
+                              <div className="text-[10px] text-gray-400 px-1">
+                                  {formData.leaderboardMode === 'global' 
+                                      ? "Alla deltagare i detta event ser varandras tider och poäng." 
+                                      : "Deltagaren ser endast sin egen tid/poäng. Ingen ranking visas."
+                                  }
+                              </div>
+
+                              {/* Private Event Context Note */}
+                              {!formData.isPublic && formData.leaderboardMode === 'global' && (
+                                  <div className="mt-2 flex items-start gap-2 bg-blue-900/20 p-2 rounded-lg border border-blue-500/20">
+                                      <Info className="w-3 h-3 text-blue-400 mt-0.5 shrink-0" />
+                                      <span className="text-[10px] text-blue-200">
+                                          Eftersom eventet är privat visas topplistan endast för de som har koden.
+                                      </span>
+                                  </div>
+                              )}
                           </div>
                       </div>
 
@@ -699,4 +717,3 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
     </div>
   );
 };
-    
