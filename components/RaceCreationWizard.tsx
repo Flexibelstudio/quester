@@ -294,10 +294,10 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                      
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                          
-                         {/* 1. CLASSIC RACE */}
+                         {/* 1. CLASSIC RACE (Order 1) */}
                          <button
                             onClick={() => selectArchetype('classic')}
-                            className={`relative flex flex-col items-center text-center p-6 rounded-2xl border-2 transition-all duration-300 group hover:-translate-y-1 ${
+                            className={`order-1 relative flex flex-col items-center text-center p-6 rounded-2xl border-2 transition-all duration-300 group hover:-translate-y-1 ${
                                 activeArchetype === 'classic'
                                 ? 'bg-blue-900/20 border-blue-500 shadow-xl shadow-blue-900/20'
                                 : 'bg-gray-950 border-gray-800 hover:border-gray-600'
@@ -319,10 +319,10 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                              </div>
                          </button>
 
-                         {/* 2. ROGAINING */}
+                         {/* 2. ROGAINING (Order 2) */}
                          <button
                             onClick={() => selectArchetype('rogaining')}
-                            className={`relative flex flex-col items-center text-center p-6 rounded-2xl border-2 transition-all duration-300 group hover:-translate-y-1 ${
+                            className={`order-2 relative flex flex-col items-center text-center p-6 rounded-2xl border-2 transition-all duration-300 group hover:-translate-y-1 ${
                                 activeArchetype === 'rogaining'
                                 ? 'bg-yellow-900/20 border-yellow-500 shadow-xl shadow-yellow-900/20'
                                 : 'bg-gray-950 border-gray-800 hover:border-gray-600'
@@ -344,10 +344,10 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                              </div>
                          </button>
 
-                         {/* 3. ADVENTURE */}
+                         {/* 3. ADVENTURE (Order 4 on mobile, 3 on desktop) */}
                          <button
                             onClick={() => selectArchetype('adventure')}
-                            className={`relative flex flex-col items-center text-center p-6 rounded-2xl border-2 transition-all duration-300 group hover:-translate-y-1 ${
+                            className={`order-4 md:order-3 relative flex flex-col items-center text-center p-6 rounded-2xl border-2 transition-all duration-300 group hover:-translate-y-1 ${
                                 activeArchetype === 'adventure'
                                 ? 'bg-purple-900/20 border-purple-500 shadow-xl shadow-purple-900/20'
                                 : 'bg-gray-950 border-gray-800 hover:border-gray-600'
@@ -368,32 +368,32 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                                  <span className="text-[10px] font-bold uppercase px-2 py-1 bg-gray-800 rounded text-gray-400">Ingen Tid</span>
                              </div>
                          </button>
-                     </div>
 
-                     {/* Rogaining Settings (Conditional) */}
-                     {activeArchetype === 'rogaining' && (
-                         <div className="relative bg-yellow-900/10 border border-yellow-500/30 p-4 rounded-xl flex items-center justify-between animate-in slide-in-from-top-2 duration-300 mt-2">
-                             {/* Connector Arrow */}
-                             <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-yellow-900/10 border-t border-l border-yellow-500/30 transform rotate-45 hidden md:block"></div>
-                             
-                             <div className="flex items-center gap-3">
-                                 <Clock className="w-6 h-6 text-yellow-500" />
-                                 <div>
-                                     <h4 className="text-sm font-bold text-yellow-100">Inställningar för Poängjakt</h4>
-                                     <p className="text-xs text-yellow-200/70">Hur länge får deltagarna vara ute?</p>
+                         {/* Rogaining Settings (Order 3 on mobile, 4 on desktop) */}
+                         {activeArchetype === 'rogaining' && (
+                             <div className="order-3 md:order-4 col-span-1 md:col-span-3 relative bg-yellow-900/10 border border-yellow-500/30 p-4 rounded-xl flex items-center justify-between animate-in slide-in-from-top-2 duration-300 mt-2">
+                                 {/* Connector Arrow */}
+                                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-yellow-900/10 border-t border-l border-yellow-500/30 transform rotate-45"></div>
+                                 
+                                 <div className="flex items-center gap-3">
+                                     <Clock className="w-6 h-6 text-yellow-500" />
+                                     <div>
+                                         <h4 className="text-sm font-bold text-yellow-100">Inställningar för Poängjakt</h4>
+                                         <p className="text-xs text-yellow-200/70">Hur länge får deltagarna vara ute?</p>
+                                     </div>
+                                 </div>
+                                 <div className="flex items-center gap-2">
+                                     <input 
+                                        type="number"
+                                        value={formData.timeLimitMinutes}
+                                        onChange={(e) => setFormData({...formData, timeLimitMinutes: parseInt(e.target.value) || 60})}
+                                        className="w-20 bg-gray-900 border border-yellow-500/50 rounded-lg p-2 text-center text-white font-bold"
+                                     />
+                                     <span className="text-sm font-bold text-gray-400">minuter</span>
                                  </div>
                              </div>
-                             <div className="flex items-center gap-2">
-                                 <input 
-                                    type="number"
-                                    value={formData.timeLimitMinutes}
-                                    onChange={(e) => setFormData({...formData, timeLimitMinutes: parseInt(e.target.value) || 60})}
-                                    className="w-20 bg-gray-900 border border-yellow-500/50 rounded-lg p-2 text-center text-white font-bold"
-                                 />
-                                 <span className="text-sm font-bold text-gray-400">minuter</span>
-                             </div>
-                         </div>
-                     )}
+                         )}
+                     </div>
                  </div>
              )}
 
