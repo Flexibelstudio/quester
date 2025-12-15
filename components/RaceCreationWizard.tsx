@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { RaceEvent, WinCondition, CheckpointOrder, TerrainType, StartMode, UserProfile, ScoreModel, LeaderboardMode } from '../types';
 import { RACE_CATEGORIES, EVENT_TYPES, DEFAULT_COORDINATES } from '../constants';
 import { api } from '../services/dataService';
-import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info, Eye, EyeOff, ChevronDown, CheckCircle2, Lock, Globe, Users, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
+import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info, Eye, EyeOff, ChevronDown, CheckCircle2, Lock, Globe, Users, Loader2, Image as ImageIcon, Upload, LayoutTemplate } from 'lucide-react';
 
 interface RaceCreationWizardProps {
   onCancel: () => void;
@@ -250,19 +250,38 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                           />
                      </div>
 
+                     <div>
+                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Eventnamn</label>
+                         <div className="relative">
+                            <Flag className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
+                            <input 
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                placeholder="T.ex. Sommarjakten 2025"
+                                className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                                autoFocus
+                            />
+                         </div>
+                     </div>
+
                      <div className="grid grid-cols-2 gap-6">
                         <div className="col-span-2 sm:col-span-1">
-                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Eventnamn</label>
+                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Typ av Aktivitet</label>
                              <div className="relative">
-                                <Flag className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
-                                <input 
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                    placeholder="T.ex. Sommarjakten 2025"
-                                    className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                                    autoFocus
-                                />
+                                <LayoutTemplate className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
+                                <select 
+                                    value={formData.eventType}
+                                    onChange={(e) => setFormData({...formData, eventType: e.target.value})}
+                                    className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all appearance-none cursor-pointer"
+                                >
+                                    {EVENT_TYPES.map(type => (
+                                        <option key={type} value={type}>{type}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                                    <ChevronDown className="w-4 h-4" />
+                                </div>
                              </div>
                         </div>
                         <div className="col-span-2 sm:col-span-1">
