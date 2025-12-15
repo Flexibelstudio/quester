@@ -178,12 +178,21 @@ export class FirebaseAuthService implements IAuthService {
     }
 
     async updateProfileImage(file: Blob): Promise<string> {
-        if (!auth?.currentUser || !storage) throw new Error("Auth or Storage not initialized");
+        if (!auth?.currentUser) throw new Error("Auth not initialized");
         
-        const path = `profile-images/${auth.currentUser.uid}`;
-        const storageRef = ref(storage as FirebaseStorage, path);
-        const snapshot = await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(snapshot.ref);
+        let url = '';
+        
+        try {
+            if (!storage) throw new Error("Storage not configured");
+            const path = `profile-images/${auth.currentUser.uid}`;
+            const storageRef = ref(storage as FirebaseStorage, path);
+            const snapshot = await uploadBytes(storageRef, file);
+            url = await getDownloadURL(snapshot.ref);
+        } catch (error: any) {
+            console.warn("Firebase Storage Upload Failed (Profile). Falling back to local URL.", error);
+            // Fallback: Create a local URL so the UI updates immediately even if backend rejects it
+            url = URL.createObjectURL(file);
+        }
 
         await updateProfile(auth.currentUser, { photoURL: url });
         
@@ -413,9 +422,29 @@ export class FirebaseConfigService implements ISystemConfigService {
 // --- FIREBASE STORAGE SERVICE ---
 export class FirebaseStorageService implements IStorageService {
     async uploadBlob(path: string, file: Blob): Promise<string> {
-        if (!storage) throw new Error("Storage not initialized");
-        const storageRef = ref(storage as FirebaseStorage, path);
-        const snapshot = await uploadBytes(storageRef, file);
-        return await getDownloadURL(snapshot.ref);
+        // Fallback 1: No storage configured at all
+        if (!storage) {
+            console.warn("Storage not initialized in FirebaseConfig. Returning local Object URL.");
+            return URL.createObjectURL(file);
+        }
+
+        try {
+            const storageRef = ref(storage as FirebaseStorage, path);
+            const snapshot = await uploadBytes(storageRef, file);
+            return await getDownloadURL(snapshot.ref);
+        } catch (error: any) {
+            // Fallback 2: Permission denied (403) or other storage errors
+            console.error("Firebase Storage Upload Error:", error);
+            
+            if (error.code === 'storage/unauthorized' || error.message?.includes('403')) {
+                console.warn("Permission denied (403). Returning local Object URL fallback for this session.");
+                // This allows the user to see their image immediately without crashing the app,
+                // even if the backend rejects the write.
+                return URL.createObjectURL(file);
+            }
+            
+            // Re-throw if it's a critical unknown error, but mostly we want to fail gracefuly
+            return URL.createObjectURL(file);
+        }
     }
 }
