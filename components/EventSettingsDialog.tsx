@@ -1,11 +1,13 @@
 
 
 
+
+
 import React, { useState, useRef } from 'react';
-import { RaceEvent, TerrainType, StartMode, LeaderboardMode, EventStatus } from '../types';
+import { RaceEvent, TerrainType, StartMode, LeaderboardMode, EventStatus, ScoreModel, WinCondition } from '../types';
 import { RACE_CATEGORIES, EVENT_TYPES } from '../constants';
 import { api } from '../services/dataService';
-import { X, Save, Type, FileText, Tag, Map, Key, Calendar, Globe, Route, Shuffle, Trees, Mountain, PlayCircle, Clock, Lock, Languages, Eye, User, Archive, AlertTriangle, MousePointer2, Image as ImageIcon, Upload, Loader2, Navigation, Flag, Trash2 } from 'lucide-react';
+import { X, Save, Type, FileText, Tag, Map, Key, Calendar, Globe, Route, Shuffle, Trees, Mountain, PlayCircle, Clock, Lock, Languages, Eye, User, Archive, AlertTriangle, MousePointer2, Image as ImageIcon, Upload, Loader2, Navigation, Flag, Trash2, Trophy, Calculator } from 'lucide-react';
 
 interface EventSettingsDialogProps {
   raceData: RaceEvent;
@@ -54,7 +56,12 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
     terrainType: raceData.terrainType || 'trail',
     leaderboardMode: raceData.leaderboardMode || 'global',
     startCity: raceData.startCity || '',
-    finishCity: raceData.finishCity || ''
+    finishCity: raceData.finishCity || '',
+    winCondition: raceData.winCondition || 'fastest_time',
+    scoreModel: raceData.scoreModel || 'basic',
+    timeLimitMinutes: raceData.timeLimitMinutes || 60,
+    parTimeMinutes: raceData.parTimeMinutes || 60,
+    pointsPerMinute: raceData.pointsPerMinute || 10
   });
 
   // Reset form when opening
@@ -78,7 +85,12 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
         terrainType: raceData.terrainType || 'trail',
         leaderboardMode: raceData.leaderboardMode || 'global',
         startCity: raceData.startCity || '',
-        finishCity: raceData.finishCity || ''
+        finishCity: raceData.finishCity || '',
+        winCondition: raceData.winCondition || 'fastest_time',
+        scoreModel: raceData.scoreModel || 'basic',
+        timeLimitMinutes: raceData.timeLimitMinutes || 60,
+        parTimeMinutes: raceData.parTimeMinutes || 60,
+        pointsPerMinute: raceData.pointsPerMinute || 10
       });
     }
   }, [isOpen, raceData]);
@@ -89,7 +101,9 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
     e.preventDefault();
     onSave({
         ...formData,
-        startDateTime: new Date(formData.startDateTime).toISOString()
+        startDateTime: new Date(formData.startDateTime).toISOString(),
+        winCondition: formData.winCondition as WinCondition,
+        scoreModel: formData.scoreModel as ScoreModel
     });
     onClose();
   };
@@ -181,23 +195,6 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
                      <option value="completed">🏁 Avslutad (Stängd)</option>
                      <option value="archived">🗄️ Arkiverad (Räknas ej mot kvot)</option>
                  </select>
-                 
-                 {formData.status === 'archived' ? (
-                     <div className="flex gap-2 items-start bg-blue-900/20 p-2 rounded border border-blue-900/50">
-                         <Archive className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
-                         <p className="text-xs text-blue-200">
-                             <strong>Arkiverat:</strong> Detta event sparas i historiken men räknas inte som ett "Aktivt Event". 
-                             Din licensplats är nu frigjord för att skapa ett nytt event.
-                         </p>
-                     </div>
-                 ) : (
-                      <div className="flex gap-2 items-start bg-gray-800 p-2 rounded border border-gray-700">
-                         <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
-                         <p className="text-xs text-gray-400">
-                             Så länge eventet inte är arkiverat räknas det som "Aktivt" och upptar en plats i din plan.
-                         </p>
-                     </div>
-                 )}
              </div>
           </div>
 
@@ -216,7 +213,7 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
                 />
             </div>
             
-            {/* Category - Enhanced to support hidden system categories */}
+            {/* Category */}
             <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
                 <Tag className="w-3 h-3" /> Kategori
@@ -261,97 +258,95 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
               </div>
           </div>
 
-          {/* Public Toggle */}
-          <div className={`flex items-center justify-between p-4 rounded-lg border ${raceData.isLockedByAdmin ? 'bg-red-900/10 border-red-900/50' : 'bg-gray-900 border-gray-600'}`}>
-             <div className="flex items-center gap-3">
-                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${raceData.isLockedByAdmin ? 'bg-red-900' : formData.isPublic ? 'bg-green-600' : 'bg-gray-700'}`}>
-                     {raceData.isLockedByAdmin ? <Lock className="w-5 h-5 text-red-200" /> : <Globe className="w-5 h-5 text-white" />}
-                 </div>
-                 <div>
-                     <div className={`text-sm font-bold ${raceData.isLockedByAdmin ? 'text-red-300' : 'text-white'}`}>
-                        {raceData.isLockedByAdmin ? 'Låst av Systemadmin' : 'Publikt Event'}
-                     </div>
-                     <div className="text-xs text-gray-400">
-                        {raceData.isLockedByAdmin 
-                            ? 'Detta event har avpublicerats och låsts.' 
-                            : 'Synligt för communityt + Publik topplista'
-                        }
-                     </div>
-                 </div>
-             </div>
-             <label className={`relative inline-flex items-center ${raceData.isLockedByAdmin ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
-                <input 
-                    type="checkbox" 
-                    checked={formData.isPublic} 
-                    onChange={(e) => !raceData.isLockedByAdmin && setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
-                    disabled={raceData.isLockedByAdmin}
-                    className="sr-only peer" 
-                />
-                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-            </label>
-          </div>
+          {/* Scoring & Win Conditions */}
+          <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-700">
+              <label className="block text-xs font-bold text-yellow-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Calculator className="w-3 h-3" /> Vinstvillkor & Poängmodell
+              </label>
+              
+              <div className="space-y-4">
+                  <div>
+                      <label className="text-xs text-gray-400 block mb-2">Vad avgör vinnaren?</label>
+                      <div className="grid grid-cols-2 gap-3">
+                          <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, winCondition: 'fastest_time', scoreModel: 'basic' }))}
+                              className={`p-2 rounded text-sm font-bold border transition-colors ${formData.winCondition === 'fastest_time' ? 'bg-blue-600 text-white border-blue-500' : 'bg-gray-800 text-gray-400 border-gray-600'}`}
+                          >
+                              Snabbast i Mål
+                          </button>
+                          <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, winCondition: 'most_points' }))}
+                              className={`p-2 rounded text-sm font-bold border transition-colors ${formData.winCondition === 'most_points' ? 'bg-yellow-600 text-white border-yellow-500' : 'bg-gray-800 text-gray-400 border-gray-600'}`}
+                          >
+                              Flest Poäng
+                          </button>
+                      </div>
+                  </div>
 
-           {/* Start Mode Selection */}
-           <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                <PlayCircle className="w-3 h-3" /> Startmetod
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                  <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, startMode: 'mass_start' }))}
-                      className={`flex items-center justify-center gap-2 p-3 rounded-lg border text-sm transition-all ${
-                          formData.startMode === 'mass_start'
-                          ? 'bg-blue-900/40 border-blue-500 text-blue-200 shadow-inner'
-                          : 'bg-gray-900 border-gray-600 text-gray-400 hover:bg-gray-800'
-                      }`}
-                  >
-                      <Clock className="w-4 h-4" /> Masstart (Gemensam Tid)
-                  </button>
-                   <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, startMode: 'self_start' }))}
-                      className={`flex items-center justify-center gap-2 p-3 rounded-lg border text-sm transition-all ${
-                          formData.startMode === 'self_start'
-                          ? 'bg-green-900/40 border-green-500 text-green-200 shadow-inner'
-                          : 'bg-gray-900 border-gray-600 text-gray-400 hover:bg-gray-800'
-                      }`}
-                  >
-                      <Route className="w-4 h-4" /> Självstart (GPS vid Start)
-                  </button>
-              </div>
-          </div>
-          
-           {/* Leaderboard Mode */}
-           <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                <Eye className="w-3 h-3" /> Resultat & Synlighet
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                  <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, leaderboardMode: 'global' }))}
-                      className={`flex flex-col items-center justify-center p-3 rounded-lg border text-sm transition-all ${
-                          formData.leaderboardMode === 'global'
-                          ? 'bg-purple-900/40 border-purple-500 text-purple-200 shadow-inner'
-                          : 'bg-gray-900 border-gray-600 text-gray-400 hover:bg-gray-800'
-                      }`}
-                  >
-                      <div className="flex items-center gap-2 font-bold mb-1"><Globe className="w-4 h-4" /> Öppen Topplista</div>
-                      <span className="text-[10px] opacity-70">Alla ser alla resultat</span>
-                  </button>
-                   <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, leaderboardMode: 'private' }))}
-                      className={`flex flex-col items-center justify-center p-3 rounded-lg border text-sm transition-all ${
-                          formData.leaderboardMode === 'private'
-                          ? 'bg-indigo-900/40 border-indigo-500 text-indigo-200 shadow-inner'
-                          : 'bg-gray-900 border-gray-600 text-gray-400 hover:bg-gray-800'
-                      }`}
-                  >
-                      <div className="flex items-center gap-2 font-bold mb-1"><User className="w-4 h-4" /> Privat Resultat</div>
-                      <span className="text-[10px] opacity-70">Deltagare ser bara sig själva</span>
-                  </button>
+                  {formData.winCondition === 'most_points' && (
+                      <div className="animate-in slide-in-from-top-2 duration-300 space-y-4 pt-4 border-t border-gray-700">
+                          <div>
+                              <label className="text-xs text-gray-400 block mb-2">Poängmodell</label>
+                              <select
+                                  value={formData.scoreModel}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, scoreModel: e.target.value as any }))}
+                                  className="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white text-sm focus:ring-2 focus:ring-yellow-500 outline-none"
+                              >
+                                  <option value="basic">Grund (Ingen tidsfaktor)</option>
+                                  <option value="rogaining">Rogaining (Tidsstraff)</option>
+                                  <option value="time_bonus">Tidsbonus (Snabb = Mer Poäng)</option>
+                              </select>
+                          </div>
+
+                          {formData.scoreModel === 'rogaining' && (
+                              <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                      <label className="text-[10px] uppercase text-gray-500 font-bold block mb-1">Maxtid (min)</label>
+                                      <input 
+                                          type="number" 
+                                          value={formData.timeLimitMinutes}
+                                          onChange={e => setFormData(prev => ({ ...prev, timeLimitMinutes: parseInt(e.target.value) }))}
+                                          className="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white text-sm"
+                                      />
+                                  </div>
+                                  <div>
+                                      <label className="text-[10px] uppercase text-gray-500 font-bold block mb-1">Straff / min (p)</label>
+                                      <input 
+                                          type="number" 
+                                          value={formData.pointsPerMinute}
+                                          onChange={e => setFormData(prev => ({ ...prev, pointsPerMinute: parseInt(e.target.value) }))}
+                                          className="w-full bg-gray-900 border border-red-900 text-red-300 rounded p-2 text-sm"
+                                      />
+                                  </div>
+                              </div>
+                          )}
+
+                          {formData.scoreModel === 'time_bonus' && (
+                              <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                      <label className="text-[10px] uppercase text-gray-500 font-bold block mb-1">Par-tid (min)</label>
+                                      <input 
+                                          type="number" 
+                                          value={formData.parTimeMinutes}
+                                          onChange={e => setFormData(prev => ({ ...prev, parTimeMinutes: parseInt(e.target.value) }))}
+                                          className="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white text-sm"
+                                      />
+                                  </div>
+                                  <div>
+                                      <label className="text-[10px] uppercase text-gray-500 font-bold block mb-1">Bonus / min (p)</label>
+                                      <input 
+                                          type="number" 
+                                          value={formData.pointsPerMinute}
+                                          onChange={e => setFormData(prev => ({ ...prev, pointsPerMinute: parseInt(e.target.value) }))}
+                                          className="w-full bg-gray-900 border border-green-900 text-green-300 rounded p-2 text-sm"
+                                      />
+                                  </div>
+                              </div>
+                          )}
+                      </div>
+                  )}
               </div>
           </div>
 
@@ -419,11 +414,6 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
                         </label>
                     )}
                 </div>
-                {formData.startMode === 'mass_start' && (
-                    <p className="text-[10px] text-gray-500 mt-2 italic">
-                        Om knappen är aktiverad kan du starta loppet manuellt från arrangörsvyn oavsett tid. Om avstängd, startar loppet automatiskt vid klockslaget ovan.
-                    </p>
-                )}
             </div>
             
             {/* Access Code */}

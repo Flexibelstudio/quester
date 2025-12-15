@@ -39,6 +39,9 @@ export interface Rating {
 
 export type WinCondition = 'fastest_time' | 'most_points';
 
+// NEW: Scoring Models
+export type ScoreModel = 'basic' | 'rogaining' | 'time_bonus';
+
 export type CheckpointOrder = 'free' | 'sequential';
 
 export type MapStyle = 'standard' | 'dark' | 'google_standard' | 'google_hybrid' | 'google_terrain';
@@ -71,6 +74,12 @@ export interface ParticipantResult {
   authProvider?: 'google' | 'facebook' | 'guest'; // New: Login method
   finishTime: string; // HH:MM:SS or elapsed time string
   totalPoints: number;
+  
+  // NEW: Scoring Breakdown
+  basePoints?: number; // Points from checkpoints only
+  timePenaltyPoints?: number; // Points deducted due to time
+  timeBonusPoints?: number; // Points added due to speed
+  
   checkpointsVisited: number;
   visitedCheckpointIds?: string[]; // New: Specific IDs taken for resuming state
   log?: CheckpointVisitLog[]; // NEW: Detailed audit trail
@@ -123,6 +132,12 @@ export interface RaceEvent {
   safetyInstructions: string[];
   leaderboardMetric?: string;
   winCondition: WinCondition;
+  
+  // NEW: Scoring Configuration
+  scoreModel?: ScoreModel;
+  parTimeMinutes?: number; // Target time for Time Bonus model
+  pointsPerMinute?: number; // Points to add/deduct per minute
+  
   leaderboardMode?: LeaderboardMode; // New field for result visibility
   timeLimitMinutes?: number;
   mapStyle?: MapStyle;

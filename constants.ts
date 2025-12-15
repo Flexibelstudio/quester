@@ -54,8 +54,13 @@ export const INITIAL_RACE_STATE: RaceEvent = {
   safetyInstructions: [],
   leaderboardMetric: 'Snabbast total tid',
   winCondition: 'fastest_time',
+  // New Defaults
+  scoreModel: 'basic',
+  parTimeMinutes: 60,
+  pointsPerMinute: 10,
+  timeLimitMinutes: 60,
+  
   leaderboardMode: 'global', // Default to everyone sees everyone
-  timeLimitMinutes: 120,
   mapStyle: 'google_standard',
   results: [],
   ratings: [],
