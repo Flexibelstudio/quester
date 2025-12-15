@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { RaceEvent, WinCondition, CheckpointOrder, TerrainType, StartMode, UserProfile } from '../types';
 import { RACE_CATEGORIES, EVENT_TYPES, DEFAULT_COORDINATES } from '../constants';
-import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass } from 'lucide-react';
+import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info } from 'lucide-react';
 
 interface RaceCreationWizardProps {
   onCancel: () => void;
@@ -20,16 +20,17 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
     category: '',
     eventType: 'Lopp',
     language: 'sv',
+    startCity: '', // Added startCity
     winCondition: 'fastest_time' as WinCondition,
     checkpointOrder: 'free' as CheckpointOrder,
     terrainType: 'trail' as TerrainType,
     startMode: 'mass_start' as StartMode,
     manualStartEnabled: true,
-    // Default to 24 hours from now to indicate planning mode, user changes this in settings or via "Start Now" button
+    // Default to 24 hours from now to indicate planning mode
     startDateTime: new Date(Date.now() + 86400 * 1000).toISOString().slice(0, 16),
     accessCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
     isPublic: false,
-    createAsOfficial: false // New field for admin override
+    createAsOfficial: false 
   });
 
   // Attempt to get user location on mount
@@ -178,13 +179,21 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                              </div>
                         </div>
                         <div className="col-span-2 sm:col-span-1">
-                            {/* Location Feedback */}
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Startplats</label>
-                            <div className={`w-full border rounded-xl py-3 px-4 flex items-center gap-2 ${userLocation ? 'bg-blue-900/20 border-blue-500/50 text-blue-300' : 'bg-gray-950 border-gray-700 text-gray-500'}`}>
-                                <MapPin className="w-5 h-5" />
-                                <span className="text-sm">
-                                    {userLocation ? 'GPS-position hittad' : 'Hämtar plats... (Standard: Sthlm)'}
-                                </span>
+                            {/* Location Input */}
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Startort / Stad</label>
+                            <div className="relative">
+                                <MapPin className={`absolute left-3 top-3.5 w-5 h-5 ${userLocation ? 'text-green-500' : 'text-gray-500'}`} />
+                                <input 
+                                    type="text"
+                                    value={formData.startCity}
+                                    onChange={(e) => setFormData({...formData, startCity: e.target.value})}
+                                    placeholder={userLocation ? "Din nuvarande plats" : "T.ex. Stockholm"}
+                                    className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                                />
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-2 text-[10px] text-blue-300 bg-blue-900/20 p-1.5 rounded border border-blue-900/50">
+                                <Info className="w-3 h-3" />
+                                <span>Du placerar den <strong>exakta</strong> startnålen på kartan i nästa steg.</span>
                             </div>
                         </div>
                      </div>
