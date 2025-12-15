@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { RaceEvent, UserTier, TierConfig, EventStatus, UserProfile } from '../types';
-import { Plus, Map, Calendar, Users, Trophy, Trash2, ArrowRight, Settings2, PlayCircle, Compass, Star, ShieldAlert, Zap, Share2, Archive, CheckCircle2, User, MapPin, Crown, LayoutTemplate, PenTool } from 'lucide-react';
+import { Plus, Map, Calendar, Users, Trophy, Trash2, ArrowRight, Settings2, PlayCircle, Compass, Star, ShieldAlert, Zap, Share2, Archive, CheckCircle2, User, MapPin, Crown, LayoutTemplate, PenTool, Gamepad2 } from 'lucide-react';
 import { ShareDialog } from './ShareDialog';
 
 interface DashboardProps {
@@ -104,13 +104,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProf
                 </button>
             )}
             <button 
-              onClick={() => onOpenParticipant()}
-              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-5 py-3 rounded-xl font-bold transition-all border border-gray-700"
-            >
-              <Users className="w-5 h-5" />
-              Till Deltagarvy
-            </button>
-            <button 
               onClick={onCreateEvent}
               className="group flex items-center gap-3 bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/30 active:scale-95"
             >
@@ -122,8 +115,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProf
           </div>
         </div>
 
-        {/* Grid */}
-        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Mina Event</h3>
+        {/* Grid Header & Filter Info */}
+        <div className="flex justify-between items-end mb-4">
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Mina Event</h3>
+            
+            <button 
+                onClick={() => onOpenParticipant()} 
+                className="flex items-center gap-2 text-xs font-bold text-blue-400 hover:text-white transition-colors bg-blue-900/10 hover:bg-blue-900/30 px-3 py-1.5 rounded-lg border border-blue-500/20"
+            >
+                <Gamepad2 className="w-3 h-3" /> Letar du efter spel du deltar i?
+            </button>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {organizedEvents.map(event => (
             <div key={event.id} className={`bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden hover:border-gray-600 transition-all hover:shadow-2xl hover:-translate-y-1 group relative ${event.status === 'archived' ? 'opacity-60 hover:opacity-100' : ''}`}>

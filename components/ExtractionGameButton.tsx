@@ -127,6 +127,7 @@ export const ExtractionGameButton: React.FC<ExtractionGameButtonProps> = ({ onGa
         winCondition: 'most_points', // Score based
         startLocation: { lat, lng },
         finishLocation: { lat, lng, radiusMeters: 50 }, // Placeholder, updated later
+        isInstantGame: true,
       } as RaceEvent;
 
       setLoading(false);

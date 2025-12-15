@@ -163,6 +163,7 @@ export const ChristmasHuntButton: React.FC<ChristmasHuntButtonProps> = ({
         winCondition: 'most_points', 
         startLocation: generatedData.startLocation || { lat, lng },
         finishLocation: generatedData.finishLocation || { lat, lng, radiusMeters: 50 },
+        isInstantGame: true,
       } as RaceEvent;
 
       onGameCreated(finalEvent);

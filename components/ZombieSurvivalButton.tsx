@@ -313,6 +313,7 @@ export const ZombieSurvivalButton: React.FC<ZombieSurvivalButtonProps> = ({
       finishLocation: { lat, lng, radiusMeters: 50 },
       checkpoints: checkpoints,
       results: [],
+      isInstantGame: true, // Mark as instant game
       // navGraph removed
     } as RaceEvent;
 
