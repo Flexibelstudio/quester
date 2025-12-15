@@ -620,7 +620,7 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                                       onClick={() => setFormData({...formData, leaderboardMode: 'global'})}
                                       className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${formData.leaderboardMode === 'global' ? 'bg-yellow-600 text-white shadow' : 'text-gray-500 hover:bg-gray-900'}`}
                                   >
-                                      🏆 Topplista (Tävling)
+                                      {formData.isPublic ? "🏆 Publik Topplista (Tävling)" : "🏆 Topplista"}
                                   </button>
                                   <button 
                                       onClick={() => setFormData({...formData, leaderboardMode: 'private'})}

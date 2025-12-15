@@ -568,13 +568,6 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
                     <Save className="w-4 h-4" />
                     <span className="hidden sm:inline">Spara</span>
                 </button>
-
-                 <button 
-                    onClick={() => setIsSettingsOpen(true)}
-                    className="glass-button h-10 w-10 flex items-center justify-center rounded-xl text-white"
-                >
-                    <Settings className="w-5 h-5" />
-                </button>
             </div>
         </div>
 
