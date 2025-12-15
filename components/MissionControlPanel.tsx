@@ -5,7 +5,8 @@ import {
   ChevronLeft, Flag, Plus, Globe, 
   CheckCircle2, Circle, Sparkles, Trash2, Edit2, 
   LayoutList, ListTodo, PanelLeftClose, PanelLeftOpen,
-  Hammer, Wand2, Skull, BookOpen, ChevronDown, ChevronRight, PlayCircle, MousePointer2
+  Hammer, Wand2, Skull, BookOpen, ChevronDown, ChevronRight, PlayCircle, MousePointer2,
+  Settings2, Play, Share2
 } from 'lucide-react';
 
 interface CheckpointConfig {
@@ -31,15 +32,19 @@ interface MissionControlPanelProps {
   cpConfig: CheckpointConfig;
   setCpConfig: (config: CheckpointConfig) => void;
   onGenerateContent: (prompt: string) => void;
+  // New Action Props
+  onTestRun: () => void;
+  onSettings: () => void;
+  onShare: () => void;
 }
 
 const StatusBadge: React.FC<{ status: EventStatus }> = ({ status }) => {
-    let colorClass = 'text-gray-400 border-gray-600';
+    let colorClass = 'text-gray-400 border-gray-600 bg-gray-800';
     let label = 'Utkast';
     
-    if (status === 'active') { colorClass = 'text-blue-400 border-blue-500/50 animate-pulse'; label = 'Pågående'; }
-    else if (status === 'published') { colorClass = 'text-green-400 border-green-500/50'; label = 'Publicerad'; }
-    else if (status === 'completed') { colorClass = 'text-purple-300 border-purple-500/50'; label = 'Avslutad'; }
+    if (status === 'active') { colorClass = 'text-blue-400 border-blue-500/50 bg-blue-900/20 animate-pulse'; label = 'Pågående'; }
+    else if (status === 'published') { colorClass = 'text-green-400 border-green-500/50 bg-green-900/20'; label = 'Publicerad'; }
+    else if (status === 'completed') { colorClass = 'text-purple-300 border-purple-500/50 bg-purple-900/20'; label = 'Avslutad'; }
 
     return (
         <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-bold border ${colorClass}`}>
@@ -136,12 +141,15 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
   setIsOpen,
   cpConfig,
   setCpConfig,
-  onGenerateContent
+  onGenerateContent,
+  onTestRun,
+  onSettings,
+  onShare
 }) => {
   const [activeTab, setActiveTab] = useState<'guide' | 'build' | 'layers'>('build');
   const [expandedContent, setExpandedContent] = useState<string | null>(null);
 
-  // Checklist State - Now relies on explicit confirmation
+  // Checklist State
   const hasStart = !!raceData.startLocationConfirmed;
   const hasFinish = !!raceData.finishLocationConfirmed;
   const hasCheckpoints = raceData.checkpoints.length > 0;
@@ -185,30 +193,77 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
 
       <aside className={`fixed inset-y-0 left-0 z-40 w-full md:w-[400px] bg-slate-950 border-r border-slate-800 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
         
-        {/* --- HEADER --- */}
-        <div className="p-4 border-b border-slate-800 bg-slate-900/50">
+        {/* --- HEADER (New Action Bar Layout) --- */}
+        <div className="p-4 border-b border-slate-800 bg-slate-900/95 backdrop-blur-md shrink-0">
+          
+          {/* Row 1: Nav & Actions */}
           <div className="flex items-center justify-between mb-4">
-            <button onClick={onExit} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-medium">
-              <ChevronLeft className="w-4 h-4" /> Tillbaka
+            <button 
+                onClick={onExit} 
+                className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors text-xs font-bold uppercase tracking-wider group"
+            >
+              <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Tillbaka
             </button>
+            
             <div className="flex items-center gap-2">
-               <StatusBadge status={raceData.status} />
-               <button onClick={() => setIsOpen(false)} className="md:hidden text-gray-500"><PanelLeftClose className="w-5 h-5" /></button>
+                <button 
+                    onClick={onSettings}
+                    className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white transition-colors border border-gray-700"
+                    title="Inställningar"
+                >
+                    <Settings2 className="w-4 h-4" />
+                </button>
+                <button 
+                    onClick={onTestRun}
+                    className="p-2 rounded-lg bg-gray-800 text-green-400 hover:bg-green-900/30 hover:text-green-300 transition-colors border border-gray-700 hover:border-green-800"
+                    title="Testkör"
+                >
+                    <Play className="w-4 h-4 fill-current" />
+                </button>
+                {isPublished ? (
+                    <button 
+                        onClick={onShare}
+                        className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-900/30"
+                        title="Dela Event"
+                    >
+                        <Share2 className="w-4 h-4" />
+                    </button>
+                ) : (
+                    <button 
+                        onClick={onPublish}
+                        disabled={!hasStart || !hasFinish || !hasCheckpoints}
+                        className={`p-2 rounded-lg transition-colors border ${(!hasStart || !hasFinish || !hasCheckpoints) ? 'bg-gray-800 text-gray-600 border-gray-700 cursor-not-allowed' : 'bg-gray-800 text-blue-400 hover:bg-gray-700 hover:text-white border-gray-700'}`}
+                        title="Publicera"
+                    >
+                        <Globe className="w-4 h-4" />
+                    </button>
+                )}
+                
+                <button onClick={() => setIsOpen(false)} className="md:hidden ml-2 text-gray-500 hover:text-white"><PanelLeftClose className="w-5 h-5" /></button>
             </div>
           </div>
-          <h1 className="text-xl font-black text-white tracking-tight leading-none mb-1">{raceData.name}</h1>
-          <p className="text-xs text-gray-500 font-mono uppercase tracking-wide">Mission Control</p>
+
+          {/* Row 2: Title & Status */}
+          <div className="flex flex-col gap-2">
+              <h1 className="text-xl font-black text-white tracking-tight leading-tight line-clamp-2">
+                  {raceData.name}
+              </h1>
+              <div className="flex items-center gap-2">
+                  <StatusBadge status={raceData.status} />
+                  <span className="text-[10px] text-gray-500 font-mono uppercase tracking-wide">Mission Control</span>
+              </div>
+          </div>
         </div>
 
         {/* --- TABS --- */}
-        <div className="flex border-b border-slate-800">
+        <div className="flex border-b border-slate-800 bg-slate-950">
           <button onClick={() => setActiveTab('guide')} className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'guide' ? 'border-green-500 text-green-400 bg-green-900/10' : 'border-transparent text-gray-500 hover:text-gray-300'}`}><ListTodo className="w-4 h-4" /><span className="text-xs font-bold uppercase">Guide</span></button>
           <button onClick={() => setActiveTab('build')} className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'build' ? 'border-blue-500 text-blue-400 bg-blue-900/10' : 'border-transparent text-gray-500 hover:text-gray-300'}`}><Hammer className="w-4 h-4" /><span className="text-xs font-bold uppercase">Bygg</span></button>
           <button onClick={() => setActiveTab('layers')} className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'layers' ? 'border-purple-500 text-purple-400 bg-purple-900/10' : 'border-transparent text-gray-500 hover:text-gray-300'}`}><LayoutList className="w-4 h-4" /><span className="text-xs font-bold uppercase">Lager</span></button>
         </div>
 
         {/* --- CONTENT --- */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 min-h-0">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 min-h-0 bg-slate-950">
           
           {/* TAB: GUIDE (Checklist) */}
           {activeTab === 'guide' && (
@@ -217,12 +272,17 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
               <ChecklistItem done={hasStart} label="Placera Start" isActive={activeTool === 'start'} onClick={() => { setActiveTool('start'); setActiveTab('build'); }} />
               <ChecklistItem done={hasFinish} label="Placera Mål" isActive={activeTool === 'finish'} onClick={() => { setActiveTool('finish'); setActiveTab('build'); }} />
               <ChecklistItem done={hasCheckpoints} label="Lägg till Checkpoints" isActive={activeTool === 'checkpoint'} onClick={() => { setActiveTool('checkpoint'); setActiveTab('build'); }} />
-              <div className="my-4 border-t border-slate-800"></div>
-              <div className="text-xs font-bold text-gray-500 uppercase mb-2">Publicering</div>
-              <button onClick={onPublish} disabled={!hasStart || !hasFinish || !hasCheckpoints || isPublished} className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all ${isPublished ? 'bg-green-900/20 text-green-500 border border-green-900 cursor-default' : (!hasStart || !hasFinish || !hasCheckpoints) ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500 text-white animate-pulse'}`}>
-                {isPublished ? <Globe className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
-                {isPublished ? 'Eventet är Live' : 'Publicera Event'}
-              </button>
+              
+              {!isPublished && (
+                  <>
+                    <div className="my-4 border-t border-slate-800"></div>
+                    <div className="text-xs font-bold text-gray-500 uppercase mb-2">Slutför</div>
+                    <button onClick={onPublish} disabled={!hasStart || !hasFinish || !hasCheckpoints} className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all ${(!hasStart || !hasFinish || !hasCheckpoints) ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500 text-white animate-pulse'}`}>
+                        <Sparkles className="w-5 h-5" />
+                        Publicera Event
+                    </button>
+                  </>
+              )}
             </div>
           )}
 
@@ -283,13 +343,6 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
                         <AiGeneratorSection onGenerate={onGenerateContent} />
                     </AccordionItem>
                     
-                    <AccordionItem id="zombie" title="Zombie Outbreak" icon={<Skull className="w-4 h-4" />} colorClass="text-red-500">
-                        <p className="text-xs text-gray-400 mb-3">Skapar ett överlevnadsscenario med Safe Houses och infekterade zoner baserat på din startplats.</p>
-                        <button onClick={() => onGenerateContent("GENERATE_ZOMBIE_MODE")} className="w-full bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-800 font-bold py-2 rounded text-xs uppercase tracking-wider flex items-center justify-center gap-2">
-                            <Skull className="w-4 h-4" /> Starta Outbreak
-                        </button>
-                    </AccordionItem>
-
                     <AccordionItem id="story" title="Story Mode" icon={<BookOpen className="w-4 h-4" />} colorClass="text-green-400">
                         <StorySection onApply={onUpdateRace} raceData={raceData} />
                     </AccordionItem>

@@ -224,6 +224,10 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
             cpConfig={cpConfig}
             setCpConfig={setCpConfig}
             onGenerateContent={handleContentGeneration}
+            // New Actions
+            onTestRun={onTestRun}
+            onSettings={() => setIsSettingsOpen(true)}
+            onShare={() => setIsShareOpen(true)}
         />
 
         {/* --- MAIN AREA (Map) --- */}
@@ -243,23 +247,6 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
                     }}
                     hideLegend={false}
                 />
-            </div>
-
-            {/* Top Right Actions */}
-            <div className="absolute top-4 right-4 z-20 flex gap-2">
-                 <button 
-                    onClick={() => setIsSettingsOpen(true)}
-                    className="p-3 bg-gray-900/80 hover:bg-gray-800 text-white rounded-xl shadow-lg backdrop-blur border border-gray-700"
-                    title="Inställningar"
-                >
-                    <Settings2 className="w-5 h-5" />
-                </button>
-                <button
-                    onClick={onTestRun}
-                    className="px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg font-bold text-xs uppercase tracking-wider"
-                >
-                    Test Run
-                </button>
             </div>
 
         </div>
