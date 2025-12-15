@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { GeminiService } from '../services/gemini';
 import { accessControlService } from '../services/accessControl';
@@ -38,7 +35,7 @@ interface CheckpointConfig {
   points: number;
   type: 'mandatory' | 'optional';
   color: string;
-  name: 'Ny CP'
+  name: string;
 }
 
 const StatusHeaderBadge: React.FC<{ status: EventStatus }> = ({ status }) => {

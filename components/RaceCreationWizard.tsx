@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RaceEvent, WinCondition, CheckpointOrder, TerrainType, StartMode, UserProfile, ScoreModel, LeaderboardMode } from '../types';
 import { RACE_CATEGORIES, EVENT_TYPES, DEFAULT_COORDINATES } from '../constants';
-import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info, Eye, EyeOff, ChevronDown, CheckCircle2, Lock, Globe, Users } from 'lucide-react';
+import { X, ArrowRight, ArrowLeft, Check, Trophy, Timer, Route, Shuffle, Key, FileText, Tag, Flag, Mountain, Trees, Clock, MousePointer2, Languages, PenTool, MapPin, ShieldCheck, Compass, Info, Eye, EyeOff, ChevronDown, CheckCircle2, Lock, Globe, Users, Loader2 } from 'lucide-react';
 
 interface RaceCreationWizardProps {
   onCancel: () => void;
@@ -13,6 +13,7 @@ interface RaceCreationWizardProps {
 export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel, onComplete, user }) => {
   const [step, setStep] = useState(1);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   
   const [formData, setFormData] = useState({
@@ -74,9 +75,32 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
   const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => setStep(prev => prev - 1);
   
-  const handleFinish = () => {
-    // Use detected location or fallback to Stockholm default
-    const startLoc = userLocation || DEFAULT_COORDINATES;
+  const handleFinish = async () => {
+    setIsGeocoding(true);
+
+    // 1. Determine Start Location
+    // Priority: GPS -> Text Input Geocode -> Default (Stockholm)
+    let startLoc = userLocation;
+
+    if (!startLoc && formData.startCity) {
+        try {
+            // Fetch coordinates for the city name using OpenStreetMap Nominatim
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.startCity)}&limit=1`);
+            const data = await response.json();
+            
+            if (data && data.length > 0) {
+                startLoc = {
+                    lat: parseFloat(data[0].lat),
+                    lng: parseFloat(data[0].lon)
+                };
+            }
+        } catch (error) {
+            console.warn("Geocoding failed, falling back to default.", error);
+        }
+    }
+
+    // Final fallback
+    if (!startLoc) startLoc = DEFAULT_COORDINATES;
 
     // Prepare Base Data
     const partialData: Partial<RaceEvent> = {
@@ -102,6 +126,7 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
     }
 
     onComplete(partialData);
+    setIsGeocoding(false);
   };
 
   // Helper for Custom Category
@@ -611,9 +636,11 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
              ) : (
                  <button 
                     onClick={handleFinish}
-                    className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-green-900/30 animate-pulse"
+                    disabled={isGeocoding}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-green-900/30 animate-pulse disabled:opacity-50 disabled:animate-none"
                  >
-                     <Check className="w-4 h-4" /> Skapa {formData.eventType}
+                     {isGeocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} 
+                     {isGeocoding ? 'Hittar plats...' : `Skapa ${formData.eventType}`}
                  </button>
              )}
          </div>
