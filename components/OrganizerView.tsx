@@ -167,9 +167,9 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
 
   const handleMapClick = (coord: Coordinate) => {
     if (activeTool === 'start') {
-      onUpdateRace({ startLocation: coord });
+      onUpdateRace({ startLocation: coord, startLocationConfirmed: true });
     } else if (activeTool === 'finish') {
-      onUpdateRace({ finishLocation: { ...raceData.finishLocation, ...coord } });
+      onUpdateRace({ finishLocation: { ...raceData.finishLocation, ...coord }, finishLocationConfirmed: true });
     } else if (activeTool === 'checkpoint') {
       const check = accessControlService.canAddCheckpoint(userProfile, raceData.checkpoints.length, tierConfigs);
       if (!check.allowed) {
@@ -237,8 +237,8 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
                     onDeleteCheckpoint={(id) => onUpdateRace({ checkpoints: raceData.checkpoints.filter(cp => cp.id !== id) })}
                     onEditCheckpoint={(id) => { const cp = raceData.checkpoints.find(c => c.id === id); if(cp) setEditingCheckpoint(cp); }}
                     onUpdateLocation={(id, coord, type) => {
-                            if (type === 'start') onUpdateRace({ startLocation: coord });
-                            else if (type === 'finish') onUpdateRace({ finishLocation: { ...raceData.finishLocation, ...coord } });
+                            if (type === 'start') onUpdateRace({ startLocation: coord, startLocationConfirmed: true });
+                            else if (type === 'finish') onUpdateRace({ finishLocation: { ...raceData.finishLocation, ...coord }, finishLocationConfirmed: true });
                             else if (type === 'checkpoint' && id) onUpdateRace({ checkpoints: raceData.checkpoints.map(cp => cp.id === id ? { ...cp, location: coord } : cp) });
                     }}
                     hideLegend={false}

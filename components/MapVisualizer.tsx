@@ -15,16 +15,16 @@ let DefaultIcon = L.icon({
 });
 
 // Custom Icon for Finish to ensure it's visible and clickable
-const FinishIcon = L.divIcon({
+const FinishIcon = (confirmed: boolean = true) => L.divIcon({
   className: 'finish-icon',
-  html: `<div style="font-size:30px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transform: translate(-10px, -30px); cursor: move;">🏁</div>`,
+  html: `<div style="font-size:30px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transform: translate(-10px, -30px); cursor: move; ${!confirmed ? 'opacity: 0.6; filter: grayscale(1); animation: pulse-ring 2s infinite;' : ''}">🏁</div>`,
   iconSize: [40, 40],
   iconAnchor: [20, 20] 
 });
 
-const StartIcon = L.divIcon({
+const StartIcon = (confirmed: boolean = true) => L.divIcon({
   className: 'start-icon',
-  html: `<div style="font-size:30px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transform: translate(-10px, -30px); cursor: move;">▶️</div>`,
+  html: `<div style="font-size:30px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transform: translate(-10px, -30px); cursor: move; ${!confirmed ? 'opacity: 0.6; filter: grayscale(1); animation: pulse-ring 2s infinite;' : ''}">▶️</div>`,
   iconSize: [40, 40],
   iconAnchor: [20, 20] 
 });
@@ -236,7 +236,7 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
         {/* Start Marker */}
         <Marker 
             position={startPos} 
-            icon={StartIcon}
+            icon={StartIcon(raceData.startLocationConfirmed)}
             draggable={true}
             eventHandlers={{
                 dragend: (e) => {
@@ -248,6 +248,7 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
         >
           <Popup>
             <strong>Start:</strong> {raceData.name}
+            {!raceData.startLocationConfirmed && <div className="text-red-500 font-bold text-[10px] mt-1 uppercase">Ej bekräftad (Preliminär)</div>}
             <div className="text-xs text-gray-500 mt-1">Dra för att flytta</div>
           </Popup>
         </Marker>
@@ -264,7 +265,7 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
         />
         <Marker 
             position={finishPos} 
-            icon={FinishIcon}
+            icon={FinishIcon(raceData.finishLocationConfirmed)}
             draggable={true}
             eventHandlers={{
                 dragend: (e) => {
@@ -276,6 +277,7 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
         >
            <Popup>
             <strong>Mål:</strong> Radie {raceData.finishLocation.radiusMeters}m
+            {!raceData.finishLocationConfirmed && <div className="text-red-500 font-bold text-[10px] mt-1 uppercase">Ej bekräftad (Preliminär)</div>}
             <div className="text-xs text-gray-500 mt-1">Dra för att flytta</div>
           </Popup>
         </Marker>

@@ -16,6 +16,7 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false); // New state for custom input
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   
@@ -158,8 +159,16 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
     setIsGeocoding(false);
   };
 
-  // Helper for Custom Category
-  const isCustomCategory = formData.category === 'Annat' || (formData.category !== '' && !RACE_CATEGORIES.includes(formData.category));
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const val = e.target.value;
+      if (val === 'Annat') {
+          setShowCustomCategoryInput(true);
+          setFormData(prev => ({ ...prev, category: '' })); // Clear category to enforce typing (invalidates step 1)
+      } else {
+          setShowCustomCategoryInput(false);
+          setFormData(prev => ({ ...prev, category: val }));
+      }
+  };
 
   // Archetype Selection Logic
   const selectArchetype = (type: 'classic' | 'rogaining' | 'adventure') => {
@@ -307,14 +316,14 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                         </div>
                      </div>
 
-                     {/* Updated Category Selection (Dropdown) */}
+                     {/* Updated Category Selection (Dropdown + Custom) */}
                      <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Kategori</label>
                         <div className="relative">
                             <Compass className="absolute left-3 top-3.5 text-gray-500 w-5 h-5" />
                             <select 
-                                value={RACE_CATEGORIES.includes(formData.category) ? formData.category : (formData.category ? 'Annat' : '')}
-                                onChange={(e) => setFormData({...formData, category: e.target.value === 'Annat' ? '' : e.target.value})}
+                                value={showCustomCategoryInput ? 'Annat' : formData.category}
+                                onChange={handleCategoryChange}
                                 className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-10 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all appearance-none cursor-pointer"
                             >
                                 <option value="" disabled>Välj kategori...</option>
@@ -327,15 +336,15 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                             </div>
                         </div>
 
-                        {/* Custom Input if 'Annat' is selected (or active custom value) */}
-                        {isCustomCategory && (
+                        {/* Custom Input if 'Annat' is selected */}
+                        {showCustomCategoryInput && (
                             <div className="mt-3 animate-in fade-in slide-in-from-top-1">
                                 <input 
                                     type="text"
-                                    value={formData.category === 'Annat' ? '' : formData.category}
-                                    onChange={(e) => setFormData({...formData, category: e.target.value})}
-                                    placeholder="Skriv din kategori..."
-                                    className="w-full bg-gray-900 border border-blue-500/50 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    value={formData.category}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                                    placeholder="Skriv din kategori här..."
+                                    className="w-full bg-gray-900 border border-blue-500/50 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-blue-300/30"
                                     autoFocus
                                 />
                             </div>

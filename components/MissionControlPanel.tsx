@@ -141,9 +141,9 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
   const [activeTab, setActiveTab] = useState<'guide' | 'build' | 'layers'>('build');
   const [expandedContent, setExpandedContent] = useState<string | null>(null);
 
-  // Checklist State
-  const hasStart = raceData.startLocation.lat !== 59.3293;
-  const hasFinish = raceData.finishLocation.lat !== 59.3293;
+  // Checklist State - Now relies on explicit confirmation
+  const hasStart = !!raceData.startLocationConfirmed;
+  const hasFinish = !!raceData.finishLocationConfirmed;
   const hasCheckpoints = raceData.checkpoints.length > 0;
   const isPublished = raceData.status === 'published' || raceData.status === 'active';
 

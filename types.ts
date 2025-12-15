@@ -1,5 +1,4 @@
 
-
 export interface Coordinate {
   lat: number;
   lng: number;
@@ -122,7 +121,9 @@ export interface RaceEvent {
   startMode?: StartMode; // New field for start logic
   manualStartEnabled?: boolean; // New field: toggle start button availability
   startLocation: Coordinate;
+  startLocationConfirmed?: boolean; // New: True if user has manually placed/confirmed start
   finishLocation: Coordinate & { radiusMeters: number };
+  finishLocationConfirmed?: boolean; // New: True if user has manually placed/confirmed finish
   startCity?: string; // New: Manual city name for start
   finishCity?: string; // New: Manual city name for finish
   checkpoints: Checkpoint[];
