@@ -346,6 +346,7 @@ function AppContent() {
             onInstantGame={handleDirectRaceCreate}
             onOpenProfile={() => setIsProfileOpen(true)}
             onOpenSystemAdmin={() => setViewMode('system_admin')}
+            onGoToDashboard={() => setViewMode('dashboard')}
             onCreateEvent={() => {
                 setViewMode('dashboard');
                 handleCreateEventClick();

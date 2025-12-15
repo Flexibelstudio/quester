@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { UserTier, TierConfig, RaceEvent, SystemConfig, UserProfile } from '../types';
-import { Compass, Map, Zap, Crown, Check, ArrowRight, Star, Users, Trophy, Smartphone, Sparkles, LogIn, ChevronDown, Gamepad2, Mail, User, Loader2, Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import { Compass, Map, Zap, Crown, Check, ArrowRight, Star, Users, Trophy, Smartphone, Sparkles, LogIn, ChevronDown, Gamepad2, Mail, User, Loader2, Eye, EyeOff, ShieldAlert, LayoutDashboard } from 'lucide-react';
 import { api } from '../services/dataService';
 import { useAuth } from '../contexts/AuthContext';
 import { ZombieSurvivalButton } from './ZombieSurvivalButton';
@@ -27,7 +27,8 @@ interface LandingPageProps {
   onRegisterUser: (name: string, email: string) => void;
   onOpenProfile?: () => void;
   onOpenSystemAdmin?: () => void;
-  onCreateEvent?: () => void; // New Prop for direct creation
+  onCreateEvent?: () => void;
+  onGoToDashboard?: () => void; // New Prop
 }
 
 const TIER_VISUALS: Record<UserTier, {
@@ -224,7 +225,7 @@ const MockEventCard: React.FC<{ name: string, type: string, players: number, rat
     </div>
 );
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowseEvents, tierConfigs, onInstantGame, userProfile, onOpenProfile, onOpenSystemAdmin, onCreateEvent }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowseEvents, tierConfigs, onInstantGame, userProfile, onOpenProfile, onOpenSystemAdmin, onCreateEvent, onGoToDashboard }) => {
   const pricingRef = useRef<HTMLDivElement>(null);
   const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
@@ -320,6 +321,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
                       System
                   </button>
               )}
+
+              {/* NEW DASHBOARD BUTTON */}
+              {userProfile.id !== 'guest' && onGoToDashboard && (
+                  <button
+                      onClick={onGoToDashboard}
+                      className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-bold border border-white/10 transition-all shadow-sm"
+                  >
+                      <LayoutDashboard className="w-4 h-4" />
+                      <span className="hidden sm:inline">Mina Event</span>
+                  </button>
+              )}
+
               {userProfile.id !== 'guest' ? (
                   <button onClick={onOpenProfile} className="text-sm font-bold text-white bg-white/10 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors">
                       <img src={avatarUrl} alt="Profile" className="w-5 h-5 rounded-full object-cover" />
