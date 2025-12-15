@@ -9,11 +9,10 @@ import { EventSettingsDialog } from './EventSettingsDialog';
 import { CheckpointEditorDialog } from './CheckpointEditorDialog';
 import { ResultManager } from './ResultManager';
 import { AnalysisDialog } from './AnalysisDialog';
-import { ContentGeneratorDialog } from './ContentGeneratorDialog';
 import { ShareDialog } from './ShareDialog';
 import { AILoader } from './AILoader';
 import { MissionControlPanel } from './MissionControlPanel';
-import { MousePointer2, PlayCircle, Flag, Plus, Wand2, BrainCircuit, Settings2 } from 'lucide-react';
+import { Settings2 } from 'lucide-react';
 
 interface OrganizerViewProps {
   raceData: RaceEvent;
@@ -55,11 +54,9 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isResultsOpen, setIsResultsOpen] = useState(false);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
-  const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [editingCheckpoint, setEditingCheckpoint] = useState<Checkpoint | null>(null);
   
-  // Mission Control Visibility (Desktop persistent, Mobile toggle)
   const [isPanelOpen, setIsPanelOpen] = useState(true);
 
   // Builder Config
@@ -118,7 +115,7 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
     if (geminiServiceRef.current && isOnline) {
       geminiServiceRef.current.startNewSession(userProfile.tier);
       if (!isLocationSet) {
-           setMessages([{ id: '1', role: 'model', text: `👋 Hej! Börja med att dra ut **Start** och **Mål** på kartan.` }]);
+           setMessages([{ id: '1', role: 'model', text: `👋 Hej! Använd panelen till vänster för att bygga din bana.` }]);
       } else {
            setMessages([{ id: '1', role: 'model', text: `Jag är redo. Vad vill du skapa idag?` }]);
       }
@@ -141,20 +138,14 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
         raceData.checkpoints.map(cp => ({
             id: cp.id,
             name: cp.name,
-            desc: cp.description,
-            hasQuiz: !!cp.quiz,
-            hasChallenge: !!cp.challenge
+            desc: cp.description
         }))
     );
 
     const contextPrompt = `
       CURRENT STATE:
-      Event Type: ${raceData.eventType}
-      Status: ${raceData.status}
-      Language: ${raceData.language || 'sv'}
       Checkpoints List: ${checkpointContext}
       Start Coordinates: ${raceData.startLocation.lat}, ${raceData.startLocation.lng}
-      Finish Coordinates: ${raceData.finishLocation.lat}, ${raceData.finishLocation.lng}
       USER REQUEST: "${text}"
     `;
 
@@ -170,14 +161,32 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
 
   const handleContentGeneration = async (prompt: string) => {
     if (!geminiServiceRef.current || !isOnline) return;
-    setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', text: `🪄 ${prompt}` }]);
     
-    setAiLoaderMessage("Skapar innehåll...");
+    // Check for special commands from Sidebar
+    if (prompt === "GENERATE_ZOMBIE_MODE") {
+        setAiLoaderMessage("Simulerar zombie-utbrott...");
+        const startLat = raceData.startLocation.lat;
+        const startLng = raceData.startLocation.lng;
+        prompt = `
+          TASK: Create a 'Zombie Run' scenario.
+          Start Location: { lat: ${startLat}, lng: ${startLng} }
+          Difficulty: Medium.
+          RULES:
+          1. Generate 3 "Safe Houses" (Mandatory, Green, 100p).
+          2. Generate 5 "Zombie Nests" (Optional, Red, -50p).
+          3. Write a dramatic intro description.
+          4. Set Category to 'Survival Run'.
+        `;
+    } else {
+        setAiLoaderMessage("Genererar innehåll...");
+        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', text: `🪄 AI Generator körs...` }]);
+    }
+    
     setIsLoading(true);
     setIsGeneratingContent(true); 
     
     try {
-        const fullPrompt = `CONTEXT: ... (omitted for brevity) ... TASK: ${prompt}`; // Re-use logic
+        const fullPrompt = `CONTEXT: User Location ${raceData.startLocation.lat},${raceData.startLocation.lng}. TASK: ${prompt}`;
         const responseText = await geminiServiceRef.current.sendMessage(fullPrompt);
         setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText }]);
     } catch (e) {
@@ -185,19 +194,6 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
     } finally {
         setIsLoading(false);
         setIsGeneratingContent(false);
-    }
-  };
-
-  const handleRequestAnalysis = async () => {
-    if (!geminiServiceRef.current || !isOnline) return;
-    setAiLoaderMessage("Analyserar banan...");
-    setIsGeneratingContent(true);
-    try {
-      await geminiServiceRef.current.sendMessage("Analyze this race plan...");
-    } catch (e) {
-      alert("Kunde inte genomföra analysen just nu.");
-    } finally {
-      setIsGeneratingContent(false);
     }
   };
 
@@ -256,7 +252,6 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
         <EventSettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} raceData={raceData} onSave={onUpdateRace} onDelete={onDeleteEvent ? () => onDeleteEvent(raceData.id) : undefined} />
         <CheckpointEditorDialog checkpoint={editingCheckpoint} isOpen={!!editingCheckpoint} onClose={() => setEditingCheckpoint(null)} onSave={(updatedCp) => onUpdateRace({ checkpoints: raceData.checkpoints.map(cp => cp.id === updatedCp.id ? updatedCp : cp) })} />
         <AnalysisDialog analysis={analysisData} isOpen={isAnalysisOpen} onClose={() => setIsAnalysisOpen(false)} />
-        <ContentGeneratorDialog isOpen={isGeneratorOpen} onClose={() => setIsGeneratorOpen(false)} onGenerate={handleContentGeneration} onApplyUpdate={onUpdateRace} currentRaceData={raceData} />
         {isResultsOpen && <ResultManager raceData={raceData} onClose={() => setIsResultsOpen(false)} onUpdateResults={(results) => onUpdateRace({ results })} />}
 
         {/* --- MISSION CONTROL SIDEBAR --- */}
@@ -274,12 +269,15 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
             activeTool={activeTool}
             setActiveTool={setActiveTool}
             onPublish={handlePublish}
+            // Builder Props
+            cpConfig={cpConfig}
+            setCpConfig={setCpConfig}
+            onGenerateContent={handleContentGeneration}
         />
 
-        {/* --- MAIN AREA (Map + Floating Tools) --- */}
+        {/* --- MAIN AREA (Map) --- */}
         <div className="flex-1 relative h-full w-full">
             
-            {/* Map */}
             <div className="absolute inset-0 z-0">
                 <MapVisualizer 
                     raceData={raceData} 
@@ -296,7 +294,7 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
                 />
             </div>
 
-            {/* Top Right Actions (Settings, Test Run) */}
+            {/* Top Right Actions */}
             <div className="absolute top-4 right-4 z-20 flex gap-2">
                  <button 
                     onClick={() => setIsSettingsOpen(true)}
@@ -311,64 +309,6 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
                 >
                     Test Run
                 </button>
-            </div>
-
-            {/* Bottom Floating Dock (Tools) */}
-            <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center pointer-events-none">
-                <div className="bg-gray-900/90 backdrop-blur-md p-2 rounded-2xl flex items-center gap-2 shadow-2xl pointer-events-auto border border-gray-700">
-                    
-                    <button 
-                        onClick={() => setActiveTool('none')}
-                        className={`p-3 rounded-xl transition-all ${activeTool === 'none' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}`}
-                        title="Navigera"
-                    >
-                        <MousePointer2 className="w-5 h-5" />
-                    </button>
-                    
-                    <div className="w-px h-8 bg-gray-700 mx-1"></div>
-
-                    <button 
-                        onClick={() => setActiveTool('start')}
-                        className={`px-4 py-3 rounded-xl transition-all flex items-center gap-2 ${activeTool === 'start' ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-green-400'}`}
-                    >
-                        <PlayCircle className="w-5 h-5" />
-                        <span className="hidden md:inline text-xs font-bold uppercase">Start</span>
-                    </button>
-
-                    <button 
-                        onClick={() => setActiveTool('finish')}
-                        className={`px-4 py-3 rounded-xl transition-all flex items-center gap-2 ${activeTool === 'finish' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-red-400'}`}
-                    >
-                        <Flag className="w-5 h-5" />
-                        <span className="hidden md:inline text-xs font-bold uppercase">Mål</span>
-                    </button>
-
-                    <button 
-                        onClick={() => setActiveTool('checkpoint')}
-                        className={`px-4 py-3 rounded-xl transition-all flex items-center gap-2 ${activeTool === 'checkpoint' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-blue-400'}`}
-                    >
-                        <Plus className="w-5 h-5" />
-                        <span className="hidden md:inline text-xs font-bold uppercase">CP</span>
-                    </button>
-
-                    <div className="w-px h-8 bg-gray-700 mx-1"></div>
-
-                    <button 
-                        onClick={() => setIsGeneratorOpen(true)}
-                        className="p-3 rounded-xl text-purple-400 hover:bg-purple-900/30"
-                        title="AI Wizard"
-                    >
-                        <Wand2 className="w-5 h-5" />
-                    </button>
-
-                    <button 
-                        onClick={handleRequestAnalysis}
-                        className="p-3 rounded-xl text-blue-400 hover:bg-blue-900/30"
-                        title="AI Analys"
-                    >
-                        <BrainCircuit className="w-5 h-5" />
-                    </button>
-                </div>
             </div>
 
         </div>
