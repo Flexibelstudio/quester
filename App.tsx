@@ -402,6 +402,7 @@ function AppContent() {
             onGoHome={() => setViewMode('landing')}
             userProfile={safeProfile}
             onBack={() => setViewMode(previousViewMode)}
+            onOpenProfile={() => setIsProfileOpen(true)}
         />
       )}
 

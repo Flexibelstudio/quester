@@ -2,7 +2,7 @@
 // ... existing imports ...
 import React, { useState, useMemo, useEffect } from 'react';
 import { RaceEvent, UserTier, SystemConfig, UserProfile, ParticipantResult } from '../types';
-import { Search, MapPin, Calendar, ArrowRight, Key, Filter, Compass, ChevronRight, Star, ShieldAlert, Sparkles, Zap, ArrowLeft, Gamepad2, Trophy, Loader2, PlayCircle, Clock, Crown, XCircle, Flag, User, ShieldCheck } from 'lucide-react';
+import { Search, MapPin, Calendar, ArrowRight, Key, Filter, Compass, ChevronRight, Star, ShieldAlert, Sparkles, Zap, ArrowLeft, Gamepad2, Trophy, Loader2, PlayCircle, Clock, Crown, XCircle, Flag, User, ShieldCheck, LayoutDashboard } from 'lucide-react';
 import { api } from '../services/dataService';
 import { ZombieSurvivalButton } from './ZombieSurvivalButton';
 import { ChristmasHuntButton } from './ChristmasHuntButton';
@@ -19,6 +19,7 @@ interface PublicEventBrowserProps {
   onGoHome?: () => void; // New Prop
   onDirectRaceCreate?: (event: RaceEvent) => void;
   userProfile?: UserProfile;
+  onOpenProfile?: () => void; // New Prop
 }
 
 const RatingDisplay: React.FC<{ ratings?: { score: number }[] }> = ({ ratings }) => {
@@ -33,7 +34,7 @@ const RatingDisplay: React.FC<{ ratings?: { score: number }[] }> = ({ ratings })
     );
 };
 
-export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, onJoinRace, onBackToAdmin, onOpenSystemAdmin, initialJoinCode, onBack, onGoHome, onDirectRaceCreate, userProfile }) => {
+export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, onJoinRace, onBackToAdmin, onOpenSystemAdmin, initialJoinCode, onBack, onGoHome, onDirectRaceCreate, userProfile, onOpenProfile }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Alla');
   const [directCode, setDirectCode] = useState('');
@@ -153,6 +154,8 @@ export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, 
   const activeChristmas = systemConfig?.featuredModes?.christmas_hunt?.isActive;
   const hasActiveModes = activeZombie || activeChristmas; // Also considering Extraction always active for now
   const userTier = userProfile?.tier || 'SCOUT';
+  const isLoggedIn = userProfile && userProfile.id !== 'guest';
+  const avatarUrl = userProfile?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile?.name}`;
 
   return (
     <div className="h-[100dvh] w-full bg-slate-950 text-gray-100 font-sans flex flex-col relative overflow-y-auto overflow-x-hidden">
@@ -198,13 +201,36 @@ export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, 
                       <ShieldAlert className="w-3 h-3" /> System
                     </button>
                  )}
-                <div className="h-4 w-px bg-white/10 hidden md:block"></div>
-                <button 
-                  onClick={onBackToAdmin}
-                  className="text-xs font-bold px-4 py-2 rounded-full border border-white/10 hover:bg-white/10 transition-all text-gray-300 hover:text-white"
-                >
-                  Arrangörslogin
-                </button>
+
+                 {isLoggedIn ? (
+                    <>
+                        <button
+                            onClick={onBackToAdmin}
+                            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-bold border border-white/10 transition-all shadow-sm"
+                        >
+                            <LayoutDashboard className="w-4 h-4" />
+                            <span className="hidden sm:inline">Mina Event</span>
+                        </button>
+
+                        <button 
+                            onClick={onOpenProfile}
+                            className="text-sm font-bold text-white bg-white/10 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors"
+                        >
+                            <img src={avatarUrl} alt="Profile" className="w-5 h-5 rounded-full object-cover" />
+                            {userProfile?.name}
+                        </button>
+                    </>
+                 ) : (
+                    <>
+                        <div className="h-4 w-px bg-white/10 hidden md:block"></div>
+                        <button 
+                          onClick={onBackToAdmin}
+                          className="text-xs font-bold px-4 py-2 rounded-full border border-white/10 hover:bg-white/10 transition-all text-gray-300 hover:text-white"
+                        >
+                          Arrangörslogin
+                        </button>
+                    </>
+                 )}
             </div>
           </div>
         </div>
