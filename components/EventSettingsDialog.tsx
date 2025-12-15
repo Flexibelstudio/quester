@@ -1,9 +1,9 @@
 
 import React, { useState, useRef } from 'react';
-import { RaceEvent, TerrainType, StartMode, LeaderboardMode, EventStatus, ScoreModel, WinCondition } from '../types';
+import { RaceEvent, TerrainType, StartMode, LeaderboardMode, EventStatus, ScoreModel, WinCondition, CheckpointOrder } from '../types';
 import { RACE_CATEGORIES, EVENT_TYPES } from '../constants';
 import { api } from '../services/dataService';
-import { X, Save, Flag, Trophy, Globe, Upload, Loader2, ImageIcon, Calculator, Clock, AlertTriangle, Users, Play, Lock, Key, Trash2, LayoutTemplate, Compass, AlertOctagon, CheckCircle2 } from 'lucide-react';
+import { X, Save, Flag, Trophy, Globe, Upload, Loader2, ImageIcon, Calculator, Clock, AlertTriangle, Users, Play, Lock, Key, Trash2, LayoutTemplate, Compass, AlertOctagon, CheckCircle2, Mountain, Trees, Timer } from 'lucide-react';
 
 interface EventSettingsDialogProps {
   raceData: RaceEvent;
@@ -96,7 +96,8 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
         ...formData,
         startDateTime: new Date(formData.startDateTime).toISOString(),
         winCondition: formData.winCondition as WinCondition,
-        scoreModel: formData.scoreModel as ScoreModel
+        scoreModel: formData.scoreModel as ScoreModel,
+        checkpointOrder: formData.checkpointOrder as CheckpointOrder
     });
     onClose();
   };
@@ -125,6 +126,37 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
       }
   };
 
+  // Logic to set archetype
+  const setGameType = (type: 'classic' | 'rogaining' | 'adventure') => {
+      if (type === 'classic') {
+          setFormData(prev => ({
+              ...prev,
+              winCondition: 'fastest_time',
+              checkpointOrder: 'sequential',
+              scoreModel: 'basic'
+          }));
+      } else if (type === 'rogaining') {
+          setFormData(prev => ({
+              ...prev,
+              winCondition: 'most_points',
+              checkpointOrder: 'free',
+              scoreModel: 'rogaining'
+          }));
+      } else if (type === 'adventure') {
+          setFormData(prev => ({
+              ...prev,
+              winCondition: 'most_points',
+              checkpointOrder: 'free',
+              scoreModel: 'basic'
+          }));
+      }
+  };
+
+  // Determine current active archetype
+  const activeArchetype = 
+      formData.scoreModel === 'rogaining' ? 'rogaining' :
+      formData.winCondition === 'most_points' ? 'adventure' : 'classic';
+
   // Determine categories to show
   const availableCategories = Array.from(new Set([formData.category, ...RACE_CATEGORIES]));
 
@@ -135,7 +167,7 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-700 flex justify-between items-center bg-gray-950 shrink-0">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            Inställningar: {raceData.name}
+            Inställningar
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
             <X className="w-5 h-5" />
@@ -223,96 +255,129 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
               </div>
           )}
 
-          {/* TAB 2: REGLER */}
+          {/* TAB 2: REGLER (Redesigned) */}
           {activeTab === 'rules' && (
-              <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+              <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
                   
-                  {/* Vinstvillkor */}
+                  {/* Game Type Cards */}
                   <div>
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 block">Vinstvillkor</label>
-                      <div className="grid grid-cols-2 gap-4">
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, winCondition: 'fastest_time', scoreModel: 'basic', checkpointOrder: 'sequential' }))} className={`p-4 rounded-xl border text-left transition-all ${formData.winCondition === 'fastest_time' ? 'bg-blue-900/20 border-blue-500 text-white shadow-lg' : 'bg-gray-950 border-gray-700 text-gray-400 hover:bg-gray-800'}`}>
-                              <div className="flex justify-between mb-2">
-                                  <Clock className={`w-6 h-6 ${formData.winCondition === 'fastest_time' ? 'text-blue-400' : 'text-gray-600'}`} />
-                                  {formData.winCondition === 'fastest_time' && <CheckCircle2 className="w-5 h-5 text-blue-500" />}
-                              </div>
-                              <div className="font-bold mb-1">Snabbast Tid</div>
-                              <div className="text-xs opacity-70">Först i mål vinner.</div>
-                          </button>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 block">Välj Speltyp</label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, winCondition: 'most_points', checkpointOrder: 'free' }))} className={`p-4 rounded-xl border text-left transition-all ${formData.winCondition === 'most_points' ? 'bg-yellow-900/20 border-yellow-500 text-white shadow-lg' : 'bg-gray-950 border-gray-700 text-gray-400 hover:bg-gray-800'}`}>
-                              <div className="flex justify-between mb-2">
-                                  <Trophy className={`w-6 h-6 ${formData.winCondition === 'most_points' ? 'text-yellow-400' : 'text-gray-600'}`} />
-                                  {formData.winCondition === 'most_points' && <CheckCircle2 className="w-5 h-5 text-yellow-500" />}
+                          {/* 1. Banlopp */}
+                          <button
+                            type="button"
+                            onClick={() => setGameType('classic')}
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                                activeArchetype === 'classic'
+                                ? 'bg-blue-900/20 border-blue-500 text-white shadow-lg'
+                                : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-600'
+                            }`}
+                          >
+                              <Flag className={`w-8 h-8 mb-2 ${activeArchetype === 'classic' ? 'text-blue-400' : 'text-gray-600'}`} />
+                              <span className="font-bold text-sm">Banlopp</span>
+                              <div className="flex gap-1 mt-2">
+                                <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-gray-900 border border-gray-700">Tid</span>
+                                <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-gray-900 border border-gray-700">Sekventiell</span>
                               </div>
-                              <div className="font-bold mb-1">Flest Poäng</div>
-                              <div className="text-xs opacity-70">Samla poäng.</div>
+                          </button>
+
+                          {/* 2. Poängjakt */}
+                          <button
+                            type="button"
+                            onClick={() => setGameType('rogaining')}
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                                activeArchetype === 'rogaining'
+                                ? 'bg-yellow-900/20 border-yellow-500 text-white shadow-lg'
+                                : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-600'
+                            }`}
+                          >
+                              <Timer className={`w-8 h-8 mb-2 ${activeArchetype === 'rogaining' ? 'text-yellow-400' : 'text-gray-600'}`} />
+                              <span className="font-bold text-sm">Poängjakt</span>
+                              <div className="flex gap-1 mt-2">
+                                <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-gray-900 border border-gray-700">Poäng</span>
+                                <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-gray-900 border border-gray-700">Fri</span>
+                              </div>
+                          </button>
+
+                          {/* 3. Äventyr */}
+                          <button
+                            type="button"
+                            onClick={() => setGameType('adventure')}
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                                activeArchetype === 'adventure'
+                                ? 'bg-purple-900/20 border-purple-500 text-white shadow-lg'
+                                : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-600'
+                            }`}
+                          >
+                              <Compass className={`w-8 h-8 mb-2 ${activeArchetype === 'adventure' ? 'text-purple-400' : 'text-gray-600'}`} />
+                              <span className="font-bold text-sm">Äventyr</span>
+                              <div className="flex gap-1 mt-2">
+                                <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-gray-900 border border-gray-700">Upplevelse</span>
+                                <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-gray-900 border border-gray-700">Fri</span>
+                              </div>
                           </button>
                       </div>
                   </div>
 
-                  {/* Poängmodell (Advanced Scoring) - Only valid for "Most Points" */}
-                  {formData.winCondition === 'most_points' && (
-                      <div className="bg-yellow-900/10 border border-yellow-500/30 rounded-2xl p-5 animate-in slide-in-from-top-2 duration-300">
-                          <h3 className="text-sm font-bold text-yellow-200 uppercase tracking-wide mb-4 flex items-center gap-2">
-                              <Calculator className="w-4 h-4" /> Poängmodell & Regler
-                          </h3>
-                          
-                          <div className="mb-4">
-                              <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Speltyp</label>
-                              <select value={formData.scoreModel} onChange={(e) => setFormData(prev => ({ ...prev, scoreModel: e.target.value as any }))} className="w-full bg-gray-900 border border-yellow-500/30 rounded-xl px-4 py-2 text-white">
-                                  <option value="basic">Grund (Ingen tidsfaktor)</option>
-                                  <option value="rogaining">Rogaining (Maxtid + Straff)</option>
-                                  <option value="time_bonus">Tidsbonus (Snabb = Mer Poäng)</option>
-                              </select>
+                  {/* Contextual Settings: Rogaining Time Limit */}
+                  {activeArchetype === 'rogaining' && (
+                      <div className="bg-yellow-900/10 border border-yellow-500/30 rounded-xl p-4 flex items-center justify-between animate-in slide-in-from-top-2 duration-300">
+                          <div className="flex items-center gap-3">
+                              <div className="p-2 bg-yellow-500/20 rounded-lg">
+                                  <Clock className="w-5 h-5 text-yellow-500" />
+                              </div>
+                              <div>
+                                  <h4 className="text-sm font-bold text-yellow-100">Tidsgräns & Straff</h4>
+                                  <p className="text-xs text-yellow-200/70">Hur länge får deltagarna vara ute?</p>
+                              </div>
                           </div>
-
-                          {/* Rogaining Settings */}
-                          {formData.scoreModel === 'rogaining' && (
-                              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-yellow-500/20">
-                                  <div>
-                                      <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Maxtid (min)</label>
-                                      <input type="number" value={formData.timeLimitMinutes} onChange={e => setFormData(prev => ({ ...prev, timeLimitMinutes: parseInt(e.target.value) }))} className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2 text-white" />
-                                  </div>
-                                  <div>
-                                      <label className="text-[10px] font-bold text-red-400 uppercase mb-1 flex items-center gap-1"><AlertOctagon className="w-3 h-3"/> Straff / min</label>
-                                      <input type="number" value={formData.pointsPerMinute} onChange={e => setFormData(prev => ({ ...prev, pointsPerMinute: parseInt(e.target.value) }))} className="w-full bg-gray-900 border border-red-900/50 text-red-300 rounded-lg p-2" />
-                                  </div>
+                          
+                          <div className="flex items-center gap-4">
+                              <div>
+                                <label className="block text-[10px] uppercase font-bold text-yellow-500 mb-1">Maxtid (min)</label>
+                                <input 
+                                    type="number"
+                                    value={formData.timeLimitMinutes}
+                                    onChange={(e) => setFormData(prev => ({...prev, timeLimitMinutes: parseInt(e.target.value) || 60}))}
+                                    className="w-20 bg-gray-900 border border-yellow-500/50 rounded-lg p-2 text-center text-white font-bold"
+                                />
                               </div>
-                          )}
-
-                          {/* Time Bonus Settings */}
-                          {formData.scoreModel === 'time_bonus' && (
-                              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-yellow-500/20">
-                                  <div>
-                                      <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Par-tid (min)</label>
-                                      <input type="number" value={formData.parTimeMinutes} onChange={e => setFormData(prev => ({ ...prev, parTimeMinutes: parseInt(e.target.value) }))} className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2 text-white" />
-                                  </div>
-                                  <div>
-                                      <label className="text-[10px] font-bold text-green-400 uppercase mb-1 flex items-center gap-1"><Clock className="w-3 h-3"/> Bonus / min</label>
-                                      <input type="number" value={formData.pointsPerMinute} onChange={e => setFormData(prev => ({ ...prev, pointsPerMinute: parseInt(e.target.value) }))} className="w-full bg-gray-900 border border-green-900/50 text-green-300 rounded-lg p-2" />
-                                  </div>
+                              <div>
+                                <label className="block text-[10px] uppercase font-bold text-red-400 mb-1">Straff/min</label>
+                                <input 
+                                    type="number"
+                                    value={formData.pointsPerMinute}
+                                    onChange={(e) => setFormData(prev => ({...prev, pointsPerMinute: parseInt(e.target.value) || 10}))}
+                                    className="w-20 bg-gray-900 border border-red-500/50 rounded-lg p-2 text-center text-white font-bold"
+                                />
                               </div>
-                          )}
+                          </div>
                       </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-6">
-                      <div>
-                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Banläggning</label>
-                          <select value={formData.checkpointOrder} onChange={(e) => setFormData(prev => ({ ...prev, checkpointOrder: e.target.value as any }))} className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 px-4 text-white">
-                              <option value="free">Valfri Ordning (Poängjakt)</option>
-                              <option value="sequential">Sekventiell (1-2-3)</option>
-                          </select>
-                      </div>
-                      <div>
-                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Terräng</label>
-                          <select value={formData.terrainType} onChange={(e) => setFormData(prev => ({ ...prev, terrainType: e.target.value as TerrainType }))} className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 px-4 text-white">
-                              <option value="trail">Stig/Väg</option>
-                              <option value="mixed">Blandat</option>
-                              <option value="off_road">Obanat</option>
-                              <option value="urban">Stad</option>
-                          </select>
+                  {/* Other Settings */}
+                  <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 block">Övrigt</label>
+                      
+                      <div className="bg-gray-950 border border-gray-800 rounded-xl p-4">
+                          <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Terräng</label>
+                          <div className="grid grid-cols-2 gap-4">
+                              <button 
+                                type="button"
+                                onClick={() => setFormData(prev => ({...prev, terrainType: 'trail'}))}
+                                className={`flex items-center gap-2 p-2 rounded-lg border text-sm transition-all ${formData.terrainType === 'trail' ? 'bg-green-900/20 border-green-600 text-white' : 'bg-gray-900 border-gray-700 text-gray-400'}`}
+                              >
+                                  <Trees className="w-4 h-4" /> Stig/Väg
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => setFormData(prev => ({...prev, terrainType: 'off_road'}))}
+                                className={`flex items-center gap-2 p-2 rounded-lg border text-sm transition-all ${formData.terrainType === 'off_road' ? 'bg-orange-900/20 border-orange-600 text-white' : 'bg-gray-900 border-gray-700 text-gray-400'}`}
+                              >
+                                  <Mountain className="w-4 h-4" /> Obanat
+                              </button>
+                          </div>
                       </div>
                   </div>
               </div>
