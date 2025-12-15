@@ -70,7 +70,8 @@ export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, 
 
   // Extract unique categories from public events
   const categories = useMemo(() => {
-    const cats = new Set(events.filter(e => e.isPublic).map(e => e.category));
+    // Also filter categories based on visibility to avoid showing categories for hidden drafts
+    const cats = new Set(events.filter(e => e.isPublic && ['published', 'active', 'completed'].includes(e.status || 'draft')).map(e => e.category));
     return ['Alla', ...Array.from(cats)];
   }, [events]);
 
@@ -89,6 +90,13 @@ export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, 
       // Admin locked events are never public
       if (event.isLockedByAdmin) return false;
       if (!event.isPublic) return false;
+
+      // Filter out Drafts and Archived events
+      // Only show Published, Active or Completed
+      const validStatuses = ['published', 'active', 'completed'];
+      if (!validStatuses.includes(event.status || 'draft')) {
+          return false;
+      }
 
       const matchesCategory = selectedCategory === 'Alla' || event.category === selectedCategory;
       const searchLower = searchTerm.toLowerCase();
