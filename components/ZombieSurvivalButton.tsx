@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Skull, Radiation, Biohazard, TriangleAlert, Map as MapIcon } from 'lucide-react';
+import { Skull, Radiation, Biohazard, TriangleAlert, Map as MapIcon, Zap } from 'lucide-react';
 import { GeminiService } from '../services/gemini';
 import { RaceEvent, Checkpoint, NavGraph, NavNode } from '../types';
 import { INITIAL_RACE_STATE } from '../constants';
@@ -330,6 +330,11 @@ export const ZombieSurvivalButton: React.FC<ZombieSurvivalButtonProps> = ({
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
             <div className="absolute inset-0 bg-gradient-to-br from-red-950/50 to-black opacity-80"></div>
             
+            {/* CONTENT WARNING BADGE */}
+            <div className="absolute top-2 right-2 z-20 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded border border-red-400 shadow-lg flex items-center gap-1 animate-pulse">
+                <TriangleAlert className="w-3 h-3" /> 15+ SKRÄCK
+            </div>
+
             {loading && (
                  <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-4 text-center">
                     <MapIcon className="w-12 h-12 text-red-500 animate-pulse mb-4" />
@@ -349,10 +354,16 @@ export const ZombieSurvivalButton: React.FC<ZombieSurvivalButtonProps> = ({
                         <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white group-hover:text-red-500 transition-colors">
                             Zombie Survival
                         </h3>
-                        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-red-400/80">
-                            <Radiation className="h-3 w-3" />
-                            Real-World Data
-                        </p>
+                        
+                        {/* INTENSITY METER */}
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Intensitet:</span>
+                            <div className="flex gap-1">
+                                <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_5px_red]"></div>
+                                <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_5px_red]"></div>
+                                <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_5px_red]"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 

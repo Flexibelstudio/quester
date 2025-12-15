@@ -197,10 +197,16 @@ export const ChristmasHuntButton: React.FC<ChristmasHuntButtonProps> = ({
                     <h3 className="text-xl font-black italic uppercase tracking-tighter text-white">
                         Christmas Hunt
                     </h3>
-                    <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-blue-300/80">
-                        <Snowflake className="h-3 w-3" />
-                        Seasonal • Yo-Yo Mode
-                    </p>
+                    
+                    {/* INTENSITY METER */}
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Intensitet:</span>
+                        <div className="flex gap-1">
+                            <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_5px_green]"></div>
+                            <div className="w-2 h-2 rounded-full bg-slate-700"></div>
+                            <div className="w-2 h-2 rounded-full bg-slate-700"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
