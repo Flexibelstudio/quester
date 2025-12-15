@@ -233,6 +233,12 @@ function AppContent() {
       setTimeout(() => document.title = originalText, 2000);
   };
 
+  // NEW: Handler for direct updates from Dashboard (e.g. Publish)
+  const handleExternalEventUpdate = async (updatedEvent: RaceEvent) => {
+      await api.events.saveEvent(updatedEvent);
+      await refreshEvents();
+  };
+
   const handleDashboardSettingsSave = async (updates: Partial<RaceEvent>) => {
       if (!dashboardSettingsEvent) return;
       const updatedEvent = { ...dashboardSettingsEvent, ...updates };
@@ -387,6 +393,7 @@ function AppContent() {
             onDirectRaceCreate={handleDirectRaceCreate}
             onOpenProfile={() => setIsProfileOpen(true)}
             onOpenSettings={(e) => setDashboardSettingsEvent(e)}
+            onUpdateEvent={handleExternalEventUpdate} // Pass handler
           />
         </>
       )}
