@@ -238,6 +238,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
 
   // Leaderboard State
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [leaderboardMode, setLeaderboardMode] = useState<'zombie_survival' | 'christmas_hunt'>('zombie_survival');
 
   useEffect(() => {
     const load = async () => {
@@ -270,6 +271,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
       }
   };
 
+  const openLeaderboard = (mode: 'zombie_survival' | 'christmas_hunt') => {
+      setLeaderboardMode(mode);
+      setIsLeaderboardOpen(true);
+  };
+
   const hasFeaturedModes = systemConfig?.featuredModes?.zombie_survival?.isActive || systemConfig?.featuredModes?.christmas_hunt?.isActive;
   const avatarUrl = userProfile.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile.name}`;
   const isGuest = userProfile.id === 'guest';
@@ -293,6 +299,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
       <GlobalLeaderboard 
         isOpen={isLeaderboardOpen} 
         onClose={() => setIsLeaderboardOpen(false)} 
+        defaultMode={leaderboardMode}
       />
 
       {/* Background Ambience */}
@@ -383,7 +390,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
         {/* Leaderboard Button */}
         <div className="mt-6 animate-in fade-in slide-in-from-bottom-12 duration-700 delay-400">
             <button
-                onClick={() => setIsLeaderboardOpen(true)}
+                onClick={() => openLeaderboard('zombie_survival')}
                 className="flex items-center gap-2 text-sm font-bold text-yellow-400 bg-yellow-900/10 px-6 py-2 rounded-full border border-yellow-500/30 hover:bg-yellow-900/30 transition-all hover:scale-105 shadow-[0_0_15px_rgba(234,179,8,0.2)]"
             >
                 <Trophy className="w-4 h-4" />
@@ -411,6 +418,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
                             }}
                             autoStart={pendingGameType === 'zombie' && !isGuest}
                             onAutoStartConsumed={() => setPendingGameType(null)}
+                            onShowLeaderboard={() => openLeaderboard('zombie_survival')}
                         />
                     )}
                     {systemConfig?.featuredModes?.christmas_hunt?.isActive && (
@@ -424,6 +432,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
                             }}
                             autoStart={pendingGameType === 'christmas' && !isGuest}
                             onAutoStartConsumed={() => setPendingGameType(null)}
+                            onShowLeaderboard={() => openLeaderboard('christmas_hunt')}
                         />
                     )}
                 </div>
