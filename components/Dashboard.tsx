@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { RaceEvent, UserTier, TierConfig, EventStatus, UserProfile } from '../types';
-import { Plus, Map, Calendar, Users, Trophy, Trash2, ArrowRight, Settings2, PlayCircle, Compass, Star, ShieldAlert, Zap, Share2, Archive, CheckCircle2, User, MapPin, Crown, LayoutTemplate, PenTool, Gamepad2, Hammer, Rocket, PauseCircle, AlertTriangle } from 'lucide-react';
+import { Plus, Map, Calendar, Users, Trophy, Trash2, ArrowRight, Settings2, PlayCircle, Compass, Star, ShieldAlert, Zap, Share2, Archive, CheckCircle2, User, MapPin, Crown, LayoutTemplate, PenTool, Gamepad2, Hammer, Rocket, PauseCircle, AlertTriangle, BookOpen } from 'lucide-react';
 import { ShareDialog } from './ShareDialog';
 import { ConfirmationDialog } from './ConfirmationDialog'; // Importerad
 
@@ -20,6 +20,7 @@ interface DashboardProps {
   onOpenProfile: () => void;
   onOpenSettings: (event: RaceEvent) => void;
   onUpdateEvent: (event: RaceEvent) => void; 
+  onOpenLibrary: () => void; // NEW
 }
 
 const RatingDisplay: React.FC<{ ratings?: { score: number }[] }> = ({ ratings }) => {
@@ -48,7 +49,7 @@ const StatusBadge: React.FC<{ status: EventStatus }> = ({ status }) => {
     }
 };
 
-export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProfile, tierConfigs, onSelectEvent, onCreateEvent, onDeleteEvent, onOpenParticipant, onOpenSystemAdmin, onUpgradeClick, onOpenProfile, onOpenSettings, onUpdateEvent }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProfile, tierConfigs, onSelectEvent, onCreateEvent, onDeleteEvent, onOpenParticipant, onOpenSystemAdmin, onUpgradeClick, onOpenProfile, onOpenSettings, onUpdateEvent, onOpenLibrary }) => {
   const [shareEvent, setShareEvent] = useState<RaceEvent | null>(null);
   
   // Dialog State
@@ -144,13 +145,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProf
                  )}
 
                  {/* CREATE EVENT BUTTON (Moved to Header) */}
-                 <button 
-                    onClick={onCreateEvent}
-                    className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-blue-900/30 transition-all active:scale-95 flex items-center gap-2"
-                 >
-                    <Plus className="w-4 h-4" /> 
-                    <span className="hidden sm:inline">Skapa Event</span>
-                 </button>
+                 <div className="flex bg-gray-800 rounded-lg p-1 border border-gray-700">
+                     <button 
+                        onClick={onOpenLibrary}
+                        className="px-3 py-1.5 rounded-md text-xs font-bold text-gray-300 hover:text-white hover:bg-gray-700 transition-colors flex items-center gap-2"
+                     >
+                        <BookOpen className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Bibliotek</span>
+                     </button>
+                     <div className="w-px bg-gray-700 my-1 mx-1"></div>
+                     <button 
+                        onClick={onCreateEvent}
+                        className="px-3 py-1.5 rounded-md text-xs font-bold text-blue-400 hover:text-white hover:bg-blue-600 transition-colors flex items-center gap-2"
+                     >
+                        <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Skapa Nytt</span>
+                     </button>
+                 </div>
 
                  {/* Divider */}
                  <div className="h-6 w-px bg-white/10 hidden sm:block mx-1"></div>
@@ -350,14 +359,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProf
                     </div>
                     <h3 className="text-2xl font-black text-white mb-3">Din arbetsyta är tom</h3>
                     <p className="text-gray-400 mb-8 max-w-md text-lg leading-relaxed">
-                        Det är dags att bygga något episkt! Klicka nedan för att starta guiden och skapa ditt första äventyr.
+                        Det är dags att bygga något episkt! Välj ett färdigt äventyr från biblioteket eller skapa nytt från grunden.
                     </p>
-                    <button 
-                        onClick={onCreateEvent}
-                        className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/30 flex items-center gap-3 hover:-translate-y-1 hover:shadow-2xl"
-                    >
-                        <Plus className="w-6 h-6" /> Skapa Nytt Äventyr
-                    </button>
+                    <div className="flex gap-4">
+                        <button 
+                            onClick={onOpenLibrary}
+                            className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-3 rounded-xl font-bold transition-all border border-gray-700 flex items-center gap-2"
+                        >
+                            <BookOpen className="w-5 h-5" /> Bläddra i Biblioteket
+                        </button>
+                        <button 
+                            onClick={onCreateEvent}
+                            className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/30 flex items-center gap-2"
+                        >
+                            <Plus className="w-5 h-5" /> Skapa Nytt
+                        </button>
+                    </div>
                 </div>
             )}
             </div>

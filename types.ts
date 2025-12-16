@@ -27,6 +27,8 @@ export interface Checkpoint {
   timeModifierSeconds?: number; // Negative = Bonus (deduction), Positive = Penalty
   // New feature for photo proof
   requiresPhoto?: boolean;
+  // New for Templates
+  terrainHint?: string; // Hint for AI placement (e.g. "Park", "Water", "Urban")
 }
 
 export interface Rating {
@@ -112,6 +114,7 @@ export interface RaceEvent {
   isPublic?: boolean; // New field: visible to community
   isLockedByAdmin?: boolean; // New field: prevents user from publishing
   isInstantGame?: boolean; // New: Marks event as a played system game (Zombie/Xmas) to hide from organizer dashboard
+  isTemplate?: boolean; // NEW: Marks this event as a reusable blueprint
   participantIds?: string[]; // New: Array of user IDs who have participated (for efficient history queries)
   unlockExpiresAt?: string; // ISO Date string. When the 30-day edit window expires.
   accessCode?: string; // Code for participants to join

@@ -147,6 +147,64 @@ export const INITIAL_TIER_CONFIGS: Record<UserTier, TierConfig> = {
   }
 };
 
+// --- OFFICIAL TEMPLATES (BLUEPRINTS) ---
+export const OFFICIAL_TEMPLATES: RaceEvent[] = [
+    {
+        ...INITIAL_RACE_STATE,
+        id: 'tpl-spooky-walk',
+        isTemplate: true,
+        name: 'Den Hemsökta Promenaden',
+        category: 'Tipspromenad / Quiz',
+        description: 'En spännande spökvandring för familjen eller vännerna. Gåtorna handlar om lokala spökhistorier och myter. Passar bra att köra i skymningen.',
+        eventType: 'Äventyr',
+        winCondition: 'most_points',
+        checkpoints: [
+            { id: '1', name: 'Gamla Kyrkogården', location: null, type: 'mandatory', points: 10, radiusMeters: 25, color: '#8b5cf6', terrainHint: 'Open space or near old structure', quiz: { question: 'Vad kallas spöket som sägs varna för dödsfall?', options: ['Vita Frun', 'Mylingen', 'Lyktgubben', 'Näcken'], correctOptionIndex: 0 } },
+            { id: '2', name: 'Viskande Trädet', location: null, type: 'mandatory', points: 10, radiusMeters: 25, color: '#8b5cf6', terrainHint: 'Near a large tree or park', quiz: { question: 'Vilket väsen lurar i vattendrag?', options: ['Troll', 'Näcken', 'Vättar', 'Skogsrået'], correctOptionIndex: 1 } },
+            { id: '3', name: 'Övergivna Huset', location: null, type: 'mandatory', points: 20, radiusMeters: 25, color: '#8b5cf6', terrainHint: 'Secluded area or building', quiz: { question: 'Hur skyddar man sig mot troll enligt folktron?', options: ['Med Silver', 'Med Järn', 'Med Vitlök', 'Med Eld'], correctOptionIndex: 1 } },
+            { id: '4', name: 'Skuggornas Plats', location: null, type: 'mandatory', points: 10, radiusMeters: 25, color: '#8b5cf6', terrainHint: 'Darker area or under bridge', quiz: { question: 'Vad är en "Bäckahäst"?', options: ['En snäll ponny', 'Ett vattenväsen', 'En fågel', 'Ett spöktåg'], correctOptionIndex: 1 } }
+        ],
+        coverImage: 'https://images.unsplash.com/photo-1509557965875-b88c97052f0e?auto=format&fit=crop&w=800&q=80',
+        terrainType: 'trail'
+    },
+    {
+        ...INITIAL_RACE_STATE,
+        id: 'tpl-city-pulse',
+        isTemplate: true,
+        name: 'City Pulse Challenge',
+        category: 'Multisport',
+        description: 'Ett högintensivt stadslopp där ni navigerar mellan landmärken och löser kluriga uppgifter. Perfekt för teambuilding eller kompisgänget.',
+        eventType: 'Tävling',
+        winCondition: 'fastest_time',
+        checkpoints: [
+            { id: '1', name: 'Torget', location: null, type: 'mandatory', points: 0, radiusMeters: 30, color: '#3b82f6', terrainHint: 'Central square or plaza', description: 'Starta klockan! Hitta statyn.' },
+            { id: '2', name: 'Brofästet', location: null, type: 'mandatory', points: 0, radiusMeters: 30, color: '#3b82f6', terrainHint: 'Bridge or crossing', challenge: 'Ta en gruppbild med bron i bakgrunden.' },
+            { id: '3', name: 'Höjden', location: null, type: 'mandatory', points: 0, radiusMeters: 30, color: '#3b82f6', terrainHint: 'High point or hill', description: 'Spring upp för trapporna!' },
+            { id: '4', name: 'Parken', location: null, type: 'mandatory', points: 0, radiusMeters: 30, color: '#3b82f6', terrainHint: 'Park area', quiz: { question: 'Vilket år grundades er stad?', options: ['1200-talet', '1600-talet', '1800-talet', 'Ingen aning'], correctOptionIndex: 3 } }
+        ],
+        coverImage: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=800&q=80',
+        terrainType: 'urban'
+    },
+    {
+        ...INITIAL_RACE_STATE,
+        id: 'tpl-family-fun',
+        isTemplate: true,
+        name: 'Familjeäventyret',
+        category: 'Vandring',
+        description: 'En lugn och rolig runda för hela familjen med fokus på natur och lek. Ingen tidspress, bara upptäckarglädje.',
+        eventType: 'Äventyr',
+        winCondition: 'most_points',
+        checkpoints: [
+            { id: '1', name: 'Myrstacken', location: null, type: 'mandatory', points: 5, radiusMeters: 20, color: '#10B981', terrainHint: 'Forest edge', description: 'Se om ni kan hitta några myror!' },
+            { id: '2', name: 'Fågelspaning', location: null, type: 'mandatory', points: 5, radiusMeters: 20, color: '#10B981', terrainHint: 'Open field or trees', challenge: 'Hitta 3 olika sorters blad.' },
+            { id: '3', name: 'Picknick-gläntan', location: null, type: 'mandatory', points: 10, radiusMeters: 20, color: '#10B981', terrainHint: 'Nice grassy area', description: 'Dags för fika?' },
+            { id: '4', name: 'Vattenhålet', location: null, type: 'mandatory', points: 5, radiusMeters: 20, color: '#10B981', terrainHint: 'Near water or fountain', quiz: { question: 'Vad äter ekorrar helst?', options: ['Köttbullar', 'Kottar & Nötter', 'Gräs', 'Fisk'], correctOptionIndex: 1 } }
+        ],
+        coverImage: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80',
+        terrainType: 'trail'
+    }
+];
+
 export const AI_INSTRUCTION_BASE = `
 Role: Du är en AI-assistent för en äventyrstävling (Quester) där alla deltagare startar samtidigt från samma plats och försöker nå mål eller samla poäng.
 Din viktigaste uppgift är att sköta logiken för banläggning via verktyget \`update_race_plan\`.

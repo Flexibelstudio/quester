@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from './services/dataService'; 
+import { GeminiService } from './services/gemini'; // Needed for direct template calls
 import { INITIAL_RACE_STATE, INITIAL_TIER_CONFIGS } from './constants';
-import { RaceEvent, UserTier, TierConfig } from './types';
+import { RaceEvent, UserTier, TierConfig, Checkpoint } from './types';
 import { ParticipantView } from './components/ParticipantView';
 import { PublicEventBrowser } from './components/PublicEventBrowser';
 import { SystemAdminView } from './components/SystemAdminView';
@@ -14,11 +15,12 @@ import { OrganizerView } from './components/OrganizerView';
 import { ProfileDialog } from './components/ProfileDialog';
 import { EventSettingsDialog } from './components/EventSettingsDialog'; // Hoisted
 import { ErrorBoundary } from './components/ErrorBoundary'; 
+import { TemplateBrowser } from './components/TemplateBrowser'; // NEW
 import { WifiOff, Loader2 } from 'lucide-react';
 import { accessControlService } from './services/accessControl';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-type ViewMode = 'landing' | 'dashboard' | 'organizer' | 'participant' | 'browser' | 'system_admin';
+type ViewMode = 'landing' | 'dashboard' | 'organizer' | 'participant' | 'browser' | 'system_admin' | 'templates';
 
 // Inner App Component that uses the AuthContext
 function AppContent() {
@@ -39,6 +41,9 @@ function AppContent() {
   // UI Flags
   const [isCreatingRace, setIsCreatingRace] = useState(false);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
+  const [isTemplateBrowserOpen, setIsTemplateBrowserOpen] = useState(false); // New flag
+  const [isTemplateProcessing, setIsTemplateProcessing] = useState(false); // Loading state for template AI
+
   // NEW: State to hold the specific reason why the upgrade dialog was opened
   const [upgradeTriggerMessage, setUpgradeTriggerMessage] = useState<string>('');
   
@@ -156,19 +161,15 @@ function AppContent() {
   const handleRaceWizardComplete = async (newRaceData: Partial<RaceEvent>) => {
       if (!user) return;
       
-      // Determine if this is an official "Quester" event created by an admin
-      // The wizard sets ownerId to 'QUESTER_SYSTEM' in that case.
-      // Otherwise, default to current user.
       const isOfficial = newRaceData.ownerId === 'QUESTER_SYSTEM';
 
       const finalRaceData: RaceEvent = {
           ...INITIAL_RACE_STATE,
           ...newRaceData,
           id: `race-${Date.now()}`,
-          // If official, preserve the overrides from wizard. Else use user profile.
           ownerId: isOfficial ? 'QUESTER_SYSTEM' : user.id,
           ownerName: isOfficial ? 'Quester Original' : user.name,
-          ownerPhotoURL: isOfficial ? '' : user.photoURL, // Empty string = Use Quester Logo in UI
+          ownerPhotoURL: isOfficial ? '' : user.photoURL, 
           creatorTier: user.tier,
           status: newRaceData.status || 'draft',
           results: []
@@ -185,11 +186,10 @@ function AppContent() {
 
   const handleDirectRaceCreate = async (event: RaceEvent) => {
      if (user) {
-         event.ownerId = user.id; // Set Owner
+         event.ownerId = user.id; 
          event.ownerName = user.name;
          event.ownerPhotoURL = user.photoURL;
          event.creatorTier = user.tier;
-         // Mark as instant game so it doesn't clutter Organizer Dashboard
          event.isInstantGame = true; 
      }
      
@@ -204,6 +204,91 @@ function AppContent() {
      setViewMode('participant');
   };
 
+  // --- TEMPLATE INSTANTIATION LOGIC ---
+  const handleUseTemplate = async (template: RaceEvent, location: { lat: number, lng: number }) => {
+      if (!user) return;
+      setIsTemplateProcessing(true);
+
+      // Create base event from template
+      const baseEvent: RaceEvent = {
+          ...template,
+          id: `tpl-${Date.now()}`,
+          ownerId: user.id,
+          ownerName: user.name,
+          ownerPhotoURL: user.photoURL,
+          creatorTier: user.tier,
+          status: 'draft',
+          startLocation: { ...location, radiusMeters: 50 },
+          finishLocation: { ...location, radiusMeters: 50 },
+          startCity: 'Din Plats',
+          finishCity: 'Din Plats',
+          isTemplate: false, // It's an instance now
+          checkpoints: [] // Empty checkpoints initially, AI will fill them
+      };
+
+      // Construct AI Prompt to map checkpoints
+      const prompt = `
+        ROLE: You are the "Template Instantiator".
+        TASK: Take the provided blueprint checkpoints and place them intelligently around the Start Location.
+        
+        CONTEXT:
+        Start Location: { lat: ${location.lat}, lng: ${location.lng} }
+        Template Name: ${template.name}
+        
+        BLUEPRINT CHECKPOINTS:
+        ${JSON.stringify(template.checkpoints.map(c => ({
+            name: c.name,
+            desc: c.description,
+            hint: c.terrainHint || 'Place somewhere suitable'
+        })))}
+        
+        INSTRUCTION:
+        1. Keep the names, descriptions, quiz data, and points exactly as they are.
+        2. Assign valid 'location' {lat, lng} to each checkpoint based on the 'hint' relative to the Start Location.
+        3. Spread them out to form a loop of approx 1-2 km.
+        4. Use 'update_race_plan' to apply the mapped checkpoints.
+      `;
+
+      // Use temporary Gemini Service
+      const gemini = new GeminiService(
+          async (updatedData) => {
+              // Merge AI result with base event (preserving quiz data from template if AI missed it, though prompt says keep it)
+              const finalEvent = { ...baseEvent, ...updatedData };
+              
+              // Ensure quiz data from template persists if AI only returned locations
+              if (updatedData.checkpoints) {
+                  finalEvent.checkpoints = updatedData.checkpoints.map((cp: Checkpoint, idx: number) => {
+                      const templateCp = template.checkpoints[idx] || {};
+                      return {
+                          ...templateCp, // Base properties
+                          ...cp, // Overwritten location from AI
+                          id: `cp-${Date.now()}-${idx}` // New ID
+                      };
+                  });
+              }
+
+              await api.events.saveEvent(finalEvent);
+              await refreshEvents();
+              
+              setRaceData(finalEvent);
+              setIsTemplateProcessing(false);
+              setIsTemplateBrowserOpen(false);
+              setViewMode('organizer');
+          },
+          () => {} // No analysis needed here
+      );
+      
+      gemini.startNewSession('CREATOR'); // Use CREATOR capability for better mapping
+      
+      try {
+          await gemini.sendMessage(prompt);
+      } catch (e) {
+          console.error("Template Instantiation Failed", e);
+          alert("Kunde inte skapa eventet. AI-tjänsten svarade inte.");
+          setIsTemplateProcessing(false);
+      }
+  };
+
   // useCallback ensures that the function reference is stable, 
   // preventing GeminiService from being re-instantiated on every render in OrganizerView
   const handleRaceUpdate = useCallback((updates: Partial<RaceEvent>) => {
@@ -211,19 +296,14 @@ function AppContent() {
       setHasUnsavedChanges(true);
   }, []);
 
-  // UPDATED: Accepts optional overrides to ensure atomic saving of critical state (like Publish)
   const handleManualSave = async (dataOverride?: Partial<RaceEvent>) => {
-      // Merge current state with any overrides (e.g. status: 'published')
       const dataToSave = { ...raceData, ...(dataOverride || {}) };
       
       if (user) {
-          // Only force override owner info if it is missing OR if it's not a special system ID
-          // This prevents overwriting 'QUESTER_SYSTEM' with the admin's personal ID during edit
           if (!dataToSave.ownerId) {
               dataToSave.ownerId = user.id;
               dataToSave.ownerName = user.name;
           } else if (dataToSave.ownerId !== 'QUESTER_SYSTEM' && dataToSave.ownerId === user.id) {
-              // Only update name if it matches current user, keeping profile sync
               if (!dataToSave.ownerName) dataToSave.ownerName = user.name;
           }
       }
@@ -231,7 +311,6 @@ function AppContent() {
       await api.events.saveEvent(dataToSave);
       await refreshEvents();
       
-      // If we had overrides, update local state to match to ensure UI sync
       if (dataOverride) {
           setRaceData(dataToSave);
       }
@@ -243,7 +322,6 @@ function AppContent() {
       setTimeout(() => document.title = originalText, 2000);
   };
 
-  // NEW: Handler for direct updates from Dashboard (e.g. Publish)
   const handleExternalEventUpdate = async (updatedEvent: RaceEvent) => {
       await api.events.saveEvent(updatedEvent);
       await refreshEvents();
@@ -253,7 +331,7 @@ function AppContent() {
       if (!dashboardSettingsEvent) return;
       const updatedEvent = { ...dashboardSettingsEvent, ...updates };
       await api.events.saveEvent(updatedEvent);
-      await refreshEvents(); // Refresh dashboard list
+      await refreshEvents(); 
       setDashboardSettingsEvent(null);
   };
 
@@ -262,7 +340,7 @@ function AppContent() {
           if (!window.confirm('Du har osparade ändringar. Är du säker på att du vill lämna?')) {
               return;
           }
-          await refreshEvents(); // Revert to saved
+          await refreshEvents(); 
       }
       setHasUnsavedChanges(false);
       setViewMode('dashboard');
@@ -296,7 +374,6 @@ function AppContent() {
       )
   }
 
-  // Fallback user profile for views that expect it (prevents null checks everywhere)
   const safeProfile = user || { id: 'guest', name: 'Gäst', email: '', tier: 'SCOUT', createdRaceCount: 0 };
 
   return (
@@ -312,6 +389,15 @@ function AppContent() {
         tierConfigs={tierConfigs}
         customMessage={upgradeTriggerMessage} 
       />
+      
+      {/* Template Browser Modal */}
+      {isTemplateBrowserOpen && (
+          <TemplateBrowser 
+              onUseTemplate={handleUseTemplate}
+              onCancel={() => setIsTemplateBrowserOpen(false)}
+              isProcessing={isTemplateProcessing}
+          />
+      )}
       
       {/* Profile Dialog */}
       {user && (
@@ -340,7 +426,6 @@ function AppContent() {
         <LandingPage 
             userProfile={safeProfile}
             onSelectTier={(t) => { 
-                // PREVENT DOWNGRADE LOGIC
                 const isGuest = safeProfile.id === 'guest';
                 const tierLevels: Record<string, number> = { 'SCOUT': 0, 'CREATOR': 1, 'MASTER': 2 };
                 
@@ -384,7 +469,7 @@ function AppContent() {
                 setViewMode('organizer'); 
             }}
             onCreateEvent={handleCreateEventClick}
-            onDeleteEvent={handleDeleteEvent} // Direct pass, confirmation logic moved to Dashboard
+            onDeleteEvent={handleDeleteEvent} 
             onOpenParticipant={(e) => { 
                 if(e) setRaceData(e); 
                 setIsTestRun(false);
@@ -399,7 +484,8 @@ function AppContent() {
             onDirectRaceCreate={handleDirectRaceCreate}
             onOpenProfile={() => setIsProfileOpen(true)}
             onOpenSettings={(e) => setDashboardSettingsEvent(e)}
-            onUpdateEvent={handleExternalEventUpdate} // Pass handler
+            onUpdateEvent={handleExternalEventUpdate}
+            onOpenLibrary={() => setIsTemplateBrowserOpen(true)} // Wire up the button
           />
         </>
       )}
@@ -442,7 +528,6 @@ function AppContent() {
                 setViewMode(previousViewMode);
             }} 
             onUpdateResult={async (res) => {
-                // Update local raceData to reflect changes in UI
                 const currentResults = raceData.results || [];
                 const idx = currentResults.findIndex(r => r.id === res.id);
                 const newResults = idx !== -1 ? currentResults.map((r, i) => i === idx ? res : r) : [...currentResults, res];
@@ -450,8 +535,6 @@ function AppContent() {
                 const updatedRaceData = { ...raceData, results: newResults };
                 setRaceData(updatedRaceData);
 
-                // OPTIMISTIC UPDATE: Update global 'allEvents' immediately 
-                // so dashboards/browsers reflect the change instantly without refresh.
                 setAllEvents(prevEvents => prevEvents.map(evt => {
                     if (evt.id === raceData.id) {
                         return { ...evt, results: newResults };
