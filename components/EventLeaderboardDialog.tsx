@@ -1,7 +1,7 @@
 
 import React, { useMemo } from 'react';
 import { RaceEvent, ParticipantResult } from '../types';
-import { X, Trophy, Medal, Clock, Star, Crown } from 'lucide-react';
+import { X, Trophy, Medal, Clock, Star, Crown, AlertTriangle } from 'lucide-react';
 
 interface EventLeaderboardDialogProps {
   isOpen: boolean;
@@ -13,12 +13,10 @@ export const EventLeaderboardDialog: React.FC<EventLeaderboardDialogProps> = ({ 
   if (!isOpen || !event) return null;
 
   const sortedResults = useMemo(() => {
-    const results = [...(event.results || [])];
+    // Only include FINISHED participants in the leaderboard presentation
+    const results = [...(event.results || [])].filter(r => r.status === 'finished');
+    
     return results.sort((a, b) => {
-        // Handle DNF/Running -> Put them last
-        if (a.status !== 'finished' && b.status === 'finished') return 1;
-        if (a.status === 'finished' && b.status !== 'finished') return -1;
-
         if (event.winCondition === 'most_points') {
             // Sort by Points DESC, then Time ASC
             if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
@@ -30,6 +28,13 @@ export const EventLeaderboardDialog: React.FC<EventLeaderboardDialogProps> = ({ 
         }
     });
   }, [event]);
+
+  // Helper text for scoring model
+  const getScoringInfo = () => {
+      if (event.scoreModel === 'rogaining') return `Rogaining: ${event.timeLimitMinutes} min gräns. Straff: ${event.pointsPerMinute}p/min.`;
+      if (event.scoreModel === 'time_bonus') return `Tidsbonus: Par-tid ${event.parTimeMinutes} min. Bonus: ${event.pointsPerMinute}p/min.`;
+      return event.winCondition === 'most_points' ? 'Sorterat på flest poäng' : 'Sorterat på snabbast tid';
+  };
 
   return (
     <div className="fixed inset-0 z-[5000] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
@@ -44,7 +49,7 @@ export const EventLeaderboardDialog: React.FC<EventLeaderboardDialogProps> = ({ 
                 </div>
                 <h2 className="text-2xl font-black text-white leading-tight">{event.name}</h2>
                 <p className="text-sm text-gray-400 mt-1">
-                    {event.winCondition === 'most_points' ? 'Sorterat på poäng' : 'Sorterat på tid'}
+                    {getScoringInfo()}
                 </p>
             </div>
             <button 
@@ -60,69 +65,81 @@ export const EventLeaderboardDialog: React.FC<EventLeaderboardDialogProps> = ({ 
             {sortedResults.length === 0 && (
                 <div className="text-center py-12 text-gray-500">
                     <Medal className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                    <p>Inga resultat registrerade ännu.</p>
+                    <p>Inga godkända resultat registrerade ännu.</p>
                 </div>
             )}
 
             {sortedResults.map((res, index) => {
-                const isFinished = res.status === 'finished';
                 let rankStyle = "bg-gray-800 border-gray-700 text-gray-400";
                 let rankIcon = <span className="font-mono font-bold text-lg">{index + 1}</span>;
 
-                if (isFinished) {
-                    if (index === 0) {
-                        rankStyle = "bg-yellow-900/20 border-yellow-500/50 text-yellow-500";
-                        rankIcon = <Crown className="w-6 h-6 fill-yellow-500" />;
-                    } else if (index === 1) {
-                        rankStyle = "bg-slate-700/30 border-slate-400/50 text-slate-300";
-                        rankIcon = <Medal className="w-6 h-6 text-slate-300" />;
-                    } else if (index === 2) {
-                        rankStyle = "bg-orange-900/20 border-orange-600/50 text-orange-400";
-                        rankIcon = <Medal className="w-6 h-6 text-orange-600" />;
-                    }
+                if (index === 0) {
+                    rankStyle = "bg-yellow-900/20 border-yellow-500/50 text-yellow-500";
+                    rankIcon = <Crown className="w-6 h-6 fill-yellow-500" />;
+                } else if (index === 1) {
+                    rankStyle = "bg-slate-700/30 border-slate-400/50 text-slate-300";
+                    rankIcon = <Medal className="w-6 h-6 text-slate-300" />;
+                } else if (index === 2) {
+                    rankStyle = "bg-orange-900/20 border-orange-600/50 text-orange-400";
+                    rankIcon = <Medal className="w-6 h-6 text-orange-600" />;
                 }
 
                 return (
                     <div 
                         key={res.id} 
-                        className={`flex items-center p-3 rounded-xl border ${rankStyle} ${!isFinished ? 'opacity-60' : ''}`}
+                        className={`flex flex-col p-3 rounded-xl border ${rankStyle}`}
                     >
-                        <div className="w-10 flex justify-center shrink-0">
-                            {rankIcon}
-                        </div>
-                        
-                        <div className="flex items-center gap-3 flex-1 min-w-0 px-2">
-                            <div className="w-10 h-10 rounded-full bg-gray-800 border border-white/10 overflow-hidden shrink-0">
-                                {res.profileImage ? (
-                                    <img src={res.profileImage} alt={res.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-500">
-                                        {res.name.charAt(0)}
-                                    </div>
-                                )}
+                        <div className="flex items-center w-full">
+                            <div className="w-10 flex justify-center shrink-0">
+                                {rankIcon}
                             </div>
-                            <div className="truncate">
-                                <div className="font-bold text-white text-sm truncate">{res.name}</div>
-                                {res.teamName && <div className="text-xs text-gray-500 truncate">{res.teamName}</div>}
+                            
+                            <div className="flex items-center gap-3 flex-1 min-w-0 px-2">
+                                <div className="w-10 h-10 rounded-full bg-gray-800 border border-white/10 overflow-hidden shrink-0">
+                                    {res.profileImage ? (
+                                        <img src={res.profileImage} alt={res.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-500">
+                                            {res.name.charAt(0)}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="truncate">
+                                    <div className="font-bold text-white text-sm truncate">{res.name}</div>
+                                    {res.teamName && <div className="text-xs text-gray-500 truncate">{res.teamName}</div>}
+                                </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                                <div className="font-mono font-bold text-white text-lg leading-none">
+                                    {event.winCondition === 'most_points' ? res.totalPoints : res.finishTime}
+                                </div>
+                                <div className="text-[10px] text-gray-500 uppercase font-bold mt-0.5">
+                                    {event.winCondition === 'most_points' ? 'Poäng' : 'Tid'}
+                                </div>
                             </div>
                         </div>
 
-                        <div className="text-right shrink-0">
-                            {isFinished ? (
-                                <>
-                                    <div className="font-mono font-bold text-white text-lg leading-none">
-                                        {event.winCondition === 'most_points' ? res.totalPoints : res.finishTime}
-                                    </div>
-                                    <div className="text-[10px] text-gray-500 uppercase font-bold mt-0.5">
-                                        {event.winCondition === 'most_points' ? 'Poäng' : 'Tid'}
-                                    </div>
-                                </>
-                            ) : (
-                                <span className="text-xs font-bold bg-gray-700 text-gray-300 px-2 py-1 rounded">
-                                    {res.status === 'dnf' ? 'DNF' : 'LÖPER'}
+                        {/* Breakdown (Expanded view if bonus/penalty exists) */}
+                        {(res.timePenaltyPoints || res.timeBonusPoints) ? (
+                            <div className="mt-2 pt-2 border-t border-white/5 flex justify-end gap-3 text-[10px] font-mono">
+                                <span className="text-gray-400">
+                                    Tid: {res.finishTime}
                                 </span>
-                            )}
-                        </div>
+                                {res.timePenaltyPoints ? (
+                                    <span className="text-red-400 font-bold flex items-center gap-1">
+                                        <AlertTriangle className="w-3 h-3" />
+                                        -{res.timePenaltyPoints}p Straff
+                                    </span>
+                                ) : null}
+                                {res.timeBonusPoints ? (
+                                    <span className="text-green-400 font-bold flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        +{res.timeBonusPoints}p Bonus
+                                    </span>
+                                ) : null}
+                            </div>
+                        ) : null}
                     </div>
                 );
             })}

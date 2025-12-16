@@ -41,8 +41,10 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({ isOpen, on
   useEffect(() => {
       const load = async () => {
           let allScores = await api.leaderboard.getAllScores();
-          // FILTER: Only show entries with score > 0
-          let filtered = allScores.filter(s => s.mode === mode && s.score > 0);
+          
+          // FILTER: Only show entries with score > 0 AND NOT DNF
+          // We check specifically for 'dnf' to exclude them. Undefined status is treated as finished for backward compatibility.
+          let filtered = allScores.filter(s => s.mode === mode && s.score > 0 && s.status !== 'dnf');
 
           if (filterType === 'group' && groupFilter) {
               filtered = filtered.filter(s => 
@@ -169,12 +171,9 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({ isOpen, on
                                 <div className="text-xs text-gray-500 flex items-center gap-2">
                                     <span>{new Date(score.timestamp).toLocaleDateString()}</span>
                                     {isZombie && (
-                                        <span className={score.status === 'dnf' ? 'text-red-500 font-bold' : 'text-green-500'}>
-                                            • {score.status === 'dnf' ? 'DNF (Blev biten)' : 'Överlevare'}
+                                        <span className='text-green-500'>
+                                            • Överlevare
                                         </span>
-                                    )}
-                                    {!isZombie && score.status === 'dnf' && (
-                                        <span className="text-red-500 font-bold">• DNF (Avbröt)</span>
                                     )}
                                 </div>
                             </div>
