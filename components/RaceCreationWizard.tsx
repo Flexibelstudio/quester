@@ -28,6 +28,7 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
     eventType: 'Lopp',
     language: 'sv',
     startCity: '',
+    finishCity: '',
     
     // Logic Settings (Controlled by Archetype in Step 2)
     winCondition: 'fastest_time' as WinCondition,
@@ -469,6 +470,27 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                              </div>
                          )}
                      </div>
+
+                     {/* Terrain Selection */}
+                     <div className="mt-6">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 block">Terräng</label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <button
+                                onClick={() => setFormData({...formData, terrainType: 'trail'})}
+                                className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${formData.terrainType === 'trail' ? 'bg-green-900/20 border-green-500 text-white shadow-lg' : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-700'}`}
+                            >
+                                <Trees className={`w-5 h-5 ${formData.terrainType === 'trail' ? 'text-green-500' : 'text-gray-500'}`} />
+                                <span className="font-bold text-sm">Stig / Väg</span>
+                            </button>
+                            <button
+                                onClick={() => setFormData({...formData, terrainType: 'off_road'})}
+                                className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${formData.terrainType === 'off_road' ? 'bg-orange-900/20 border-orange-500 text-white shadow-lg' : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-gray-700'}`}
+                            >
+                                <Mountain className={`w-5 h-5 ${formData.terrainType === 'off_road' ? 'text-orange-500' : 'text-gray-500'}`} />
+                                <span className="font-bold text-sm">Obanat / Terräng</span>
+                            </button>
+                        </div>
+                     </div>
                  </div>
              )}
 
@@ -541,36 +563,50 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tid & Plats</label>
                           </div>
                           
-                          <div className="grid grid-cols-1 gap-4">
+                          {/* Start / Finish City Inputs */}
+                          <div className="grid grid-cols-2 gap-4 mb-4">
                               <div className="relative">
-                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Startort (Söker automatiskt)</label>
-                                <MapPin className={`absolute left-3 top-8 w-5 h-5 ${userLocation ? 'text-green-500' : 'text-gray-500'}`} />
-                                <input 
-                                    type="text"
-                                    value={formData.startCity}
-                                    onChange={(e) => setFormData({...formData, startCity: e.target.value})}
-                                    placeholder={userLocation ? "Använder din GPS (eller skriv stad)" : "T.ex. Stockholm"}
-                                    className="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-600 focus:border-blue-500 transition-all"
+                                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                      <Compass className="w-3 h-3"/> Startort
+                                  </label>
+                                  <input 
+                                      type="text"
+                                      value={formData.startCity}
+                                      onChange={(e) => setFormData({...formData, startCity: e.target.value})}
+                                      placeholder={userLocation ? "Din GPS (eller skriv)" : "T.ex. Stockholm"}
+                                      className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-blue-500 transition-all"
+                                  />
+                              </div>
+                              <div className="relative">
+                                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                      <Flag className="w-3 h-3"/> Målort
+                                  </label>
+                                  <input 
+                                      type="text"
+                                      value={formData.finishCity}
+                                      onChange={(e) => setFormData({...formData, finishCity: e.target.value})}
+                                      placeholder="Samma som start"
+                                      className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-blue-500 transition-all"
+                                  />
+                              </div>
+                          </div>
+
+                          {formData.startMode === 'mass_start' ? (
+                              <div className="relative animate-in fade-in slide-in-from-top-2">
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Datum & Starttid</label>
+                                <input
+                                    type="datetime-local"
+                                    value={formData.startDateTime}
+                                    onChange={(e) => setFormData({...formData, startDateTime: e.target.value})}
+                                    className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition-all"
                                 />
                               </div>
-
-                              {formData.startMode === 'mass_start' ? (
-                                  <div className="relative animate-in fade-in slide-in-from-top-2">
-                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Datum & Starttid</label>
-                                    <input
-                                        type="datetime-local"
-                                        value={formData.startDateTime}
-                                        onChange={(e) => setFormData({...formData, startDateTime: e.target.value})}
-                                        className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition-all"
-                                    />
-                                  </div>
-                              ) : (
-                                  <div className="p-3 bg-blue-900/20 border border-blue-500/30 rounded-xl text-xs text-blue-200 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-                                      <div className="bg-blue-900/50 p-2 rounded-lg"><Info className="w-4 h-4 text-blue-400" /></div>
-                                      <span>Eventet blir tillgängligt för deltagare direkt när du publicerar det. Ingen starttid behövs.</span>
-                                  </div>
-                              )}
-                          </div>
+                          ) : (
+                              <div className="p-3 bg-blue-900/20 border border-blue-500/30 rounded-xl text-xs text-blue-200 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                                  <div className="bg-blue-900/50 p-2 rounded-lg"><Info className="w-4 h-4 text-blue-400" /></div>
+                                  <span>Eventet blir tillgängligt för deltagare direkt när du publicerar det. Ingen starttid behövs.</span>
+                              </div>
+                          )}
                       </div>
 
                       {/* SEKTION C: SYNLIGHET & RESULTAT */}
