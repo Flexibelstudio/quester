@@ -142,10 +142,17 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
     setIsGeneratingContent(true); 
     
     try {
-        const fullPrompt = `CONTEXT: User Location ${raceData.startLocation.lat},${raceData.startLocation.lng}. TASK: ${prompt}`;
-        await geminiServiceRef.current.sendMessage(fullPrompt);
-    } catch (e) {
-        console.error(e);
+        const fullPrompt = `CONTEXT: User Location ${raceData.startLocation.lat},${raceData.startLocation.lng}. TASK: ${prompt}. VIKTIGT: Du MÅSTE använda verktyget 'update_race_plan' för att utföra ändringarna. Svara inte bara med text.`;
+        const result = await geminiServiceRef.current.sendMessage(fullPrompt);
+        
+        if (!result.toolCalled) {
+            console.warn("AI returned text but no tool call:", result.text);
+            alert(`AI:n förstod kommandot men kunde inte uppdatera kartan. Svar från AI: "${result.text || 'Inget svar'}"`);
+        }
+
+    } catch (e: any) {
+        console.error("Content Gen Error:", e);
+        alert(`Ett fel uppstod vid kontakt med AI-tjänsten: ${e.message || "Okänt fel"}. Försök igen.`);
     } finally {
         setIsGeneratingContent(false);
     }

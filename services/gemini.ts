@@ -44,8 +44,9 @@ export class GeminiService {
 
   /**
    * Sends a message to the AI via Cloud Function.
+   * Returns object indicating if a tool was successfully called.
    */
-  async sendMessage(message: string | any[]): Promise<string> {
+  async sendMessage(message: string | any[]): Promise<{ text: string, toolCalled: boolean }> {
     if (USE_CLOUD_PROXY) {
         try {
             const payload = {
@@ -75,6 +76,8 @@ export class GeminiService {
             this.conversationHistory.push({ role: 'user', parts: [{ text: typeof message === 'string' ? message : JSON.stringify(message) }] });
             this.conversationHistory.push({ role: 'model', parts: [{ text: data.textResponse || "Action executed." }] });
 
+            let toolCalled = false;
+
             // Handle Tool Calls returned from Server
             if (data.toolCalls) {
                 for (const call of data.toolCalls) {
@@ -82,20 +85,22 @@ export class GeminiService {
                     
                     if (call.name === "update_race_plan") {
                         this.onRaceUpdate(call.args);
+                        toolCalled = true;
                     } else if (call.name === "provide_race_analysis") {
                         this.onRaceAnalysis(call.args);
+                        toolCalled = true;
                     }
                 }
             }
 
-            return data.textResponse || "Jag har uppdaterat kartan enligt önskemål.";
+            return { text: data.textResponse || "Jag har uppdaterat kartan enligt önskemål.", toolCalled };
 
         } catch (error) {
             console.error("Gemini Proxy Error:", error);
-            return "Kunde inte nå AI-tjänsten. Kontrollera din anslutning eller försök igen senare.";
+            throw error; // Re-throw to let UI handle the alert
         }
     }
 
-    return "Cloud Proxy is disabled.";
+    return { text: "Cloud Proxy is disabled.", toolCalled: false };
   }
 }

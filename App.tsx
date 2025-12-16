@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from './services/dataService'; 
 import { INITIAL_RACE_STATE, INITIAL_TIER_CONFIGS } from './constants';
 import { RaceEvent, UserTier, TierConfig } from './types';
@@ -204,10 +204,12 @@ function AppContent() {
      setViewMode('participant');
   };
 
-  const handleRaceUpdate = (updates: Partial<RaceEvent>) => {
+  // useCallback ensures that the function reference is stable, 
+  // preventing GeminiService from being re-instantiated on every render in OrganizerView
+  const handleRaceUpdate = useCallback((updates: Partial<RaceEvent>) => {
       setRaceData(prev => ({ ...prev, ...updates }));
       setHasUnsavedChanges(true);
-  };
+  }, []);
 
   const handleManualSave = async () => {
       // Ensure ownerId is preserved or set
