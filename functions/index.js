@@ -1,3 +1,4 @@
+
 // OBS: Vi tvingar fram v1 (Generation 1) här för att slippa Cloud Run-problemen
 const functions = require("firebase-functions/v1");
 const { GoogleGenAI } = require("@google/genai");
@@ -67,7 +68,7 @@ const updateRacePlanTool = {
               }
             }
           },
-          required: ["name", "location", "type"]
+          required: ["name", "type"]
         }
       },
       results: { type: "ARRAY", items: { type: "OBJECT", properties: { /* minimal result schema */ } } }
@@ -99,18 +100,15 @@ Role: You are the Quest Master (QM), the AI engine behind the app "Quester".
 Din viktigaste uppgift är att sköta logiken för banläggning via verktyget \`update_race_plan\`.
 
 **CONTENT GENERATION (QUIZ/CHALLENGES):**
-Om användaren ber om att lägga till frågor (quiz) eller utmaningar:
-1. TITTA på "Current State" i prompten. Om det finns en lista på checkpoints med ID:n, **ANVÄND DESSA ID:N**.
-2. Du ska returnera hela listan av checkpoints i verktyget, men med \`quiz\` eller \`challenge\` tillagt på varje objekt.
+Om användaren ber om att lägga till frågor (quiz) eller utmaningar, och inte specificerar en plats:
+1. Skapa checkpoints i "Draft Mode" genom att helt UTELÄMNA fältet \`location\` i objektet. Använd INTE null.
+2. Detta låter användaren placera ut dem manuellt senare.
 3. För Quiz: Måste innehålla \`question\`, \`options\` (3-4 alternativ) och \`correctOptionIndex\`.
-4. Skapa INTE nya checkpoints om det redan finns tillräckligt många för uppgiften, uppdatera istället de befintliga.
 
-**ABSOLUT FÖRBUD:**
-Du får INTE ändra \`location\` (koordinater) på en checkpoint som redan har ett ID. 
-Om du lägger till en fråga på en existerande checkpoint, kopiera exakt samma koordinater som du fick i input. 
-Du får bara generera nya koordinater om du skapar en HELT NY checkpoint (som inte fanns i input-listan).
+**UPPDATERA EXISTERNADE:**
+Om du lägger till en fråga på en existerande checkpoint, kopiera exakt samma koordinater som du fick i input om de finns.
 
-**GEOGRAFI:** Utgå alltid från angivna Start/Mål koordinater.
+**GEOGRAFI:** Utgå alltid från angivna Start/Mål koordinater om du ska placera ut nya checkpoints på kartan (inte drafts).
 **BILDER:** Om användaren vill ha bildbevis, sätt \`requiresPhoto: true\` på checkpoints.
 `;
 
