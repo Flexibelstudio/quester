@@ -87,25 +87,38 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
     geminiServiceRef.current = new GeminiService(
         (updatedData) => {
              const currentRaceData = raceDataRef.current;
-             if (updatedData.checkpoints && currentRaceData.checkpoints.length > 0) {
-                 updatedData.checkpoints = updatedData.checkpoints.map(newCp => {
-                     const existingCp = currentRaceData.checkpoints.find(c => c.id === newCp.id);
-                     if (existingCp) {
-                         // Preserve location if AI returns partial update, or overwrite if newCp has location
-                         // If AI returns null location (draft), it overwrites existing location?
-                         // Instruction says: "Copy exact same coordinates... if exisiting".
-                         // Safe to assume we keep existing unless new is explicitly provided AND different?
-                         // Actually, let's trust the AI output but fallback to existing location if new is missing/null AND it's an update.
-                         // But for Draft Mode feature, we allow AI to create nulls.
-                         return {
-                             ...newCp,
-                             location: newCp.location || existingCp.location, // Prefer new, fallback to old
-                             radiusMeters: existingCp.radiusMeters
+             
+             // Smart Merge / Upsert Logic for Checkpoints
+             // This ensures we add new drafts without wiping existing checkpoints if the AI returns a partial list.
+             if (updatedData.checkpoints) {
+                 const mergedCheckpoints = [...currentRaceData.checkpoints];
+                 
+                 updatedData.checkpoints.forEach((incomingCp: Checkpoint) => {
+                     // 1. Ensure ID exists (AI might forget)
+                     if (!incomingCp.id) incomingCp.id = `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                     
+                     const existingIdx = mergedCheckpoints.findIndex(c => c.id === incomingCp.id);
+                     
+                     if (existingIdx !== -1) {
+                         // 2. Update existing (Merge fields)
+                         const existing = mergedCheckpoints[existingIdx];
+                         mergedCheckpoints[existingIdx] = {
+                             ...existing,
+                             ...incomingCp,
+                             // Preserve existing location if AI omits it during an content update (common case)
+                             // If incomingCp.location is explicitly null/undefined, we keep the old one 
+                             // UNLESS we are specifically handling a "remove location" action, but standard AI flow is additive.
+                             location: incomingCp.location ? incomingCp.location : existing.location
                          };
+                     } else {
+                         // 3. Insert new (Append)
+                         // If location is missing here, it correctly becomes a "Draft"
+                         mergedCheckpoints.push(incomingCp);
                      }
-                     return newCp;
                  });
+                 updatedData.checkpoints = mergedCheckpoints;
              }
+
              onUpdateRace(updatedData);
         },
         (analysis) => {

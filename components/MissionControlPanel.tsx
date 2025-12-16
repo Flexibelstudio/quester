@@ -65,7 +65,7 @@ const AiGeneratorSection: React.FC<{ onGenerate: (prompt: string) => void }> = (
     const handleRun = () => {
         let prompt = `Skapa ${count} st blandade quiz-frågor och utmaningar. Målgrupp: ${audience}. Tema: ${theme || 'Äventyr'}. Applicera på checkpoints.`;
         if (createDrafts) {
-            prompt += " Sätt 'location' till null för att skapa Drafts (oplacerade checkpoints).";
+            prompt += " Utelämna fältet 'location' helt för att skapa Drafts (oplacerade checkpoints). Ge dem unika namn.";
         }
         onGenerate(prompt);
     };

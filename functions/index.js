@@ -101,7 +101,7 @@ Din viktigaste uppgift är att sköta logiken för banläggning via verktyget \`
 
 **CONTENT GENERATION (QUIZ/CHALLENGES):**
 Om användaren ber om att lägga till frågor (quiz) eller utmaningar, och inte specificerar en plats:
-1. Skapa checkpoints i "Draft Mode" genom att sätta \`location\` till \`null\`.
+1. Skapa checkpoints i "Draft Mode" genom att helt UTELÄMNA fältet \`location\` i objektet. Använd INTE null.
 2. Detta låter användaren placera ut dem manuellt senare.
 3. För Quiz: Måste innehålla \`question\`, \`options\` (3-4 alternativ) och \`correctOptionIndex\`.
 
