@@ -60,13 +60,11 @@ const AiGeneratorSection: React.FC<{ onGenerate: (prompt: string) => void }> = (
     const [theme, setTheme] = useState('');
     const [count, setCount] = useState(5);
     const [audience, setAudience] = useState('Vuxna / Motionärer');
-    const [createDrafts, setCreateDrafts] = useState(true);
 
     const handleRun = () => {
         let prompt = `Skapa ${count} st blandade quiz-frågor och utmaningar. Målgrupp: ${audience}. Tema: ${theme || 'Äventyr'}. Applicera på checkpoints.`;
-        if (createDrafts) {
-            prompt += " Utelämna fältet 'location' helt för att skapa Drafts (oplacerade checkpoints). Ge dem unika namn.";
-        }
+        // Always force Draft Mode for content generation
+        prompt += " Utelämna fältet 'location' helt för att skapa Drafts (oplacerade checkpoints). Ge dem unika namn.";
         onGenerate(prompt);
     };
 
@@ -91,12 +89,9 @@ const AiGeneratorSection: React.FC<{ onGenerate: (prompt: string) => void }> = (
                     <input type="number" value={count} onChange={e => setCount(parseInt(e.target.value))} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white mt-1" />
                 </div>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer p-2 bg-slate-900 rounded border border-slate-800">
-                <input type="checkbox" checked={createDrafts} onChange={e => setCreateDrafts(e.target.checked)} className="rounded border-gray-600 bg-gray-800 text-purple-600" />
-                <span className="text-xs text-gray-300">Skapa som utkast (placera senare)</span>
-            </label>
+            
             <button onClick={handleRun} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2">
-                <Wand2 className="w-4 h-4" /> Generera
+                <Wand2 className="w-4 h-4" /> Generera (Utkast)
             </button>
         </div>
     );
