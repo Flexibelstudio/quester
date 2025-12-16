@@ -15,11 +15,11 @@ interface ChristmasHuntButtonProps {
 }
 
 const LOADING_MESSAGES = [
-  "Wrapping Gifts...",
-  "Summoning Grinches...",
-  "Light up the Bonfires...",
-  "Freezing Terrain...",
-  "Hiding Presents..."
+  "Slår in paket...",
+  "Kallar på Grinchar...",
+  "Tänder brasorna...",
+  "Fryser marken...",
+  "Gömmer julklapparna..."
 ];
 
 type GameScale = 'small' | 'medium' | 'large';

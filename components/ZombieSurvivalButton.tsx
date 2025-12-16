@@ -15,11 +15,11 @@ interface ZombieSurvivalButtonProps {
 }
 
 const LOADING_MESSAGES = [
-  "Scanning Satellite Imagery...",
-  "Identifying Walkable Paths...",
-  "Building Navigation Graph...",
-  "Detecting Heat Signatures...",
-  "Simulating Infection Spread..."
+  "Skannar satellitbilder...",
+  "Identifierar flyktvägar...",
+  "Bygger navigationsnät...",
+  "Söker värmesignaturer...",
+  "Simulerar smittspridning..."
 ];
 
 export const ZombieSurvivalButton: React.FC<ZombieSurvivalButtonProps> = ({ 
@@ -65,7 +65,7 @@ export const ZombieSurvivalButton: React.FC<ZombieSurvivalButtonProps> = ({
     setError(null);
 
     if (!navigator.geolocation) {
-      setError("GPS unavailable.");
+      setError("GPS ej tillgänglig.");
       setLoading(false);
       return;
     }
@@ -77,7 +77,7 @@ export const ZombieSurvivalButton: React.FC<ZombieSurvivalButtonProps> = ({
       },
       (err) => {
         console.error(err);
-        setError("GPS access denied.");
+        setError("Åtkomst till plats nekad.");
         setLoading(false);
       },
       { enableHighAccuracy: true }
