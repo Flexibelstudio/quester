@@ -12,7 +12,8 @@ import { AnalysisDialog } from './AnalysisDialog';
 import { ShareDialog } from './ShareDialog';
 import { AILoader } from './AILoader';
 import { MissionControlPanel } from './MissionControlPanel';
-import { Settings2 } from 'lucide-react';
+import { Settings2, Rocket } from 'lucide-react';
+import { ConfirmationDialog } from './ConfirmationDialog'; // Importerad
 
 interface OrganizerViewProps {
   raceData: RaceEvent;
@@ -51,12 +52,15 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
 }) => {
   // --- LOCAL STATE ---
   const [activeTool, setActiveTool] = useState<ToolType>('none');
-  const [placingCheckpointId, setPlacingCheckpointId] = useState<string | null>(null); // New: ID of draft being placed
+  const [placingCheckpointId, setPlacingCheckpointId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isResultsOpen, setIsResultsOpen] = useState(false);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [editingCheckpoint, setEditingCheckpoint] = useState<Checkpoint | null>(null);
+  
+  // Dialog State
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
   
   const [isPanelOpen, setIsPanelOpen] = useState(true);
 
@@ -68,7 +72,7 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
     name: 'Ny CP'
   });
 
-  // AI State (Used for AILoader message & Content Generation)
+  // AI State
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [aiLoaderMessage, setAiLoaderMessage] = useState("Skriver innehåll...");
   const [analysisData, setAnalysisData] = useState<RaceAnalysis | null>(null);
@@ -88,30 +92,22 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
         (updatedData) => {
              const currentRaceData = raceDataRef.current;
              
-             // Smart Merge / Upsert Logic for Checkpoints
-             // This ensures we add new drafts without wiping existing checkpoints if the AI returns a partial list.
              if (updatedData.checkpoints) {
                  const mergedCheckpoints = [...currentRaceData.checkpoints];
                  
                  updatedData.checkpoints.forEach((incomingCp: Checkpoint) => {
-                     // 1. Ensure ID exists (AI might forget)
                      if (!incomingCp.id) incomingCp.id = `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                      
                      const existingIdx = mergedCheckpoints.findIndex(c => c.id === incomingCp.id);
                      
                      if (existingIdx !== -1) {
-                         // 2. Update existing (Merge fields)
                          const existing = mergedCheckpoints[existingIdx];
                          mergedCheckpoints[existingIdx] = {
                              ...existing,
                              ...incomingCp,
-                             // Preserve existing location if AI omits it during an content update (common case)
-                             // If incomingCp.location is undefined, use existing.
                              location: incomingCp.location !== undefined ? incomingCp.location : existing.location
                          };
                      } else {
-                         // 3. Insert new (Append)
-                         // Ensure location is explicitly null if undefined (Draft) to avoid map crash
                          const newCp = { ...incomingCp };
                          if (!newCp.location) {
                              newCp.location = null;
@@ -131,7 +127,6 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
     );
   }, [userProfile.tier, tierConfigs, onUpdateRace]);
 
-  // Initial Session (Silent)
   useEffect(() => {
     if (geminiServiceRef.current && isOnline) {
       geminiServiceRef.current.startNewSession(userProfile.tier);
@@ -143,7 +138,6 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
   const handleContentGeneration = async (prompt: string) => {
     if (!geminiServiceRef.current || !isOnline) return;
     
-    // Check for special commands from Sidebar
     if (prompt === "GENERATE_ZOMBIE_MODE") {
         setAiLoaderMessage("Simulerar zombie-utbrott...");
         const startLat = raceData.startLocation.lat;
@@ -181,23 +175,21 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
     }
   };
 
-  const handlePublish = async () => {
-      // Allow publishing even if some drafts exist? Probably not recommended, but let's enforce at least 1 valid CP
+  const handlePublishRequest = () => {
       const validCPs = raceData.checkpoints.filter(cp => cp.location);
       if (validCPs.length === 0 || !isLocationSet) {
           alert("Du måste ha start, mål och minst en placerad checkpoint för att publicera.");
           return;
       }
-      if (confirm("Är du redo att publicera?")) {
-          // Pass the status update DIRECTLY to save, bypassing React state lag.
-          // This ensures the saved object in DB has status='published' immediately.
-          onSave({ status: 'published' });
-          setIsShareOpen(true);
-      }
+      setShowPublishDialog(true);
+  };
+
+  const confirmPublish = () => {
+      onSave({ status: 'published' });
+      setIsShareOpen(true);
   };
 
   const handleMapClick = (coord: Coordinate) => {
-    // 1. PLACING DRAFT MODE
     if (placingCheckpointId) {
         onUpdateRace({
             checkpoints: raceData.checkpoints.map(cp => 
@@ -205,11 +197,10 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
             )
         });
         setPlacingCheckpointId(null);
-        setActiveTool('none'); // Reset
+        setActiveTool('none');
         return;
     }
 
-    // 2. STANDARD TOOLS
     if (activeTool === 'start') {
       onUpdateRace({ startLocation: coord, startLocationConfirmed: true });
     } else if (activeTool === 'finish') {
@@ -243,22 +234,25 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
 
   const handleStartPlacing = (id: string) => {
       setPlacingCheckpointId(id);
-      setActiveTool('none'); // We handle the "tool" visually via MapVisualizer props or just overlay hint?
-      // Actually, MapVisualizer uses activeTool to determine if cursor is crosshair.
-      // Let's rely on `activeTool` not being 'none' OR pass a specific prop.
-      // For simplicity, we can temporarily set activeTool to 'checkpoint' visually, 
-      // but logic handles placingId first.
+      setActiveTool('none');
   };
-
-  // Derived state for MapVisualizer to show crosshair
-  // We want crosshair if activeTool is set OR if placingCheckpointId is set
-  const showCrosshair = activeTool !== 'none' || !!placingCheckpointId;
 
   return (
     <div className="flex h-screen w-screen bg-gray-950 text-gray-100 font-sans overflow-hidden">
         <AILoader isVisible={isGeneratingContent} message={aiLoaderMessage} />
         
         {/* --- DIALOGS --- */}
+        <ConfirmationDialog 
+            isOpen={showPublishDialog}
+            onClose={() => setShowPublishDialog(false)}
+            onConfirm={confirmPublish}
+            title="Gå Live?"
+            description="När du publicerar blir eventet tillgängligt för deltagare med koden. Är du redo att släppa in dem?"
+            confirmText="Publicera Nu"
+            variant="success"
+            icon={Rocket}
+        />
+
         <ShareDialog isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} eventName={raceData.name} accessCode={raceData.accessCode || ''} />
         
         <EventSettingsDialog 
@@ -266,7 +260,6 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
             onClose={() => setIsSettingsOpen(false)} 
             raceData={raceData} 
             onSave={(updates) => {
-                // Update local state AND persist immediately to avoid "Unsaved Changes" warning
                 onUpdateRace(updates);
                 onSave(updates);
             }} 
@@ -288,7 +281,7 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
             onDeleteCheckpoint={(id) => onUpdateRace({ checkpoints: raceData.checkpoints.filter(cp => cp.id !== id) })}
             activeTool={activeTool}
             setActiveTool={setActiveTool}
-            onPublish={handlePublish}
+            onPublish={handlePublishRequest}
             // Builder Props
             cpConfig={cpConfig}
             setCpConfig={setCpConfig}
@@ -303,7 +296,6 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
         {/* --- MAIN AREA (Map) --- */}
         <div className="flex-1 relative h-full w-full">
             
-            {/* Placement Toast */}
             {placingCheckpointId && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1500] bg-purple-900/90 text-white px-6 py-3 rounded-full shadow-2xl border border-purple-500 animate-in slide-in-from-top-4 flex items-center gap-3">
                     <span className="animate-pulse w-3 h-3 bg-purple-400 rounded-full"></span>
@@ -315,7 +307,6 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
             <div className="absolute inset-0 z-0">
                 <MapVisualizer 
                     raceData={raceData} 
-                    // Pass checkpoint tool style if placing draft, or standard activeTool
                     activeTool={placingCheckpointId ? 'checkpoint' : activeTool}
                     onMapClick={handleMapClick}
                     onDeleteCheckpoint={(id) => onUpdateRace({ checkpoints: raceData.checkpoints.filter(cp => cp.id !== id) })}

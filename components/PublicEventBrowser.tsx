@@ -2,12 +2,13 @@
 // ... existing imports ...
 import React, { useState, useMemo, useEffect } from 'react';
 import { RaceEvent, UserTier, SystemConfig, UserProfile, ParticipantResult } from '../types';
-import { Search, MapPin, Calendar, ArrowRight, Key, Filter, Compass, ChevronRight, Star, ShieldAlert, Sparkles, Zap, ArrowLeft, Gamepad2, Trophy, Loader2, PlayCircle, Clock, Crown, XCircle, Flag, User, ShieldCheck, LayoutDashboard } from 'lucide-react';
+import { Search, MapPin, Calendar, ArrowRight, Key, Filter, Compass, ChevronRight, Star, ShieldAlert, Sparkles, Zap, ArrowLeft, Gamepad2, Trophy, Loader2, PlayCircle, Clock, Crown, XCircle, Flag, User, ShieldCheck, LayoutDashboard, AlertTriangle } from 'lucide-react';
 import { api } from '../services/dataService';
 import { ZombieSurvivalButton } from './ZombieSurvivalButton';
 import { ChristmasHuntButton } from './ChristmasHuntButton';
 import { GlobalLeaderboard } from './GlobalLeaderboard';
 import { EventLeaderboardDialog } from './EventLeaderboardDialog';
+import { ConfirmationDialog } from './ConfirmationDialog'; // Importerad
 
 interface PublicEventBrowserProps {
   events: RaceEvent[];
@@ -47,6 +48,9 @@ export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, 
   // Leaderboard State
   const [isGlobalLeaderboardOpen, setIsGlobalLeaderboardOpen] = useState(false);
   const [selectedLeaderboardEvent, setSelectedLeaderboardEvent] = useState<RaceEvent | null>(null);
+
+  // Dialog State
+  const [eventToForfeit, setEventToForfeit] = useState<RaceEvent | null>(null);
 
   // Load System Config Async
   useEffect(() => {
@@ -139,22 +143,23 @@ export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, 
     }
   };
 
-  const handleForfeit = async (event: RaceEvent) => {
-      if (confirm(`Vill du ge upp loppet "${event.name}"? Du kommer markeras som DNF (Did Not Finish).`)) {
-          const result = event.results?.find(r => r.id === userProfile?.id);
-          if (result && userProfile) {
-              // Optimistically hide
-              const newHidden = new Set(hiddenEventIds);
-              newHidden.add(event.id);
-              setHiddenEventIds(newHidden);
+  const confirmForfeit = async () => {
+      if (!eventToForfeit) return;
+      
+      const result = eventToForfeit.results?.find(r => r.id === userProfile?.id);
+      if (result && userProfile) {
+          // Optimistically hide
+          const newHidden = new Set(hiddenEventIds);
+          newHidden.add(eventToForfeit.id);
+          setHiddenEventIds(newHidden);
 
-              // Update backend
-              await api.events.saveResult(event.id, {
-                  ...result,
-                  status: 'dnf'
-              });
-          }
+          // Update backend
+          await api.events.saveResult(eventToForfeit.id, {
+              ...result,
+              status: 'dnf'
+          });
       }
+      setEventToForfeit(null);
   };
 
   // Safe Navigation for Config
@@ -168,6 +173,19 @@ export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, 
   return (
     <div className="h-[100dvh] w-full bg-slate-950 text-gray-100 font-sans flex flex-col relative overflow-y-auto overflow-x-hidden">
       
+      {/* --- CONFIRMATION DIALOG --- */}
+      <ConfirmationDialog 
+        isOpen={!!eventToForfeit}
+        onClose={() => setEventToForfeit(null)}
+        onConfirm={confirmForfeit}
+        title="Ge upp loppet?"
+        description={`Är du säker på att du vill bryta "${eventToForfeit?.name}"? Detta kan inte ångras och du kommer markeras som DNF (Did Not Finish).`}
+        confirmText="Ja, jag ger upp"
+        cancelText="Nej, kör vidare"
+        variant="danger"
+        icon={AlertTriangle}
+      />
+
       <GlobalLeaderboard isOpen={isGlobalLeaderboardOpen} onClose={() => setIsGlobalLeaderboardOpen(false)} />
       <EventLeaderboardDialog isOpen={!!selectedLeaderboardEvent} onClose={() => setSelectedLeaderboardEvent(null)} event={selectedLeaderboardEvent} />
 
@@ -279,7 +297,7 @@ export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, 
                                       </button>
                                       
                                       <button 
-                                        onClick={() => handleForfeit(event)}
+                                        onClick={() => setEventToForfeit(event)}
                                         className="px-3 py-2 rounded-lg text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-900/20 border border-transparent hover:border-red-900/50 transition-colors flex items-center justify-center gap-1"
                                         title="Ge Upp (DNF)"
                                       >

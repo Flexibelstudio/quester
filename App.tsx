@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from './services/dataService'; 
 import { INITIAL_RACE_STATE, INITIAL_TIER_CONFIGS } from './constants';
@@ -212,7 +213,7 @@ function AppContent() {
 
   // UPDATED: Accepts optional overrides to ensure atomic saving of critical state (like Publish)
   const handleManualSave = async (dataOverride?: Partial<RaceEvent>) => {
-      // Merge current state with any overrides (e.g., status: 'published')
+      // Merge current state with any overrides (e.g. status: 'published')
       const dataToSave = { ...raceData, ...(dataOverride || {}) };
       
       if (user) {
@@ -383,11 +384,7 @@ function AppContent() {
                 setViewMode('organizer'); 
             }}
             onCreateEvent={handleCreateEventClick}
-            onDeleteEvent={async (id) => {
-                if (confirm('Är du säker på att du vill radera detta event permanent?')) {
-                    await handleDeleteEvent(id);
-                }
-            }}
+            onDeleteEvent={handleDeleteEvent} // Direct pass, confirmation logic moved to Dashboard
             onOpenParticipant={(e) => { 
                 if(e) setRaceData(e); 
                 setIsTestRun(false);

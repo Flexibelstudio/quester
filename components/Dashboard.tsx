@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
 import { RaceEvent, UserTier, TierConfig, EventStatus, UserProfile } from '../types';
-import { Plus, Map, Calendar, Users, Trophy, Trash2, ArrowRight, Settings2, PlayCircle, Compass, Star, ShieldAlert, Zap, Share2, Archive, CheckCircle2, User, MapPin, Crown, LayoutTemplate, PenTool, Gamepad2, Hammer, Rocket, PauseCircle } from 'lucide-react';
+import { Plus, Map, Calendar, Users, Trophy, Trash2, ArrowRight, Settings2, PlayCircle, Compass, Star, ShieldAlert, Zap, Share2, Archive, CheckCircle2, User, MapPin, Crown, LayoutTemplate, PenTool, Gamepad2, Hammer, Rocket, PauseCircle, AlertTriangle } from 'lucide-react';
 import { ShareDialog } from './ShareDialog';
+import { ConfirmationDialog } from './ConfirmationDialog'; // Importerad
 
 interface DashboardProps {
   events: RaceEvent[];
@@ -18,7 +19,7 @@ interface DashboardProps {
   onDirectRaceCreate?: (event: RaceEvent) => void;
   onOpenProfile: () => void;
   onOpenSettings: (event: RaceEvent) => void;
-  onUpdateEvent: (event: RaceEvent) => void; // Added for status toggling
+  onUpdateEvent: (event: RaceEvent) => void; 
 }
 
 const RatingDisplay: React.FC<{ ratings?: { score: number }[] }> = ({ ratings }) => {
@@ -49,6 +50,9 @@ const StatusBadge: React.FC<{ status: EventStatus }> = ({ status }) => {
 
 export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProfile, tierConfigs, onSelectEvent, onCreateEvent, onDeleteEvent, onOpenParticipant, onOpenSystemAdmin, onUpgradeClick, onOpenProfile, onOpenSettings, onUpdateEvent }) => {
   const [shareEvent, setShareEvent] = useState<RaceEvent | null>(null);
+  
+  // Dialog State
+  const [actionTarget, setActionTarget] = useState<{ event: RaceEvent, type: 'delete' | 'unpublish' } | null>(null);
 
   // Avatar or generic icon with DiceBear Fallback
   const avatarUrl = userProfile.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile.name}`;
@@ -61,14 +65,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProf
 
   const handlePublishToggle = (e: React.MouseEvent, event: RaceEvent) => {
       e.stopPropagation();
-      
       const isPublished = event.status === 'published' || event.status === 'active';
       
       if (isPublished) {
-          // Unpublish
-          if(confirm('Är du säker? Detta gör eventet osynligt för deltagarna och återställer det till utkast.')) {
-              onUpdateEvent({ ...event, status: 'draft' });
-          }
+          // Trigger unpublish dialog
+          setActionTarget({ event, type: 'unpublish' });
       } else {
           // Publish
           if (isEventReady(event)) {
@@ -80,9 +81,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProf
       }
   };
 
+  const handleDeleteClick = (e: React.MouseEvent, event: RaceEvent) => {
+      e.stopPropagation();
+      setActionTarget({ event, type: 'delete' });
+  };
+
+  const confirmAction = () => {
+      if (!actionTarget) return;
+      
+      if (actionTarget.type === 'delete') {
+          onDeleteEvent(actionTarget.event.id);
+      } else if (actionTarget.type === 'unpublish') {
+          onUpdateEvent({ ...actionTarget.event, status: 'draft' });
+      }
+      setActionTarget(null);
+  };
+
   return (
     <div className="h-full w-full bg-gray-950 text-gray-100 font-sans flex flex-col overflow-hidden">
       
+      {/* DIALOGS */}
+      <ConfirmationDialog 
+        isOpen={!!actionTarget}
+        onClose={() => setActionTarget(null)}
+        onConfirm={confirmAction}
+        title={actionTarget?.type === 'delete' ? 'Radera Event?' : 'Avpublicera Event?'}
+        description={actionTarget?.type === 'delete' 
+            ? 'Är du säker på att du vill radera detta event permanent? All data och resultat försvinner. Detta går inte att ångra.'
+            : 'Om du avpublicerar blir eventet osynligt för deltagarna och återgår till utkastläge.'}
+        confirmText={actionTarget?.type === 'delete' ? 'Ja, radera' : 'Ja, avpublicera'}
+        variant={actionTarget?.type === 'delete' ? 'danger' : 'warning'}
+        icon={actionTarget?.type === 'delete' ? Trash2 : AlertTriangle}
+      />
+
       {/* --- NEW HEADER (Landing Page Style) --- */}
       <nav className="border-b border-white/5 bg-slate-900/50 backdrop-blur-xl sticky top-0 z-50 shadow-lg shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -214,7 +245,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ events, userTier, userProf
                                 <Share2 className="w-4 h-4" />
                             </button>
                             <button 
-                                onClick={(e) => { e.stopPropagation(); onDeleteEvent(event.id); }}
+                                onClick={(e) => handleDeleteClick(e, event)}
                                 className="text-gray-600 hover:text-red-500 p-2 bg-gray-900/50 hover:bg-gray-800 rounded backdrop-blur transition-colors"
                                 title="Radera event"
                             >
