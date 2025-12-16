@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Circle, Marker, useMap, Popup, Polyline, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -472,7 +471,7 @@ const MissionBriefingDialog: React.FC<{
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">Är du på plats?</h3>
                     <p className="text-gray-400 text-sm max-w-xs mx-auto">
-                        Se till att du befinner dig vid startpunkten. När du klickar på start börjar tiden ticka (eller inväntar startskottet).
+                        Se till att du befinner dig vid startpunkten. När du klickar på knappen nedan kommer du till startlinjen.
                     </p>
                 </div>
             ),
@@ -574,7 +573,7 @@ const MissionBriefingDialog: React.FC<{
                         {step < steps.length - 1 ? (
                             <>NÄSTA <ChevronRight className="w-5 h-5" /></>
                         ) : (
-                            <>{isChristmas ? 'RÄDDA JULEN NU' : isZombie ? 'DEPLOY MISSION' : 'STARTA ÄVENTYRET'} <Rocket className="w-5 h-5" /></>
+                            <>{isChristmas ? 'GÅ TILL SLÄDEN' : isZombie ? 'PROCEED TO START' : 'GÅ TILL STARTLINJEN'} <ArrowRight className="w-5 h-5" /></>
                         )}
                     </button>
                 </div>
