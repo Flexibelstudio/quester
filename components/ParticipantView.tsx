@@ -736,10 +736,13 @@ const GameMenu: React.FC<{
                         {!isSystemEvent && (
                             <button 
                                 onClick={onPause}
-                                className={`w-full py-4 font-bold rounded-xl flex items-center justify-center gap-3 transition-colors border ${theme.button}`}
+                                className={`w-full py-4 font-bold rounded-xl flex flex-col items-center justify-center gap-1 transition-colors border ${theme.button}`}
                             >
-                                <PauseCircle className="w-5 h-5" />
-                                Pausa / Gå till Lobbyn
+                                <span className="flex items-center gap-2">
+                                    <PauseCircle className="w-5 h-5" />
+                                    Pausa / Gå till Lobbyn
+                                </span>
+                                <span className="text-[10px] opacity-70 font-normal">Tiden fortsätter ticka</span>
                             </button>
                         )}
                         
@@ -748,7 +751,7 @@ const GameMenu: React.FC<{
                             className={`w-full py-4 font-bold rounded-xl flex items-center justify-center gap-3 transition-colors border ${theme.giveUpBtn}`}
                         >
                             <Flag className="w-5 h-5" />
-                            Ge Upp (DNF)
+                            Ge Upp
                         </button>
                     </div>
                 </div>
@@ -1703,7 +1706,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                         </div>
                         <h3 className={`text-xl font-bold mb-2 ${dialogTheme.title}`}>Ge upp loppet?</h3>
                         <p className={`text-sm mb-6 leading-relaxed ${dialogTheme.text}`}>
-                            Är du säker? Ditt resultat kommer att registreras som <span className="text-red-500 font-bold">DNF</span> (Did Not Finish).
+                            Är du säker? Ditt resultat kommer att registreras som <span className="text-red-500 font-bold">avbrutet</span>.
                         </p>
                         <div className="flex gap-3 w-full">
                             <button 

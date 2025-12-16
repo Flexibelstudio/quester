@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from './services/dataService'; 
 import { INITIAL_RACE_STATE, INITIAL_TIER_CONFIGS } from './constants';
@@ -446,10 +445,22 @@ function AppContent() {
                 setViewMode(previousViewMode);
             }} 
             onUpdateResult={async (res) => {
+                // Update local raceData to reflect changes in UI
                 const currentResults = raceData.results || [];
                 const idx = currentResults.findIndex(r => r.id === res.id);
                 const newResults = idx !== -1 ? currentResults.map((r, i) => i === idx ? res : r) : [...currentResults, res];
-                setRaceData({ ...raceData, results: newResults });
+                
+                const updatedRaceData = { ...raceData, results: newResults };
+                setRaceData(updatedRaceData);
+
+                // OPTIMISTIC UPDATE: Update global 'allEvents' immediately 
+                // so dashboards/browsers reflect the change instantly without refresh.
+                setAllEvents(prevEvents => prevEvents.map(evt => {
+                    if (evt.id === raceData.id) {
+                        return { ...evt, results: newResults };
+                    }
+                    return evt;
+                }));
 
                 if (!isTestRun) {
                     await api.events.saveResult(raceData.id, res);
