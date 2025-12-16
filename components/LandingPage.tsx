@@ -387,17 +387,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
             </button>
         </div>
 
-        {/* Leaderboard Button */}
-        <div className="mt-6 animate-in fade-in slide-in-from-bottom-12 duration-700 delay-400">
-            <button
-                onClick={() => openLeaderboard('zombie_survival')}
-                className="flex items-center gap-2 text-sm font-bold text-yellow-400 bg-yellow-900/10 px-6 py-2 rounded-full border border-yellow-500/30 hover:bg-yellow-900/30 transition-all hover:scale-105 shadow-[0_0_15px_rgba(234,179,8,0.2)]"
-            >
-                <Trophy className="w-4 h-4" />
-                Topplistor
-            </button>
-        </div>
-
         {/* ACTIVE GAMES SECTION */}
         {hasFeaturedModes && (
             <div className="mt-16 w-full max-w-4xl animate-in fade-in slide-in-from-bottom-12 duration-700 delay-500">

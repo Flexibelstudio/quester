@@ -11,6 +11,7 @@ import { useGrinchLogic } from '../hooks/useGrinchLogic';
 import { useChristmasLogic } from '../hooks/useChristmasLogic';
 import { SnowfallOverlay } from './SnowfallOverlay';
 import { api } from '../services/dataService'; // DataService
+import { GlobalLeaderboard } from './GlobalLeaderboard';
 
 interface ParticipantViewProps {
   raceData: RaceEvent;
@@ -148,6 +149,7 @@ const userIcon = (profileImage?: string, isDev?: boolean) => L.divIcon({
   iconAnchor: [20, 20]
 });
 
+// Update CreateCustomIcon to handle 'Gift' icons
 const createCustomIcon = (color: string, isChecked: boolean, hasQuiz: boolean, hasChallenge: boolean, points: number, timeMod: number | undefined, index: number, isLocked: boolean, name?: string) => {
   const size = isChecked ? 24 : 32;
   const isPenalty = points < 0 || (timeMod && timeMod > 0);
@@ -157,6 +159,7 @@ const createCustomIcon = (color: string, isChecked: boolean, hasQuiz: boolean, h
   if (name?.includes('Radio')) iconSymbol = '📻';
   else if (name?.includes('Supply')) iconSymbol = '📦';
   else if (name?.includes('Extraction')) iconSymbol = '🚁';
+  else if (name?.includes('Gift')) iconSymbol = '🎁'; // Add Gift logic
   else if (hasQuiz) iconSymbol = '?';
   else if (hasChallenge) iconSymbol = '!';
 
@@ -203,8 +206,6 @@ const createCustomIcon = (color: string, isChecked: boolean, hasQuiz: boolean, h
   });
 };
 
-// --- DYNAMIC GRINCH ICON (UPDATED) ---
-// Handles states: 'guarding' | 'fleeing' | 'resting' | 'caught'
 const createGrinchIcon = (state: 'guarding' | 'fleeing' | 'resting' | 'caught') => {
     let emoji = '🎁';
     let animation = 'float';
@@ -277,7 +278,7 @@ const MissionBriefingDialog: React.FC<{
     // --- ZOMBIE CONTENT ---
     const zombieSteps = [
         {
-            title: "SITUATION REPORT",
+            title: "LÄGESRAPPORT",
             content: (
                 <div className="space-y-4">
                     <p className="text-gray-300 leading-relaxed text-sm md:text-base border-l-2 border-red-600 pl-4">
@@ -286,7 +287,7 @@ const MissionBriefingDialog: React.FC<{
                     <div className="bg-red-900/20 p-3 rounded border border-red-800/50 flex items-start gap-3">
                         <Radio className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                         <div>
-                            <div className="text-xs font-bold text-red-400 uppercase">Incoming Transmission</div>
+                            <div className="text-xs font-bold text-red-400 uppercase">INKOMMANDE SÄNDNING</div>
                             <div className="text-xs text-gray-400">"Håll dig borta från zoner markerade med rött. Hitta Safe Houses."</div>
                         </div>
                     </div>
@@ -295,7 +296,7 @@ const MissionBriefingDialog: React.FC<{
             icon: <FileText className="w-6 h-6 text-red-500" />
         },
         {
-            title: "OBJECTIVES",
+            title: "UPPDRAGSMÅL",
             content: (
                 <ul className="space-y-3">
                     <li className="flex items-center gap-3 bg-gray-800/50 p-3 rounded border border-gray-700">
@@ -315,7 +316,7 @@ const MissionBriefingDialog: React.FC<{
             icon: <Crosshair className="w-6 h-6 text-blue-500" />
         },
         {
-            title: "SURVIVAL GUIDE",
+            title: "ÖVERLEVNADSGUIDE",
             content: (
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
@@ -326,7 +327,7 @@ const MissionBriefingDialog: React.FC<{
                         </div>
                         <div className="bg-gray-800 p-3 rounded text-center">
                             <Flame className="w-6 h-6 text-orange-500 mx-auto mb-2" />
-                            <div className="text-xs font-bold text-gray-400 uppercase">ANVÄND FLARES</div>
+                            <div className="text-xs font-bold text-gray-400 uppercase">ANVÄND NÖDBLOSS</div>
                             <div className="text-[10px] text-gray-500">Stunner zombies i 30s</div>
                         </div>
                     </div>
@@ -472,7 +473,7 @@ const MissionBriefingDialog: React.FC<{
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">Är du på plats?</h3>
                     <p className="text-gray-400 text-sm max-w-xs mx-auto">
-                        Se till att du befinner dig vid startpunkten. När du klickar på start börjar tiden ticka (eller inväntar startskottet).
+                        Se till att du befinner dig vid startpunkten. När du klickar på knappen nedan kommer du till startlinjen.
                     </p>
                 </div>
             ),
@@ -497,7 +498,7 @@ const MissionBriefingDialog: React.FC<{
             progressBar: 'bg-sky-200',
             progressActive: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]',
             snow: true,
-            protocol: 'SANTA PROTOCOL V.24'
+            protocol: 'TOMTEPROTOKOLL V.24'
         };
     } else if (isZombie) {
         theme = {
@@ -511,7 +512,7 @@ const MissionBriefingDialog: React.FC<{
             progressBar: 'bg-gray-800',
             progressActive: 'bg-red-600',
             snow: false,
-            protocol: 'SURVIVAL PROTOCOL'
+            protocol: 'ÖVERLEVNADSPROTOKOLL'
         };
     } else {
         // STANDARD THEME (Clean Dark/Blue)
@@ -574,7 +575,7 @@ const MissionBriefingDialog: React.FC<{
                         {step < steps.length - 1 ? (
                             <>NÄSTA <ChevronRight className="w-5 h-5" /></>
                         ) : (
-                            <>{isChristmas ? 'RÄDDA JULEN NU' : isZombie ? 'DEPLOY MISSION' : 'STARTA ÄVENTYRET'} <Rocket className="w-5 h-5" /></>
+                            <>{isChristmas ? 'GÅ TILL SLÄDEN' : isZombie ? 'GÅ TILL STARTEN' : 'GÅ TILL STARTLINJEN'} <ArrowRight className="w-5 h-5" /></>
                         )}
                     </button>
                 </div>
@@ -586,10 +587,13 @@ const MissionBriefingDialog: React.FC<{
 const FinishDialog: React.FC<{
     isOpen: boolean;
     totalPoints: number;
+    basePoints: number;
+    penaltyPoints: number;
     elapsedTime: string;
     onRate: (score: number, comment: string) => void;
-    isChristmas?: boolean; // Added isChristmas prop
-}> = ({ isOpen, totalPoints, elapsedTime, onRate, isChristmas }) => {
+    isChristmas?: boolean;
+    onShowGlobalLeaderboard?: () => void; // New Prop
+}> = ({ isOpen, totalPoints, basePoints, penaltyPoints, elapsedTime, onRate, isChristmas, onShowGlobalLeaderboard }) => {
     const [score, setScore] = useState(0);
     const [comment, setComment] = useState('');
     if (!isOpen) return null;
@@ -634,8 +638,27 @@ const FinishDialog: React.FC<{
                     <div className={`${theme.cardBg} p-4 rounded-xl text-center`}>
                          <div className={`text-xs uppercase font-bold tracking-wider mb-1 ${theme.subText}`}>Poäng</div>
                          <div className={`text-2xl font-mono font-bold ${theme.accentText}`}>{totalPoints}</div>
+                         {/* Display Penalty breakdown if it exists */}
+                         {penaltyPoints > 0 && (
+                             <div className="text-[10px] text-red-400 mt-1 font-bold">
+                                 (-{penaltyPoints}p Straff)
+                             </div>
+                         )}
                     </div>
                 </div>
+                
+                {/* Instant Game Leaderboard Button */}
+                {onShowGlobalLeaderboard && (
+                    <div className="mb-6">
+                        <button 
+                            onClick={onShowGlobalLeaderboard}
+                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold bg-yellow-600/20 border border-yellow-500/50 text-yellow-500 hover:bg-yellow-600/30 transition-colors uppercase tracking-wider text-xs"
+                        >
+                            <Trophy className="w-4 h-4" /> Se hur du ligger till globalt
+                        </button>
+                    </div>
+                )}
+
                 <div className={`border-t pt-6 ${isChristmas ? 'border-sky-100' : 'border-slate-800'}`}>
                     <h3 className={`text-center text-sm font-bold uppercase tracking-wider mb-4 ${theme.headerText}`}>Vad tyckte du om loppet?</h3>
                     <div className="flex justify-center gap-2 mb-4">
@@ -789,90 +812,70 @@ function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 // --- MAIN COMPONENT ---
 export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onExit, onUpdateResult, onRateEvent, initialJoinCode, isTestMode, userProfile }) => {
-  // If user is already logged in (via LandingPage/Dashboard), skip login step
   const [authStep, setAuthStep] = useState<'login' | 'profile' | 'lobby' | 'race' | 'full'>(
       isTestMode ? 'race' : (userProfile && userProfile.id !== 'guest' ? 'lobby' : 'login')
   );
   
-  // Data State
   const [participantId, setParticipantId] = useState<string>(isTestMode ? 'test-user' : userProfile?.id || '');
   const [accessCodeInput, setAccessCodeInput] = useState('');
   const [teamNameInput, setTeamNameInput] = useState(isTestMode ? 'Test Runner' : userProfile?.name || '');
   const [orgInput, setOrgInput] = useState('');
   const [subGroupInput, setSubGroupInput] = useState('');
-  
-  // UI State
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [hasSeenBriefing, setHasSeenBriefing] = useState(false); // Controls Mission Briefing
+  const [hasSeenBriefing, setHasSeenBriefing] = useState(false);
   const [showGiveUpDialog, setShowGiveUpDialog] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
-  // Profile Image State with Live DiceBear Fallback
   const [profileImage, setProfileImage] = useState<string | undefined>(userProfile?.photoURL);
-  
-  // Sync profile image if user updates it elsewhere (e.g. ProfileDialog) or types name
   useEffect(() => {
       if (userProfile?.photoURL) {
           setProfileImage(userProfile.photoURL);
       } else if (teamNameInput) {
-          // Generate live preview if no real photo exists
           setProfileImage(`https://api.dicebear.com/7.x/avataaars/svg?seed=${teamNameInput}`);
       }
   }, [userProfile, teamNameInput]);
 
   const [authProvider, setAuthProvider] = useState<'guest' | 'google' | 'facebook'>('guest');
   const [loginError, setLoginError] = useState(false);
-  
-  // DEV MODE STATE
   const [isDevMode, setIsDevMode] = useState(isTestMode || false);
   const [isDevToolsOpen, setIsDevToolsOpen] = useState(false);
-
-  // Timer & Race Status
   const [startTime, setStartTime] = useState<number | null>(null);
   const [hasStarted, setHasStarted] = useState(isTestMode ? true : false);
   const [currentTime, setCurrentTime] = useState(Date.now());
-
-  // App State
   const [selectedCheckpoint, setSelectedCheckpoint] = useState<Checkpoint | null>(null);
   const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
-
-  // Photo / Camera State
+  const [finishResultData, setFinishResultData] = useState<{basePoints: number, penaltyPoints: number, totalPoints: number}>({ basePoints: 0, penaltyPoints: 0, totalPoints: 0 });
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Game State
   const [checkedInIds, setCheckedInIds] = useState<Set<string>>(new Set());
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number>(0);
   const [shouldCenterMap, setShouldCenterMap] = useState(false);
-  
   const [notificationToast, setNotificationToast] = useState<{title: string, message: string, type: 'success' | 'danger' | 'info'} | null>(null);
 
-  // GAME MODES
   const isZombieMode = raceData.category === 'Survival Run' || raceData.mapStyle === 'dark';
   const isChristmasMode = raceData.category === 'Christmas Hunt';
   
-  // Filter out drafts for game logic
   const activeCheckpoints = useMemo(() => {
       return (raceData.checkpoints || []).filter(cp => cp.location !== null);
   }, [raceData.checkpoints]);
 
-  // --- CHRISTMAS GAME STATE (WARMTH & BAG) ---
   const { 
       warmth, 
       bagCount, 
       isFrozen, 
       isWhiteout, 
       isAtSleigh,
-      isAtHeatSource, // New hook return value
+      isAtHeatSource,
       addToBag, 
       depositBag, 
       bagCapacity,
-      timePenalty // New time penalty
+      timePenalty 
   } = useChristmasLogic(
       userLocation, 
       raceData.startLocation,
-      activeCheckpoints, // Pass filtered CPs
+      activeCheckpoints, 
       isChristmasMode, 
       (t) => {
           setNotificationToast(t);
@@ -887,20 +890,15 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   );
 
   const lastCheckInRef = useRef<{time: number, coords: [number, number]} | null>(null);
-  
-  // --- ZOMBIE & EXTRACTION STATE ---
   const [lives, setLives] = useState(3);
   const [isImmune, setIsImmune] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
-  
-  // EXTRACTION INVENTORY & STATUS (INTEGRATED)
   const [flares, setFlares] = useState(0);
   const [radioPartsFound, setRadioPartsFound] = useState(0);
   const [toxicCloud, setToxicCloud] = useState<{ center: [number, number], expiresAt: number } | null>(null);
   const [flashEffect, setFlashEffect] = useState(false);
   const [extractionPoint, setExtractionPoint] = useState<Checkpoint | null>(null);
 
-  // --- REFS ---
   const userLocationRef = useRef<[number, number] | null>(null);
   const livesRef = useRef(3);
   const isImmuneRef = useRef(false);
@@ -913,22 +911,17 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
 
   const elapsedString = useMemo(() => {
      if (!startTime || isGameOver) return '00:00:00';
-     // Calculate diff plus any penalties (Christmas Freeze)
      const penaltyMs = isChristmasMode ? (timePenalty * 1000) : 0;
      const diff = Math.max(0, (currentTime - startTime) + penaltyMs);
      return new Date(diff).toISOString().slice(11, 19);
   }, [currentTime, startTime, isGameOver, timePenalty, isChristmasMode]);
 
-  // --- HELPERS (Defined before use in hooks) ---
-  
   const performCheckIn = async (cp: Checkpoint) => {
-     if (isChristmasMode && isFrozen) return; // Can't interact if frozen
+     if (isChristmasMode && isFrozen) return; 
      if (checkedInIds.has(cp.id)) return;
      if (isZombieCheckpoint(cp) && !isChristmasMode) return; 
      
-     // CHRISTMAS MODE: YO-YO LOGIC
      if (isChristmasMode) {
-         // Special case: Bonfire check-in doesn't take space in bag, just regenerates warmth (handled by proximity logic mostly, but good for feedback)
          const nameLower = cp.name.toLowerCase();
          if (nameLower.includes('eldstad') || nameLower.includes('bonfire') || nameLower.includes('värme')) {
              setNotificationToast({ title: "VÄRME!", message: "Du värmer dig vid elden.", type: 'info' });
@@ -943,12 +936,11 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
          
          const added = addToBag();
          if (added) {
-             // We mark it as checked visually, but points are only secured at Sleigh
              const newSet = new Set(checkedInIds); newSet.add(cp.id); setCheckedInIds(newSet);
              setNotificationToast({ title: "PAKET TAGET!", message: "Lämna det i släden!", type: 'success' });
              playSynthSound('success');
          }
-         return; // Skip standard check-in flow
+         return; 
      }
 
      const now = Date.now();
@@ -970,19 +962,15 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
      const newSet = new Set(checkedInIds); newSet.add(cp.id); setCheckedInIds(newSet);
      playSynthSound('success');
      
-     // EXTRACTION MODE LOGIC (Active inside Survival Run)
      if (isZombieMode) {
          if (cp.name.includes('Radio')) {
              const newRadioCount = radioPartsFound + 1;
              setRadioPartsFound(newRadioCount);
              setNotificationToast({ title: "RADIO PART SECURED", message: `${newRadioCount}/4 Collected!`, type: 'success' });
-             
-             // Spawn Helicopter if all 4 found
              if (newRadioCount === 4 && !extractionPoint) {
-                 // We need location for extraction point, based on current CP
                  if (cp.location) {
                     const extractionLoc = {
-                        lat: cp.location.lat + 0.003, // Roughly 300m away
+                        lat: cp.location.lat + 0.003, 
                         lng: cp.location.lng + 0.003
                     };
                     setExtractionPoint({
@@ -995,17 +983,16 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                         description: 'Get to the chopper!'
                     });
                     playSynthSound('alarm');
-                    setNotificationToast({ title: "EXTRACTION INBOUND", message: "Go to the LZ!", type: 'success' });
+                    setNotificationToast({ title: "RÄDDNING PÅ VÄG", message: "Ta dig till evakueringszonen!", type: 'success' });
                  }
              }
          } else if (cp.name.includes('Supply')) {
-             // 50% chance for Flare or Medkit
              if (Math.random() > 0.5) {
                  setLives(prev => Math.min(prev + 1, 3));
-                 setNotificationToast({ title: "SUPPLY CRATE", message: "Medkit found! +1 Life", type: 'success' });
+                 setNotificationToast({ title: "SUPPLY CRATE", message: "Medkit hittat! +1 Liv", type: 'success' });
              } else {
                  setFlares(prev => prev + 1);
-                 setNotificationToast({ title: "SUPPLY CRATE", message: "Flare found! +1 Flare", type: 'success' });
+                 setNotificationToast({ title: "SUPPLY CRATE", message: "Nödbloss hittat! +1 Nödbloss", type: 'success' });
              }
          } else if (cp.id === 'extraction-heli') {
              handleFinishRace();
@@ -1015,7 +1002,6 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
          setNotificationToast({ title: "CHECKPOINT SECURED", message: `${cp.name} - Poäng säkrade!`, type: 'success' });
      }
      
-     // --- AUTO-SAVE (RESUME FEATURE) ---
      const currentPoints = Array.from(newSet).reduce((sum, id) => sum + ((activeCheckpoints.find(c => c.id === id)?.points || 0)), 0);
      
      if (onUpdateResult && !isTestMode) {
@@ -1037,7 +1023,6 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
      setTimeout(() => setNotificationToast(null), 4000);
   };
 
-  // --- CHRISTMAS HUNT STATE (Depends on performCheckIn) ---
   const { grinches, statusMessage: grinchStatus } = useGrinchLogic(userLocation, activeCheckpoints, isChristmasMode, (cp, success) => {
       if (success) { performCheckIn(cp); } 
   });
@@ -1049,48 +1034,35 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
     }
   }, [grinchStatus]);
 
-  // Monitor Sleigh deposits in Christmas Mode
   const [christmasScore, setChristmasScore] = useState(0);
-  
   useEffect(() => {
       if (isAtSleigh && bagCount > 0 && !isFrozen) {
           const deposited = depositBag();
           if (deposited > 0) {
-              const cpPoints = 500; // Standard gift points
+              const cpPoints = 500; 
               const totalNewPoints = deposited * cpPoints;
               setChristmasScore(prev => prev + totalNewPoints);
-              // Save progress handled implicitly via re-render of HUD later? 
-              // We should save to DB here actually
           }
       }
   }, [isAtSleigh, bagCount, isFrozen]);
 
-  // --- RESTORE LOGIC (RESUME RACE) ---
   useEffect(() => {
-      // Check if we have an existing "running" result for this user
       if (participantId && raceData.results) {
           const existingResult = raceData.results.find(r => r.id === participantId && r.status === 'running');
           if (existingResult) {
-              console.log("Resuming race for:", participantId);
-              
               if (existingResult.visitedCheckpointIds) {
                   setCheckedInIds(new Set(existingResult.visitedCheckpointIds));
-              } else {
-                  console.warn("Resuming with count only (legacy data). IDs lost.");
               }
-
               if (raceData.startMode === 'mass_start') {
                   const massStart = new Date(raceData.startDateTime).getTime();
                   setStartTime(massStart);
                   if (Date.now() > massStart) setHasStarted(true);
               } else {
                   setHasStarted(true);
-                  setStartTime(Date.now()); // Fallback reset timer visual, but allow continue.
+                  setStartTime(Date.now()); 
               }
-
               setAuthStep('race');
               setShouldCenterMap(true);
-              // Assume they have seen briefing if resuming
               setHasSeenBriefing(true);
               setNotificationToast({ title: "VÄLKOMMEN TILLBAKA", message: "Återupptar sessionen.", type: 'success' });
           }
@@ -1112,32 +1084,24 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   const handleDamage = () => {
       if (isImmuneRef.current || isGameOverRef.current) return;
       if (navigator.vibrate) navigator.vibrate([200, 100, 500]);
-      
       playSynthSound('damage');
-      
       setLives(prev => prev - 1); setIsImmune(true);
-      setNotificationToast({ title: "DAMAGE TAKEN!", message: "You lost a life! Run!", type: 'danger' });
+      setNotificationToast({ title: "SKADAD!", message: "Du förlorade ett liv! Spring!", type: 'danger' });
       setTimeout(() => { setIsImmune(false); }, 10000);
   };
 
-  // --- CHAOS ENGINE (ZOMBIE MODE) ---
   useEffect(() => {
       if (!isZombieMode || !hasStarted || isGameOver) return;
-
       const chaosInterval = setInterval(() => {
           if (!userLocationRef.current) return;
           const roll = Math.random();
-          
-          // 30% Chance of Event every minute
           if (roll < 0.3) {
               const eventType = Math.random() > 0.5 ? 'AMBUSH' : 'CLOUD';
-              
               if (eventType === 'AMBUSH') {
-                  // Spawn zombies closer (40m)
                   const [uLat, uLng] = userLocationRef.current;
                   const zombies = Array.from({ length: 3 }).map((_, i) => {
                       const angle = Math.random() * 2 * Math.PI;
-                      const dist = 0.0004; // approx 40m
+                      const dist = 0.0004; 
                       return { 
                           id: `ambush-${Date.now()}-${i}`, 
                           lat: uLat + (Math.cos(angle) * dist), 
@@ -1148,20 +1112,17 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                   });
                   setRoamingZombies(prev => [...prev, ...zombies]);
                   playSynthSound('alarm');
-                  setNotificationToast({ title: "AMBUSH!", message: "Horde detected nearby!", type: 'danger' });
+                  setNotificationToast({ title: "BAKHÅLL!", message: "Hord upptäckt i närheten!", type: 'danger' });
               } else {
-                  // Toxic Cloud
                   setToxicCloud({ 
                       center: userLocationRef.current, 
                       expiresAt: Date.now() + 10000 
                   });
-                  playSynthSound('error'); // Gas sound sim
-                  setNotificationToast({ title: "TOXIC CLOUD", message: "Move out of the green zone!", type: 'danger' });
+                  playSynthSound('error'); 
+                  setNotificationToast({ title: "GIFTIGT MOLN", message: "Ta dig ur den gröna zonen!", type: 'danger' });
               }
           }
       }, 60000);
-
-      // Cloud Damage Check Loop (runs often)
       const cloudCheck = setInterval(() => {
           if (toxicCloud && userLocationRef.current) {
               if (Date.now() > toxicCloud.expiresAt) {
@@ -1169,16 +1130,12 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                   return;
               }
               const dist = getDistanceMeters(userLocationRef.current[0], userLocationRef.current[1], toxicCloud.center[0], toxicCloud.center[1]);
-              if (dist < 30) {
-                  // Damage logic triggers in separate effect
-              }
+              if (dist < 30) { }
           }
       }, 1000);
-      
       return () => { clearInterval(chaosInterval); clearInterval(cloudCheck); };
   }, [isZombieMode, hasStarted, isGameOver, toxicCloud]);
 
-  // Cloud Damage Trigger
   useEffect(() => {
       if (toxicCloud) {
           const timer = setTimeout(() => {
@@ -1186,7 +1143,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                   const dist = getDistanceMeters(userLocationRef.current[0], userLocationRef.current[1], toxicCloud.center[0], toxicCloud.center[1]);
                   if (dist < 30) {
                       handleDamage();
-                      setNotificationToast({ title: "TOXIC DAMAGE", message: "You stayed in the cloud too long!", type: 'danger' });
+                      setNotificationToast({ title: "GIFT SKADA", message: "Du stannade i molnet för länge!", type: 'danger' });
                   }
               }
               setToxicCloud(null);
@@ -1200,12 +1157,9 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
           setFlares(prev => prev - 1);
           setFlashEffect(true);
           playSynthSound('flare');
-          
-          // Stun zombies
-          setRoamingZombies(prev => prev.map(z => ({ ...z, lastAttackTime: Date.now() + 25000 }))); // Future timestamp = stunned
-          setNotificationToast({ title: "FLARE DEPLOYED", message: "Zombies stunned for 30s!", type: 'success' });
-          
-          setTimeout(() => setFlashEffect(false), 500); // Visual flash duration
+          setRoamingZombies(prev => prev.map(z => ({ ...z, lastAttackTime: Date.now() + 25000 }))); 
+          setNotificationToast({ title: "NÖDBLOSS AVFYRAT", message: "Zombies bländade i 30s!", type: 'success' });
+          setTimeout(() => setFlashEffect(false), 500); 
       }
   };
 
@@ -1217,7 +1171,6 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
         const spawns = nests.length > 0 ? nests : activeCheckpoints;
         const zombies = Array.from({ length: 3 }).map((_, i) => {
             const spawn = spawns[i % spawns.length];
-            // Safe since we filtered activeCheckpoints
             if (spawn.location) {
                 return { id: `hunter-${i}-${Date.now()}`, lat: spawn.location.lat, lng: spawn.location.lng, angle: 0, lastAttackTime: 0 };
             }
@@ -1239,8 +1192,6 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
             prev.forEach(z => {
                 const dist = getDistanceMeters(z.lat, z.lng, target[0], target[1]);
                 const timeSinceAttack = now - z.lastAttackTime;
-                
-                // If lastAttackTime is in future (flare stun), it's "stunned"
                 const isStunned = z.lastAttackTime > now || timeSinceAttack < 5000; 
                 
                 if (dist < 5 && !isImmuneRef.current && !isStunned) {
@@ -1279,11 +1230,9 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
     return [...activeCheckpoints, ...dynamicThreats] as Checkpoint[];
   }, [activeCheckpoints, roamingZombies]);
 
-  // --- AUDIO LOGIC HOOKS ---
   const { toggleAudio: toggleZombieAudio, nearestZombieDistance, audioEnabled: zombieAudioEnabled } = useZombieAudio(userLocation, allZombieThreats, isZombieMode);
   const { toggleAudio: toggleXmasAudio, nearestDistance: nearestGrinchDistance, audioEnabled: xmasAudioEnabled } = useChristmasAudio(userLocation, activeCheckpoints, isChristmasMode);
 
-  // UNIFIED AUDIO CONTROLS
   const audioEnabled = isZombieMode ? zombieAudioEnabled : isChristmasMode ? xmasAudioEnabled : false;
   const toggleAudio = isZombieMode ? toggleZombieAudio : isChristmasMode ? toggleXmasAudio : () => {};
 
@@ -1469,24 +1418,51 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
       // Play sound
       playSynthSound('finish');
 
+      // --- SCORING LOGIC FOR ROGAINING ---
+      let finalPoints = totalPoints;
+      let penalty = 0;
+      let calculatedTime = elapsedString;
+
       if ((isZombieMode || isChristmasMode) && startTime) {
-          const modeKey = isZombieMode ? 'zombie_survival' : 'christmas_hunt';
-          // Calculate time with penalty
+          // System modes (Zombie/Xmas) use standard point accumulation + potential penalties handled in game logic hooks
+          // But Christmas mode has explicit penalty time (seconds)
           const penaltyMs = isChristmasMode ? (timePenalty * 1000) : 0;
           const timeSec = ((Date.now() - startTime) + penaltyMs) / 1000;
+          
+          const modeKey = isZombieMode ? 'zombie_survival' : 'christmas_hunt';
           
           await api.leaderboard.saveScore({
               id: participantId,
               playerName: teamNameInput,
               groupTag: finalGroupTag,
-              score: totalPoints,
+              score: finalPoints,
               timeSeconds: timeSec,
               timeString: elapsedString,
               timestamp: new Date().toISOString(),
               location: userLocation ? { lat: userLocation[0], lng: userLocation[1] } : { lat: 0, lng: 0 },
               mode: modeKey
           });
+      } else if (raceData.scoreModel === 'rogaining' && startTime) {
+          // --- ROGAINING CALCULATION ---
+          const now = Date.now();
+          const durationMs = now - startTime;
+          const durationMinutes = durationMs / (1000 * 60);
+          const timeLimit = raceData.timeLimitMinutes || 60; // Default 60 if not set
+          
+          if (durationMinutes > timeLimit) {
+              const overMinutes = Math.ceil(durationMinutes - timeLimit); // Every started minute counts
+              const pointsPerMinute = raceData.pointsPerMinute || 10;
+              penalty = overMinutes * pointsPerMinute;
+              finalPoints = Math.max(0, totalPoints - penalty);
+          }
       }
+
+      // Store result for dialog
+      setFinishResultData({
+          basePoints: totalPoints,
+          penaltyPoints: penalty,
+          totalPoints: finalPoints
+      });
 
       if (onUpdateResult) {
           onUpdateResult({
@@ -1494,7 +1470,9 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
               name: teamNameInput,
               teamName: finalGroupTag,
               finishTime: elapsedString,
-              totalPoints: totalPoints,
+              totalPoints: finalPoints,
+              basePoints: totalPoints, // Store raw score
+              timePenaltyPoints: penalty, // Store penalty
               checkpointsVisited: checkedInIds.size,
               visitedCheckpointIds: Array.from(checkedInIds),
               status: 'finished', // Final status
@@ -1578,6 +1556,8 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
       confirmBtn: 'bg-red-600 text-white hover:bg-red-500 shadow-lg shadow-red-900/30'
   };
 
+  const leaderboardMode = isChristmasMode ? 'christmas_hunt' : 'zombie_survival';
+
   if (authStep === 'login' || authStep === 'profile' || authStep === 'lobby') {
       return (
         <div className={`h-full w-full flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans ${isZombieMode ? 'bg-black text-green-500 font-mono' : isChristmasMode ? 'bg-sky-200 text-slate-800' : 'bg-slate-950'}`}>
@@ -1640,9 +1620,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   }
 
   const currentLayer = isZombieMode ? TILE_LAYERS['dark'] : TILE_LAYERS['google_standard'];
-  
-  // Safe default coordinates to prevent white map crashes if data is missing
-  const defaultPos: [number, number] = [59.3293, 18.0686]; // Stockholm fallback
+  const defaultPos: [number, number] = [59.3293, 18.0686]; 
   const startPos: [number, number] = (raceData.startLocation && raceData.startLocation.lat) 
       ? [raceData.startLocation.lat, raceData.startLocation.lng] 
       : defaultPos;
@@ -1654,13 +1632,18 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   return (
     <div className={`h-full w-full flex flex-col relative overflow-hidden font-sans ${isZombieMode ? 'bg-black' : isChristmasMode ? 'bg-[#0f172a]' : 'bg-slate-900'}`}>
         
-        {/* Flash Effect for Flare */}
         {flashEffect && <div className="absolute inset-0 bg-white z-[9999] pointer-events-none animate-pulse"></div>}
 
         <MissionBriefingDialog 
             raceData={raceData}
             isOpen={authStep === 'race' && !hasSeenBriefing && !isDevMode}
             onDeploy={() => setHasSeenBriefing(true)}
+        />
+
+        <GlobalLeaderboard 
+            isOpen={isLeaderboardOpen} 
+            onClose={() => setIsLeaderboardOpen(false)} 
+            defaultMode={leaderboardMode} 
         />
 
         {/* RED HORROR VIGNETTE & SCANLINES (ZOMBIE MODE ONLY) */}
@@ -1674,16 +1657,27 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
         {isGameOver && (
             <div className="absolute inset-0 z-[6000] bg-black/95 flex flex-col items-center justify-center p-6 animate-in fade-in duration-1000">
                 <Skull className="w-32 h-32 text-red-600 mb-6 animate-pulse" />
-                <h1 className="text-6xl font-black text-red-600 tracking-tighter mb-4 text-center">YOU DIED</h1>
-                <p className="text-gray-400 text-center mb-8 max-w-md">The infection has taken over. You survived for <span className="text-white font-mono">{elapsedString}</span>.</p>
+                <h1 className="text-6xl font-black text-red-600 tracking-tighter mb-4 text-center">DU DOG</h1>
+                <p className="text-gray-400 text-center mb-8 max-w-md">Smittan har tagit över. Du överlevde i <span className="text-white font-mono">{elapsedString}</span>.</p>
                 <div className="flex gap-4">
-                    <button onClick={handleRestart} className="bg-red-700 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-red-900/40 uppercase tracking-widest flex items-center gap-2"><RotateCcw className="w-5 h-5" /> Try Again</button>
-                    <button onClick={onExit} className="bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-3 px-8 rounded-xl border border-gray-700 uppercase tracking-widest">Exit</button>
+                    <button onClick={handleRestart} className="bg-red-700 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-red-900/40 uppercase tracking-widest flex items-center gap-2"><RotateCcw className="w-5 h-5" /> Försök Igen</button>
+                    <button onClick={onExit} className="bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-3 px-8 rounded-xl border border-gray-700 uppercase tracking-widest">Avsluta</button>
                 </div>
             </div>
         )}
 
-        <FinishDialog isOpen={isFinishDialogOpen} totalPoints={totalPoints} elapsedTime={elapsedString} onRate={handleRateAndExit} isChristmas={isChristmasMode} />
+        <FinishDialog 
+            isOpen={isFinishDialogOpen} 
+            totalPoints={finishResultData.totalPoints} 
+            basePoints={finishResultData.basePoints}
+            penaltyPoints={finishResultData.penaltyPoints}
+            elapsedTime={elapsedString} 
+            onRate={handleRateAndExit} 
+            isChristmas={isChristmasMode} 
+            onShowGlobalLeaderboard={
+                (isZombieMode || isChristmasMode) ? () => setIsLeaderboardOpen(true) : undefined
+            }
+        />
         
         <GameMenu 
             isOpen={isMenuOpen} 
@@ -1696,7 +1690,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
             raceCategory={raceData.category}
         />
 
-        {/* --- CUSTOM GIVE UP DIALOG (Replaces Browser Confirm) --- */}
+        {/* ... (Give Up Dialog, Dev Mode, Briefing Wait - preserved) ... */}
         {showGiveUpDialog && (
             <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                 <div className={`w-full max-w-sm rounded-2xl p-6 shadow-2xl relative overflow-hidden border ${dialogTheme.bg}`}>
@@ -1840,7 +1834,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
             </div>
         )}
 
-        {/* --- CHRISTMAS HUD (UPDATED to match Zombie Layout) --- */}
+        {/* ... (HUD Components - preserved) ... */}
         {isChristmasMode ? (
             <div className="absolute top-0 left-0 right-0 z-[1000] p-4 pointer-events-none safe-area-top">
                 <div className="flex justify-between items-start">
@@ -2012,7 +2006,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
             </div>
         )}
 
-        {/* --- SURVIVAL DECK (Consolidated Bottom UI) --- */}
+        {/* ... (Survival Deck, Radar - Preserved) ... */}
         {isZombieMode && (
             <div className="absolute bottom-24 left-2 right-2 z-[2000] pointer-events-auto flex flex-col items-center">
                 
@@ -2025,7 +2019,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
 
                             <div className="flex items-center gap-2 mb-1 relative z-10">
                                 <Radar className={`w-3 h-3 ${nearestZombieDistance < 50 ? 'text-red-500 animate-spin' : 'text-green-500'}`} />
-                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Threat Radar</span>
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">HOTRADAR</span>
                             </div>
                             
                             <div className={`text-3xl font-mono font-black relative z-10 tracking-tighter leading-none ${nearestZombieDistance < 20 ? 'text-red-500 animate-pulse' : nearestZombieDistance < 50 ? 'text-yellow-500' : 'text-green-500'}`}>
@@ -2051,7 +2045,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                         className={`flex flex-col items-center justify-center h-16 w-20 rounded-2xl transition-all border-2 active:scale-95 ${flares > 0 ? 'bg-red-900/30 text-white border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.3)] hover:bg-red-900/50' : 'bg-gray-900 border-gray-800 text-gray-700'}`}
                     >
                         <Flame className={`w-6 h-6 mb-1 ${flares > 0 ? 'text-orange-500 animate-pulse' : ''}`} />
-                        <span className="text-[9px] font-black uppercase text-gray-500 tracking-wider">FLARE</span>
+                        <span className="text-[9px] font-black uppercase text-gray-500 tracking-wider">NÖDBLOSS</span>
                         <div className="absolute -top-2 -right-2 bg-gray-800 text-orange-500 text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border border-gray-700 shadow-md">
                             {flares}
                         </div>
@@ -2059,7 +2053,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
 
                     {/* Center Display (Signal Strength) */}
                     <div className="flex-1 bg-gray-900/80 rounded-xl border border-gray-800 p-2 flex flex-col items-center justify-center h-16">
-                        <div className="text-[8px] text-gray-500 font-black uppercase tracking-[0.2em] mb-1">SIGNAL UPLINK</div>
+                        <div className="text-[8px] text-gray-500 font-black uppercase tracking-[0.2em] mb-1">SIGNALSTYRKA</div>
                         <div className="flex items-center gap-2">
                             <Radio className={`w-4 h-4 ${radioPartsFound >= 4 ? 'text-green-500 animate-pulse' : 'text-gray-600'}`} />
                             <div className="flex gap-1">
@@ -2075,7 +2069,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                     <div className={`flex flex-col items-center justify-center h-16 w-20 rounded-2xl border-2 transition-all ${toxicCloud ? 'bg-yellow-900/20 border-yellow-500/50 animate-pulse' : 'bg-gray-900 border-gray-800'}`}>
                         <Biohazard className={`w-6 h-6 mb-1 ${toxicCloud ? 'text-yellow-500' : 'text-gray-700'}`} />
                         <span className={`text-[9px] font-black uppercase tracking-wider ${toxicCloud ? 'text-yellow-500' : 'text-gray-600'}`}>
-                            {toxicCloud ? 'TOXIC' : 'SAFE'}
+                            {toxicCloud ? 'SMITTA' : 'SÄKERT'}
                         </span>
                     </div>
                 </div>
@@ -2098,24 +2092,6 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                     </div>
                 </div>
             </div>
-        )}
-
-        {notificationToast && (
-          <div 
-            className="absolute top-20 inset-x-4 z-[5000] flex justify-center animate-in slide-in-from-top-10 duration-500 cursor-pointer pointer-events-auto"
-            onClick={() => setNotificationToast(null)}
-          >
-            <div className={`backdrop-blur-md border px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 max-w-sm w-full ${notificationToast.type === 'success' ? 'bg-green-900/90 border-green-500' : notificationToast.type === 'danger' ? 'bg-red-900/90 border-red-500' : 'bg-blue-900/90 border-blue-500'}`}>
-                <div className={`p-2 rounded-full ${notificationToast.type === 'success' ? 'bg-green-500 text-black' : notificationToast.type === 'danger' ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'}`}>
-                    {notificationToast.type === 'success' ? <ShieldCheck className="w-6 h-6" /> : <Skull className="w-6 h-6" />}
-                </div>
-                <div className="flex-1">
-                    <div className={`text-xs font-black uppercase tracking-widest ${notificationToast.type === 'success' ? 'text-green-400' : notificationToast.type === 'danger' ? 'text-red-400' : 'text-blue-300'}`}>{notificationToast.title}</div>
-                    <div className="text-white font-bold text-sm">{notificationToast.message}</div>
-                </div>
-                <div className="text-white/30"><X className="w-4 h-4" /></div>
-            </div>
-          </div>
         )}
 
         <div className={`absolute inset-0 z-0 ${isZombieMode ? 'bg-black' : isChristmasMode ? 'bg-[#0f172a]' : 'bg-slate-900'}`}>
@@ -2169,9 +2145,10 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                     </Circle>
                 )}
 
-                {/* --- RENDER GRINCHES (Christmas Mode Only) --- */}
+                {/* --- RENDER GRINCHES & GIFTS (Christmas Mode Only) --- */}
                 {isChristmasMode ? (
                      <>
+                        {/* RENDER GRINCHES (Moving) */}
                         {grinches.map(grinch => {
                             const isFleeing = grinch.state === 'fleeing';
                             
@@ -2204,6 +2181,38 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                                 </React.Fragment>
                             );
                         })}
+
+                        {/* RENDER GIFTS (Standard Checkpoints that aren't bonfires) */}
+                        {(activeCheckpoints || [])
+                            .filter(cp => {
+                                const n = cp.name.toLowerCase();
+                                return !n.includes('eldstad') && !n.includes('bonfire') && !n.includes('värme');
+                            })
+                            .map(cp => {
+                                if (!cp.location) return null;
+                                const isChecked = checkedInIds.has(cp.id);
+                                // Force color to standard gift red for consistency if not specified
+                                const color = cp.color || '#f87171';
+                                
+                                return (
+                                    <Marker
+                                        key={cp.id}
+                                        position={[cp.location.lat, cp.location.lng]}
+                                        icon={createCustomIcon(color, isChecked, false, false, cp.points || 0, 0, 0, false, 'Gift')}
+                                        eventHandlers={{ click: () => { if (!isChecked) { setSelectedCheckpoint(cp); } } }}
+                                    >
+                                        {!isChecked && (
+                                            <Tooltip direction="top" offset={[0, -20]} className="bg-transparent border-0 shadow-none">
+                                                <div className="px-2 py-1 rounded-md text-xs font-bold text-white shadow-md bg-red-600 whitespace-nowrap border border-white/20">
+                                                    🎁 PAKET
+                                                </div>
+                                            </Tooltip>
+                                        )}
+                                    </Marker>
+                                )
+                            })
+                        }
+
                         {/* RENDER STATIC BONFIRES SEPARATELY */}
                         {(activeCheckpoints || [])
                             .filter(cp => cp.name.toLowerCase().includes('eldstad') || cp.name.toLowerCase().includes('bonfire') || cp.name.toLowerCase().includes('värme'))
@@ -2263,11 +2272,12 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
             </MapContainer>
         </div>
         
+        {/* ... (Selected Checkpoint Modal - Preserved) ... */}
         {selectedCheckpoint && (
             <div className="absolute bottom-0 left-0 right-0 z-[2000] p-4 animate-in slide-in-from-bottom duration-300">
                 <div className={`backdrop-blur-xl border rounded-3xl p-6 shadow-2xl pb-24 overflow-hidden max-h-[80vh] overflow-y-auto ${isZombieMode ? 'bg-black/95 border-red-900 text-green-500 font-mono' : 'bg-slate-900/95 border-white/10 text-white'}`}>
                     <div className="flex justify-between items-start mb-4">
-                        <div><h2 className={`text-2xl font-bold leading-tight ${isZombieMode ? 'text-red-500 uppercase tracking-widest' : 'text-white'}`}>{selectedCheckpoint.name}</h2>{checkedInIds.has(selectedCheckpoint.id) ? (<span className={`inline-flex items-center gap-1 text-xs font-bold mt-1 px-2 py-0.5 rounded-full border ${isZombieMode ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-green-900/30 text-green-400 border-green-800'}`}><CheckCircle2 className="w-3 h-3" /> SECURED</span>) : (<span className="inline-flex items-center gap-1 text-xs font-bold mt-1 px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700"><Navigation className="w-3 h-3" /> DISTANCE: {(userLocation && selectedCheckpoint.location ? getDistanceMeters(userLocation[0], userLocation[1], selectedCheckpoint.location.lat, selectedCheckpoint.location.lng).toFixed(0) : '?')} M</span>)}</div>
+                        <div><h2 className={`text-2xl font-bold leading-tight ${isZombieMode ? 'text-red-500 uppercase tracking-widest' : 'text-white'}`}>{selectedCheckpoint.name}</h2>{checkedInIds.has(selectedCheckpoint.id) ? (<span className={`inline-flex items-center gap-1 text-xs font-bold mt-1 px-2 py-0.5 rounded-full border ${isZombieMode ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-green-900/30 text-green-400 border-green-800'}`}><CheckCircle2 className="w-3 h-3" /> SÄKRAD</span>) : (<span className="inline-flex items-center gap-1 text-xs font-bold mt-1 px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700"><Navigation className="w-3 h-3" /> AVSTÅND: {(userLocation && selectedCheckpoint.location ? getDistanceMeters(userLocation[0], userLocation[1], selectedCheckpoint.location.lat, selectedCheckpoint.location.lng).toFixed(0) : '?')} M</span>)}</div>
                         <button onClick={() => setSelectedCheckpoint(null)} className="p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white"><X className="w-4 h-4"/></button>
                     </div>
                     <div className={`rounded-xl p-4 mb-6 border ${isZombieMode ? 'bg-gray-900/50 border-red-900/30 text-green-400' : 'bg-gray-800/50 border-white/5 text-gray-300'}`}><p className="text-sm leading-relaxed">{selectedCheckpoint.description || "Ingen beskrivning."}</p>{selectedCheckpoint.points && selectedCheckpoint.points < 0 && (<div className="mt-4 pt-4 border-t border-red-900/30 flex gap-3"><div className="p-2 bg-red-900/20 rounded-lg text-red-500 h-fit"><Skull className="w-5 h-5 animate-pulse" /></div><div><div className="text-xs font-bold text-red-500 uppercase tracking-wide mb-1">HAZARD ZONE</div><p className="text-sm text-red-300 italic">This area is heavily infected. Keep your distance!</p></div></div>)}</div>
@@ -2276,18 +2286,18 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                     {selectedCheckpoint.requiresPhoto && !checkedInIds.has(selectedCheckpoint.id) && (
                         <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-xl mb-4">
                             <h3 className="text-sm font-bold text-blue-300 uppercase tracking-wider mb-2 flex items-center gap-2">
-                                <Camera className="w-4 h-4" /> Photo Proof Required
+                                <Camera className="w-4 h-4" /> Bildbevis Krävs
                             </h3>
                             
                             {isUploadingPhoto ? (
                                 <div className="flex flex-col items-center justify-center py-6">
                                     <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-2" />
-                                    <span className="text-xs font-bold text-blue-300">UPLOADING TO CLOUD...</span>
+                                    <span className="text-xs font-bold text-blue-300">LADDAR UPP TILL MOLNET...</span>
                                 </div>
                             ) : (
                                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-blue-500/50 rounded-lg cursor-pointer hover:bg-blue-900/30 transition-colors">
                                     <Upload className="w-8 h-8 text-blue-400 mb-2" />
-                                    <span className="text-xs font-bold text-blue-300">TAP TO UPLOAD EVIDENCE</span>
+                                    <span className="text-xs font-bold text-blue-300">KLICKA FÖR ATT LADDA UPP BEVIS</span>
                                     <input 
                                         ref={fileInputRef}
                                         type="file" 
@@ -2306,9 +2316,9 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                              <div className="flex items-center gap-3 mb-3">
                                 <div className="p-2 bg-blue-500/20 rounded-full animate-pulse"><Radar className="w-6 h-6 text-blue-400" /></div>
                                 <div>
-                                    <div className="text-xs font-bold text-blue-400 uppercase tracking-widest">Auto-Link Active</div>
+                                    <div className="text-xs font-bold text-blue-400 uppercase tracking-widest">Auto-Link Aktiv</div>
                                     <p className="text-xs text-blue-200">
-                                        Move within {selectedCheckpoint.radiusMeters || 20}m to check in.
+                                        Gå inom {selectedCheckpoint.radiusMeters || 20}m för att checka in.
                                     </p>
                                 </div>
                              </div>
