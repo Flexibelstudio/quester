@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Circle, Marker, useMap, Popup, Polyline, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { RaceEvent, Checkpoint, ParticipantResult, Rating, UserProfile } from '../types';
-import { MapPin, Trophy, Navigation, X, CheckCircle2, Zap, Crown, Route, Timer, Medal, User, Star, Clock, AlertTriangle, Camera, Play, LocateFixed, HelpCircle, ArrowRight, ArrowLeft, Upload, Share2, Image as ImageIcon, Loader2, Flag, Skull, Volume2, VolumeX, Radar, ShieldCheck, Heart, HeartCrack, RotateCcw, Snowflake, Gift, Bug, Ghost, Users, Building2, Ban, Lock, PlayCircle, Settings, LogOut, FileText, PauseCircle, Radio, Flame, Biohazard, Crosshair, ChevronRight, Rocket, Sparkles, Eye, Thermometer, ShoppingBag, Package, Info, Map as MapIcon } from 'lucide-react';
+import { MapPin, Trophy, Navigation, X, CheckCircle2, Zap, Crown, Route, Timer, Medal, User, Star, Clock, AlertTriangle, Camera, Play, LocateFixed, HelpCircle, ArrowRight, ArrowLeft, Upload, Share2, Image as ImageIcon, Loader2, Flag, Skull, Volume2, VolumeX, Radar, ShieldCheck, Heart, HeartCrack, RotateCcw, Snowflake, Gift, Bug, Ghost, Users, Building2, Ban, Lock, PlayCircle, Settings, LogOut, FileText, PauseCircle, Radio, Flame, Biohazard, Crosshair, ChevronRight, Rocket, Sparkles, Eye, Thermometer, ShoppingBag, Package } from 'lucide-react';
 import { ShareDialog } from './ShareDialog';
 import { useZombieAudio, unlockAudioEngine } from '../hooks/useZombieAudio';
 import { useChristmasAudio } from '../hooks/useChristmasAudio';
@@ -266,98 +266,10 @@ const MissionBriefingDialog: React.FC<{
 }> = ({ raceData, onDeploy, isOpen }) => {
     const [step, setStep] = useState(0);
     const isChristmas = raceData.category === 'Christmas Hunt';
-    const isZombie = raceData.category === 'Survival Run';
-    const isStandard = !isChristmas && !isZombie;
     
     if (!isOpen) return null;
 
-    // --- STANDARD BRIEFING ---
-    const standardSteps = [
-      {
-        title: raceData.name || "VÄLKOMMEN",
-        icon: <MapIcon className="w-6 h-6 text-blue-500" />,
-        content: (
-          <div className="space-y-4">
-             <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 shadow-inner">
-               <p className="text-slate-300 leading-relaxed text-sm whitespace-pre-wrap">
-                 {raceData.description || "Välkommen till eventet! Gör dig redo att navigera och lösa uppgifter."}
-               </p>
-             </div>
-             {raceData.startCity && (
-                <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-900/50 p-2 rounded-lg w-fit">
-                    <MapPin className="w-4 h-4" />
-                    <span>Plats: {raceData.startCity}</span>
-                </div>
-             )}
-          </div>
-        )
-      },
-      {
-        title: "REGLER & UPPLÄGG",
-        icon: <Info className="w-6 h-6 text-blue-500" />,
-        content: (
-          <div className="space-y-3">
-            {/* Win Condition */}
-            <div className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
-               <div className="bg-yellow-900/20 p-2 rounded-lg text-yellow-500 shrink-0">
-                 <Trophy className="w-5 h-5" />
-               </div>
-               <div>
-                 <div className="text-xs font-bold text-slate-400 uppercase">Målsättning</div>
-                 <div className="text-sm font-medium text-white">
-                   {raceData.winCondition === 'most_points' ? 'Samla så många poäng som möjligt' : 'Ta dig i mål på kortast tid'}
-                 </div>
-               </div>
-            </div>
-
-            {/* Checkpoints */}
-            <div className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
-               <div className="bg-blue-900/20 p-2 rounded-lg text-blue-500 shrink-0">
-                 <MapPin className="w-5 h-5" />
-               </div>
-               <div>
-                 <div className="text-xs font-bold text-slate-400 uppercase">Uppdrag</div>
-                 <div className="text-sm font-medium text-white">
-                   {raceData.checkpoints.length} checkpoints att hitta
-                 </div>
-               </div>
-            </div>
-
-            {/* Time Limit (if rogaining or specifically set) */}
-            {raceData.timeLimitMinutes && (
-              <div className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
-                 <div className="bg-red-900/20 p-2 rounded-lg text-red-500 shrink-0">
-                   <Clock className="w-5 h-5" />
-                 </div>
-                 <div>
-                   <div className="text-xs font-bold text-slate-400 uppercase">Tidsgräns</div>
-                   <div className="text-sm font-medium text-white">
-                     {raceData.timeLimitMinutes} minuter
-                   </div>
-                 </div>
-              </div>
-            )}
-          </div>
-        )
-      },
-      {
-        title: "LYCKA TILL",
-        icon: <Flag className="w-6 h-6 text-green-500" />,
-        content: (
-          <div className="text-center py-6">
-             <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-green-500/30 animate-pulse">
-               <Zap className="w-10 h-10 text-green-500" />
-             </div>
-             <h3 className="text-2xl font-black text-white mb-2">Är du redo?</h3>
-             <p className="text-slate-400 text-sm max-w-xs mx-auto">
-               Ta dig till startpunkten. Klockan startar när du trycker på knappen.
-             </p>
-          </div>
-        )
-      }
-    ];
-
-    // --- ZOMBIE BRIEFING ---
+    // Define content for Zombie/Default Mode
     const zombieSteps = [
         {
             title: "SITUATION REPORT",
@@ -423,7 +335,7 @@ const MissionBriefingDialog: React.FC<{
         }
     ];
 
-    // --- CHRISTMAS BRIEFING ---
+    // Define content for Christmas Mode (UPDATED for Yo-Yo)
     const christmasSteps = [
         {
             title: "NÖDMEDDELANDE",
@@ -480,55 +392,33 @@ const MissionBriefingDialog: React.FC<{
         }
     ];
 
-    let steps = standardSteps;
-    if (isZombie) steps = zombieSteps;
-    if (isChristmas) steps = christmasSteps;
-
+    const steps = isChristmas ? christmasSteps : zombieSteps;
     const current = steps[step];
     
     // Theme colors
-    let theme;
-    if (isChristmas) {
-        theme = {
-            bg: 'bg-white/95 border-sky-300 shadow-sky-900/20',
-            headerBg: 'bg-gradient-to-r from-sky-100 to-white border-sky-200',
-            titleText: 'text-slate-800',
-            subText: 'text-slate-500',
-            contentBg: 'bg-sky-50/30',
-            footerBg: 'bg-white border-sky-100',
-            btnNext: 'bg-red-500 hover:bg-red-600 text-white border-red-400 shadow-red-200',
-            progressBar: 'bg-sky-200',
-            progressActive: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]',
-            snow: true
-        };
-    } else if (isZombie) {
-        theme = {
-            bg: 'bg-gray-900 border-gray-700 shadow-2xl',
-            headerBg: 'bg-gray-950 border-gray-800',
-            titleText: 'text-white',
-            subText: 'text-gray-600',
-            contentBg: 'bg-black/20',
-            footerBg: 'bg-gray-950 border-gray-800',
-            btnNext: 'bg-red-600 hover:bg-red-500 text-white border-red-800',
-            progressBar: 'bg-gray-800',
-            progressActive: 'bg-red-600',
-            snow: false
-        };
-    } else {
-        // STANDARD THEME (Professional/Neutral)
-        theme = {
-            bg: 'bg-slate-900 border-slate-700 shadow-2xl',
-            headerBg: 'bg-slate-950 border-slate-800',
-            titleText: 'text-white',
-            subText: 'text-slate-400',
-            contentBg: 'bg-slate-800/30',
-            footerBg: 'bg-slate-950 border-slate-800',
-            btnNext: 'bg-blue-600 hover:bg-blue-500 text-white border-blue-800 shadow-lg shadow-blue-900/30',
-            progressBar: 'bg-slate-800',
-            progressActive: 'bg-blue-500',
-            snow: false
-        };
-    }
+    const theme = isChristmas ? {
+        bg: 'bg-white/95 border-sky-300 shadow-sky-900/20',
+        headerBg: 'bg-gradient-to-r from-sky-100 to-white border-sky-200',
+        titleText: 'text-slate-800',
+        subText: 'text-slate-500',
+        contentBg: 'bg-sky-50/30',
+        footerBg: 'bg-white border-sky-100',
+        btnNext: 'bg-red-500 hover:bg-red-600 text-white border-red-400 shadow-red-200',
+        progressBar: 'bg-sky-200',
+        progressActive: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]',
+        snow: true
+    } : {
+        bg: 'bg-gray-900 border-gray-700 shadow-2xl',
+        headerBg: 'bg-gray-950 border-gray-800',
+        titleText: 'text-white',
+        subText: 'text-gray-600',
+        contentBg: 'bg-black/20',
+        footerBg: 'bg-gray-950 border-gray-800',
+        btnNext: 'bg-red-600 hover:bg-red-500 text-white border-red-800',
+        progressBar: 'bg-gray-800',
+        progressActive: 'bg-red-600',
+        snow: false
+    };
 
     return (
         <div className="fixed inset-0 z-[5000] bg-black/80 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
@@ -539,9 +429,7 @@ const MissionBriefingDialog: React.FC<{
                 <div className={`p-6 border-b flex justify-between items-center relative overflow-hidden ${theme.headerBg}`}>
                     {theme.snow && <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/snow.png')] opacity-10"></div>}
                     <div className="relative z-10">
-                        <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isChristmas ? 'text-red-500' : isZombie ? 'text-gray-500' : 'text-blue-400'}`}>
-                            {isChristmas ? 'SANTA PROTOCOL V.24' : isZombie ? 'MISSION BRIEFING' : 'EVENT BRIEFING'}
-                        </div>
+                        <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isChristmas ? 'text-red-500' : 'text-gray-500'}`}>{isChristmas ? 'SANTA PROTOCOL V.24' : 'MISSION BRIEFING'}</div>
                         <h2 className={`text-2xl font-black uppercase tracking-tighter flex items-center gap-2 ${theme.titleText}`}>
                             {current.icon} {current.title}
                         </h2>
@@ -574,7 +462,7 @@ const MissionBriefingDialog: React.FC<{
                         {step < steps.length - 1 ? (
                             <>NÄSTA <ChevronRight className="w-5 h-5" /></>
                         ) : (
-                            <>{isChristmas ? 'RÄDDA JULEN NU' : isZombie ? 'DEPLOY MISSION' : 'STARTA ÄVENTYRET'} <Rocket className="w-5 h-5" /></>
+                            <>{isChristmas ? 'RÄDDA JULEN NU' : 'DEPLOY MISSION'} <Rocket className="w-5 h-5" /></>
                         )}
                     </button>
                 </div>
@@ -2166,104 +2054,96 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                     </Circle>
                 )}
 
-                {/* --- RENDER GRINCHES (Dynamic Entities) --- */}
-                {isChristmasMode && grinches.map(grinch => {
-                    const isFleeing = grinch.state === 'fleeing';
-                    
-                    // Do not render if caught
-                    if (grinch.state === 'caught') return null;
+                {/* --- RENDER GRINCHES (Christmas Mode Only) --- */}
+                {isChristmasMode ? (
+                     <>
+                        {grinches.map(grinch => {
+                            const isFleeing = grinch.state === 'fleeing';
+                            
+                            // We do not render if caught (maybe show loot bag later)
+                            if (grinch.state === 'caught') return null;
 
-                    return (
-                        <React.Fragment key={`grinch-${grinch.id}`}>
-                            {/* Grinch Marker (Dynamic Position) */}
-                            <Marker 
-                                position={[grinch.lat, grinch.lng]} 
-                                icon={createGrinchIcon(grinch.state)}
-                            >
-                                {isFleeing && (
-                                    <Tooltip permanent direction="top" offset={[0, -20]} className="bg-transparent border-0 shadow-none">
-                                        <div className="px-2 py-1 rounded-md text-xs font-bold text-white shadow-md bg-red-600 whitespace-nowrap">
-                                            🏃 STOPPA TJUVEN!
+                            return (
+                                <React.Fragment key={grinch.id}>
+                                    {/* Grinch Marker (Dynamic Position) */}
+                                    <Marker 
+                                        position={[grinch.lat, grinch.lng]} 
+                                        icon={createGrinchIcon(grinch.state)}
+                                    >
+                                        {isFleeing && (
+                                            <Tooltip permanent direction="top" offset={[0, -20]} className="bg-transparent border-0 shadow-none">
+                                                <div className="px-2 py-1 rounded-md text-xs font-bold text-white shadow-md bg-red-600 whitespace-nowrap">
+                                                    🏃 STOPPA TJUVEN!
+                                                </div>
+                                            </Tooltip>
+                                        )}
+                                    </Marker>
+                                    
+                                    {/* Movement Trail (Debug/Visual Aid) */}
+                                    {isFleeing && userLocation && (
+                                        <Polyline 
+                                            positions={[[grinch.lat, grinch.lng], [userLocation[0], userLocation[1]]]} 
+                                            pathOptions={{ color: 'red', weight: 2, dashArray: '5, 5', opacity: 0.3 }} 
+                                        />
+                                    )}
+                                </React.Fragment>
+                            );
+                        })}
+                        {/* RENDER STATIC BONFIRES SEPARATELY */}
+                        {(activeCheckpoints || [])
+                            .filter(cp => cp.name.toLowerCase().includes('eldstad') || cp.name.toLowerCase().includes('bonfire') || cp.name.toLowerCase().includes('värme'))
+                            .map(cp => {
+                                if (!cp.location) return null;
+                                return (
+                                <Marker 
+                                    key={cp.id}
+                                    position={[cp.location.lat, cp.location.lng]}
+                                    icon={createCustomIcon(cp.color || '#F97316', false, false, false, 0, 0, 0, false, cp.name)}
+                                >
+                                    <Tooltip direction="top" offset={[0, -20]} className="bg-transparent border-0 shadow-none">
+                                        <div className="px-2 py-1 rounded-md text-xs font-bold text-white shadow-md bg-orange-600 whitespace-nowrap">
+                                            🔥 VÄRME
                                         </div>
                                     </Tooltip>
-                                )}
-                            </Marker>
-                            
-                            {/* Movement Trail (Debug/Visual Aid) */}
-                            {isFleeing && userLocation && (
-                                <Polyline 
-                                    positions={[[grinch.lat, grinch.lng], [userLocation[0], userLocation[1]]]} 
-                                    pathOptions={{ color: 'red', weight: 2, dashArray: '5, 5', opacity: 0.3 }} 
-                                />
-                            )}
-                        </React.Fragment>
-                    );
-                })}
-
-                {/* --- RENDER CHECKPOINTS (Static Markers - All Modes) --- */}
-                {(activeCheckpoints || []).map((cp, index) => {
-                    if (cp.id === 'extraction-heli') return null; // Handled separately
-                    // Double check location is not null
-                    if (!cp.location) return null;
-
-                    const isChecked = checkedInIds.has(cp.id);
-                    const isZombieCP = isZombieCheckpoint(cp);
-                    // Default radius logic fallback
-                    const displayRadius = cp.radiusMeters || 20;
-                    const cpColor = cp.color || '#3b82f6';
-
-                    // --- Christmas Logic for Static Markers ---
-                    // If we are in Christmas Mode, we still want to see the "Gift" markers even if there is a Grinch entity.
-                    // However, if the Grinch is currently running (fleeing), having a static marker at the spawn might look weird.
-                    // But for robustness (as requested), we render it.
-                    // We DO want to filter out 'Eldstad' to give them special icons if we want, or rely on createCustomIcon which handles it.
-                    
-                    // Check if this CP corresponds to an active Grinch entity
-                    // If so, we might want to hide the STATIC marker if the Grinch is moving, 
-                    // but the user complained about invisible packages, so let's render everything unless caught.
-                    
-                    // Actually, if we have a Grinch entity for this CP, the Grinch entity *is* the visual representation.
-                    // Rendering both creates duplicates at spawn. 
-                    // Let's hide the static marker ONLY if there is a corresponding Grinch entity that is NOT caught.
-                    if (isChristmasMode) {
-                        const activeGrinch = grinches.find(g => g.id === cp.id && g.state !== 'caught');
-                        if (activeGrinch) {
-                            // If there is an active Grinch entity for this CP, we skip the static marker 
-                            // because the Grinch entity loop above handles it (with animation).
-                            // This assumes `grinches` array is populated correctly.
-                            // If the user said "nu ser jag inga paket", it implies `grinches` might be empty or failing.
-                            // To be absolutely safe and satisfy "ändra tillbaka" (revert to robust state), 
-                            // we will RENDER the static marker as a fallback if it's not the same location, 
-                            // OR just render it anyway. 
-                            // Let's skip the static marker if the grinch is fleeing (position mismatch).
-                            // If guarding (at spawn), we can skip it too to avoid z-fighting.
-                            return null; 
+                                </Marker>
+                            )})
                         }
-                        // If no active grinch entity (e.g. Bonfire, or Grinch logic failed, or Caught), render static.
-                    }
+                     </>
+                ) : (
+                    /* Standard Checkpoints rendering */
+                    (activeCheckpoints || []).map((cp, index) => {
+                        if (cp.id === 'extraction-heli') return null; // Handled separately
+                        // Double check location is not null (though activeCheckpoints should guarantee)
+                        if (!cp.location) return null;
 
-                    return (
-                        <React.Fragment key={cp.id}>
-                            {/* Visual Circle for Check-in Zone */}
-                            {!isChecked && (
-                                <Circle 
-                                    center={[cp.location.lat, cp.location.lng]} 
-                                    radius={displayRadius} 
-                                    pathOptions={{ 
-                                        color: isZombieCP ? '#ef4444' : cpColor, 
-                                        fillColor: isZombieCP ? '#ef4444' : cpColor, 
-                                        fillOpacity: isZombieCP ? 0.2 : 0.1, 
-                                        dashArray: isZombieCP ? '5, 5' : undefined,
-                                        weight: 1
-                                    }} 
-                                    interactive={false}
-                                />
-                            )}
-                            <Marker position={[cp.location.lat, cp.location.lng]} icon={createCustomIcon(cp.color || '#3b82f6', isChecked, !!cp.quiz, !!cp.challenge, cp.points || 0, cp.timeModifierSeconds, index + 1, false, cp.name)} eventHandlers={{ click: () => { if (!isZombieCP) { setSelectedCheckpoint(cp); } } }} />
-                        </React.Fragment>
-                    )
-                })}
+                        const isChecked = checkedInIds.has(cp.id);
+                        const isZombieCP = isZombieCheckpoint(cp);
+                        // Default radius logic fallback to visualize zone
+                        const displayRadius = cp.radiusMeters || 20;
+                        const cpColor = cp.color || '#3b82f6';
 
+                        return (
+                            <React.Fragment key={cp.id}>
+                                {/* Visual Circle for Check-in Zone (Always visible now) */}
+                                {!isChecked && (
+                                    <Circle 
+                                        center={[cp.location.lat, cp.location.lng]} 
+                                        radius={displayRadius} 
+                                        pathOptions={{ 
+                                            color: isZombieCP ? '#ef4444' : cpColor, 
+                                            fillColor: isZombieCP ? '#ef4444' : cpColor, 
+                                            fillOpacity: isZombieCP ? 0.2 : 0.1, 
+                                            dashArray: isZombieCP ? '5, 5' : undefined,
+                                            weight: 1
+                                        }} 
+                                        interactive={false}
+                                    />
+                                )}
+                                <Marker position={[cp.location.lat, cp.location.lng]} icon={createCustomIcon(cp.color || '#3b82f6', isChecked, !!cp.quiz, !!cp.challenge, cp.points || 0, cp.timeModifierSeconds, index + 1, false, cp.name)} eventHandlers={{ click: () => { if (!isZombieCP) { setSelectedCheckpoint(cp); } } }} />
+                            </React.Fragment>
+                        )
+                    })
+                )}
                 {roamingZombies.map(z => (<React.Fragment key={z.id}><Circle center={[z.lat, z.lng]} radius={50} pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.2, weight: 1, className: 'animate-pulse' }} interactive={false} /><Marker position={[z.lat, z.lng]} icon={createRoamingZombieIcon(z.angle || 0, (Date.now() - (z.lastAttackTime || 0)) < 5000)}/></React.Fragment>))}
             </MapContainer>
         </div>
