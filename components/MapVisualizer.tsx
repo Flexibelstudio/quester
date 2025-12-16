@@ -169,8 +169,8 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
   // Detect Zombie Survival Mode
   const isZombieMode = raceData.category === 'Survival Run' || raceData.mapStyle === 'dark';
 
-  // Calculate route positions - Filter out null locations!
-  const validCheckpoints = raceData.checkpoints.filter(cp => cp.location !== null);
+  // Calculate route positions - Filter out null/undefined locations strictly!
+  const validCheckpoints = raceData.checkpoints.filter(cp => !!cp.location);
   const allCheckpointPositions = validCheckpoints.map(cp => [cp.location!.lat, cp.location!.lng] as [number, number]);
 
   const routePositions = [

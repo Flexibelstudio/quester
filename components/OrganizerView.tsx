@@ -106,14 +106,17 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
                              ...existing,
                              ...incomingCp,
                              // Preserve existing location if AI omits it during an content update (common case)
-                             // If incomingCp.location is explicitly null/undefined, we keep the old one 
-                             // UNLESS we are specifically handling a "remove location" action, but standard AI flow is additive.
-                             location: incomingCp.location ? incomingCp.location : existing.location
+                             // If incomingCp.location is undefined, use existing.
+                             location: incomingCp.location !== undefined ? incomingCp.location : existing.location
                          };
                      } else {
                          // 3. Insert new (Append)
-                         // If location is missing here, it correctly becomes a "Draft"
-                         mergedCheckpoints.push(incomingCp);
+                         // Ensure location is explicitly null if undefined (Draft) to avoid map crash
+                         const newCp = { ...incomingCp };
+                         if (!newCp.location) {
+                             newCp.location = null;
+                         }
+                         mergedCheckpoints.push(newCp);
                      }
                  });
                  updatedData.checkpoints = mergedCheckpoints;
