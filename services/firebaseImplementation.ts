@@ -1,4 +1,3 @@
-
 import { 
     collection, 
     getDocs, 
@@ -14,6 +13,7 @@ import {
     Firestore,
     DocumentData
 } from "firebase/firestore";
+// @ts-ignore
 import { 
     GoogleAuthProvider, 
     FacebookAuthProvider, 
@@ -343,10 +343,33 @@ export class FirebaseEventService implements IEventService {
         if (!db) throw new Error("Firebase not initialized");
         const eventRef = doc(db as Firestore, this.collectionName, eventId);
         
-        await updateDoc(eventRef, {
-            results: arrayUnion(result),
-            participantIds: arrayUnion(result.id)
-        });
+        // Use READ-MODIFY-WRITE instead of arrayUnion to correctly replace/update existing entries
+        try {
+            const docSnap = await getDoc(eventRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data() as RaceEvent;
+                const results = data.results || [];
+                
+                const index = results.findIndex(r => r.id === result.id);
+                
+                if (index > -1) {
+                    // Update existing result (e.g. status change from 'running' to 'dnf')
+                    results[index] = result;
+                } else {
+                    // Add new result
+                    results.push(result);
+                }
+                
+                await updateDoc(eventRef, {
+                    results: results,
+                    // We can safely use arrayUnion for IDs as duplicates are fine/handled by set logic
+                    participantIds: arrayUnion(result.id)
+                });
+            }
+        } catch (e) {
+            console.error("Error saving result:", e);
+            throw e;
+        }
     }
 
     async getParticipatedEvents(userId: string): Promise<RaceEvent[]> {
