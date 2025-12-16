@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Circle, Marker, useMap, Popup, Polyline, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { RaceEvent, Checkpoint, ParticipantResult, Rating, UserProfile } from '../types';
-import { MapPin, Trophy, Navigation, X, CheckCircle2, Zap, Crown, Route, Timer, Medal, User, Star, Clock, AlertTriangle, Camera, Play, LocateFixed, HelpCircle, ArrowRight, ArrowLeft, Upload, Share2, Image as ImageIcon, Loader2, Flag, Skull, Volume2, VolumeX, Radar, ShieldCheck, Heart, HeartCrack, RotateCcw, Snowflake, Gift, Bug, Ghost, Users, Building2, Ban, Lock, PlayCircle, Settings, LogOut, FileText, PauseCircle, Radio, Flame, Biohazard, Crosshair, ChevronRight, Rocket, Sparkles, Eye, Thermometer, ShoppingBag, Package } from 'lucide-react';
+import { MapPin, Trophy, Navigation, X, CheckCircle2, Zap, Crown, Route, Timer, Medal, User, Star, Clock, AlertTriangle, Camera, Play, LocateFixed, HelpCircle, ArrowRight, ArrowLeft, Upload, Share2, Image as ImageIcon, Loader2, Flag, Skull, Volume2, VolumeX, Radar, ShieldCheck, Heart, HeartCrack, RotateCcw, Snowflake, Gift, Bug, Ghost, Users, Building2, Ban, Lock, PlayCircle, Settings, LogOut, FileText, PauseCircle, Radio, Flame, Biohazard, Crosshair, ChevronRight, Rocket, Sparkles, Eye, Thermometer, ShoppingBag, Package, Info, Map as MapIcon } from 'lucide-react';
 import { ShareDialog } from './ShareDialog';
 import { useZombieAudio, unlockAudioEngine } from '../hooks/useZombieAudio';
 import { useChristmasAudio } from '../hooks/useChristmasAudio';
@@ -266,10 +266,98 @@ const MissionBriefingDialog: React.FC<{
 }> = ({ raceData, onDeploy, isOpen }) => {
     const [step, setStep] = useState(0);
     const isChristmas = raceData.category === 'Christmas Hunt';
+    const isZombie = raceData.category === 'Survival Run';
+    const isStandard = !isChristmas && !isZombie;
     
     if (!isOpen) return null;
 
-    // Define content for Zombie/Default Mode
+    // --- STANDARD BRIEFING ---
+    const standardSteps = [
+      {
+        title: raceData.name || "VÄLKOMMEN",
+        icon: <MapIcon className="w-6 h-6 text-blue-500" />,
+        content: (
+          <div className="space-y-4">
+             <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 shadow-inner">
+               <p className="text-slate-300 leading-relaxed text-sm whitespace-pre-wrap">
+                 {raceData.description || "Välkommen till eventet! Gör dig redo att navigera och lösa uppgifter."}
+               </p>
+             </div>
+             {raceData.startCity && (
+                <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-900/50 p-2 rounded-lg w-fit">
+                    <MapPin className="w-4 h-4" />
+                    <span>Plats: {raceData.startCity}</span>
+                </div>
+             )}
+          </div>
+        )
+      },
+      {
+        title: "REGLER & UPPLÄGG",
+        icon: <Info className="w-6 h-6 text-blue-500" />,
+        content: (
+          <div className="space-y-3">
+            {/* Win Condition */}
+            <div className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+               <div className="bg-yellow-900/20 p-2 rounded-lg text-yellow-500 shrink-0">
+                 <Trophy className="w-5 h-5" />
+               </div>
+               <div>
+                 <div className="text-xs font-bold text-slate-400 uppercase">Målsättning</div>
+                 <div className="text-sm font-medium text-white">
+                   {raceData.winCondition === 'most_points' ? 'Samla så många poäng som möjligt' : 'Ta dig i mål på kortast tid'}
+                 </div>
+               </div>
+            </div>
+
+            {/* Checkpoints */}
+            <div className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+               <div className="bg-blue-900/20 p-2 rounded-lg text-blue-500 shrink-0">
+                 <MapPin className="w-5 h-5" />
+               </div>
+               <div>
+                 <div className="text-xs font-bold text-slate-400 uppercase">Uppdrag</div>
+                 <div className="text-sm font-medium text-white">
+                   {raceData.checkpoints.length} checkpoints att hitta
+                 </div>
+               </div>
+            </div>
+
+            {/* Time Limit (if rogaining or specifically set) */}
+            {raceData.timeLimitMinutes && (
+              <div className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                 <div className="bg-red-900/20 p-2 rounded-lg text-red-500 shrink-0">
+                   <Clock className="w-5 h-5" />
+                 </div>
+                 <div>
+                   <div className="text-xs font-bold text-slate-400 uppercase">Tidsgräns</div>
+                   <div className="text-sm font-medium text-white">
+                     {raceData.timeLimitMinutes} minuter
+                   </div>
+                 </div>
+              </div>
+            )}
+          </div>
+        )
+      },
+      {
+        title: "LYCKA TILL",
+        icon: <Flag className="w-6 h-6 text-green-500" />,
+        content: (
+          <div className="text-center py-6">
+             <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-green-500/30 animate-pulse">
+               <Zap className="w-10 h-10 text-green-500" />
+             </div>
+             <h3 className="text-2xl font-black text-white mb-2">Är du redo?</h3>
+             <p className="text-slate-400 text-sm max-w-xs mx-auto">
+               Ta dig till startpunkten. Klockan startar när du trycker på knappen.
+             </p>
+          </div>
+        )
+      }
+    ];
+
+    // --- ZOMBIE BRIEFING ---
     const zombieSteps = [
         {
             title: "SITUATION REPORT",
@@ -335,7 +423,7 @@ const MissionBriefingDialog: React.FC<{
         }
     ];
 
-    // Define content for Christmas Mode (UPDATED for Yo-Yo)
+    // --- CHRISTMAS BRIEFING ---
     const christmasSteps = [
         {
             title: "NÖDMEDDELANDE",
@@ -392,33 +480,55 @@ const MissionBriefingDialog: React.FC<{
         }
     ];
 
-    const steps = isChristmas ? christmasSteps : zombieSteps;
+    let steps = standardSteps;
+    if (isZombie) steps = zombieSteps;
+    if (isChristmas) steps = christmasSteps;
+
     const current = steps[step];
     
     // Theme colors
-    const theme = isChristmas ? {
-        bg: 'bg-white/95 border-sky-300 shadow-sky-900/20',
-        headerBg: 'bg-gradient-to-r from-sky-100 to-white border-sky-200',
-        titleText: 'text-slate-800',
-        subText: 'text-slate-500',
-        contentBg: 'bg-sky-50/30',
-        footerBg: 'bg-white border-sky-100',
-        btnNext: 'bg-red-500 hover:bg-red-600 text-white border-red-400 shadow-red-200',
-        progressBar: 'bg-sky-200',
-        progressActive: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]',
-        snow: true
-    } : {
-        bg: 'bg-gray-900 border-gray-700 shadow-2xl',
-        headerBg: 'bg-gray-950 border-gray-800',
-        titleText: 'text-white',
-        subText: 'text-gray-600',
-        contentBg: 'bg-black/20',
-        footerBg: 'bg-gray-950 border-gray-800',
-        btnNext: 'bg-red-600 hover:bg-red-500 text-white border-red-800',
-        progressBar: 'bg-gray-800',
-        progressActive: 'bg-red-600',
-        snow: false
-    };
+    let theme;
+    if (isChristmas) {
+        theme = {
+            bg: 'bg-white/95 border-sky-300 shadow-sky-900/20',
+            headerBg: 'bg-gradient-to-r from-sky-100 to-white border-sky-200',
+            titleText: 'text-slate-800',
+            subText: 'text-slate-500',
+            contentBg: 'bg-sky-50/30',
+            footerBg: 'bg-white border-sky-100',
+            btnNext: 'bg-red-500 hover:bg-red-600 text-white border-red-400 shadow-red-200',
+            progressBar: 'bg-sky-200',
+            progressActive: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]',
+            snow: true
+        };
+    } else if (isZombie) {
+        theme = {
+            bg: 'bg-gray-900 border-gray-700 shadow-2xl',
+            headerBg: 'bg-gray-950 border-gray-800',
+            titleText: 'text-white',
+            subText: 'text-gray-600',
+            contentBg: 'bg-black/20',
+            footerBg: 'bg-gray-950 border-gray-800',
+            btnNext: 'bg-red-600 hover:bg-red-500 text-white border-red-800',
+            progressBar: 'bg-gray-800',
+            progressActive: 'bg-red-600',
+            snow: false
+        };
+    } else {
+        // STANDARD THEME (Professional/Neutral)
+        theme = {
+            bg: 'bg-slate-900 border-slate-700 shadow-2xl',
+            headerBg: 'bg-slate-950 border-slate-800',
+            titleText: 'text-white',
+            subText: 'text-slate-400',
+            contentBg: 'bg-slate-800/30',
+            footerBg: 'bg-slate-950 border-slate-800',
+            btnNext: 'bg-blue-600 hover:bg-blue-500 text-white border-blue-800 shadow-lg shadow-blue-900/30',
+            progressBar: 'bg-slate-800',
+            progressActive: 'bg-blue-500',
+            snow: false
+        };
+    }
 
     return (
         <div className="fixed inset-0 z-[5000] bg-black/80 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
@@ -429,7 +539,9 @@ const MissionBriefingDialog: React.FC<{
                 <div className={`p-6 border-b flex justify-between items-center relative overflow-hidden ${theme.headerBg}`}>
                     {theme.snow && <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/snow.png')] opacity-10"></div>}
                     <div className="relative z-10">
-                        <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isChristmas ? 'text-red-500' : 'text-gray-500'}`}>{isChristmas ? 'SANTA PROTOCOL V.24' : 'MISSION BRIEFING'}</div>
+                        <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isChristmas ? 'text-red-500' : isZombie ? 'text-gray-500' : 'text-blue-400'}`}>
+                            {isChristmas ? 'SANTA PROTOCOL V.24' : isZombie ? 'MISSION BRIEFING' : 'EVENT BRIEFING'}
+                        </div>
                         <h2 className={`text-2xl font-black uppercase tracking-tighter flex items-center gap-2 ${theme.titleText}`}>
                             {current.icon} {current.title}
                         </h2>
@@ -462,7 +574,7 @@ const MissionBriefingDialog: React.FC<{
                         {step < steps.length - 1 ? (
                             <>NÄSTA <ChevronRight className="w-5 h-5" /></>
                         ) : (
-                            <>{isChristmas ? 'RÄDDA JULEN NU' : 'DEPLOY MISSION'} <Rocket className="w-5 h-5" /></>
+                            <>{isChristmas ? 'RÄDDA JULEN NU' : isZombie ? 'DEPLOY MISSION' : 'STARTA ÄVENTYRET'} <Rocket className="w-5 h-5" /></>
                         )}
                     </button>
                 </div>
