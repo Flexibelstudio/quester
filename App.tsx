@@ -594,6 +594,7 @@ function AppContent() {
                 await handleDeleteEvent(id);
                 setViewMode('dashboard');
             }}
+            onCreateTemplate={handleCreateTemplate} // Pass to OrganizerView
         />
       )}
     </div>

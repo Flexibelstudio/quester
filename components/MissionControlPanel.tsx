@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { RaceEvent, Checkpoint, EventStatus } from '../types';
+import { RaceEvent, Checkpoint, EventStatus, QuizData } from '../types';
 import { 
   ChevronLeft, Flag, Plus, Globe, 
   CheckCircle2, Circle, Sparkles, Trash2, Edit2, 
   LayoutList, ListTodo, PanelLeftClose, PanelLeftOpen,
-  Hammer, Wand2, Skull, BookOpen, ChevronDown, ChevronRight, PlayCircle, MousePointer2,
-  Settings2, Play, Share2, MapPin, XCircle
+  Hammer, Wand2, BookOpen, ChevronDown, ChevronRight, PlayCircle, MousePointer2,
+  Settings2, Play, Share2, MapPin, XCircle, BrainCircuit, Rocket, Smile, PenTool, FileSpreadsheet, Search
 } from 'lucide-react';
 
 interface CheckpointConfig {
@@ -54,85 +54,57 @@ const StatusBadge: React.FC<{ status: EventStatus }> = ({ status }) => {
     );
 };
 
-// --- CONTENT STUDIO SUB-COMPONENTS ---
+// --- AI ARCHITECT TYPES & DATA ---
+type BlueprintId = 'mystery' | 'quiz' | 'action' | 'family';
 
-const AiGeneratorSection: React.FC<{ onGenerate: (prompt: string) => void }> = ({ onGenerate }) => {
-    const [theme, setTheme] = useState('');
-    const [count, setCount] = useState(5);
-    const [audience, setAudience] = useState('Vuxna / Motionärer');
+interface Blueprint {
+    id: BlueprintId;
+    title: string;
+    description: string;
+    icon: React.ElementType;
+    colorFrom: string;
+    colorTo: string;
+    promptTemplate: string;
+}
 
-    const handleRun = () => {
-        let prompt = `Skapa ${count} st blandade quiz-frågor och utmaningar. Målgrupp: ${audience}. Tema: ${theme || 'Äventyr'}. Applicera på checkpoints.`;
-        // Always force Draft Mode for content generation
-        prompt += " Utelämna fältet 'location' helt för att skapa Drafts (oplacerade checkpoints). Ge dem unika namn.";
-        onGenerate(prompt);
-    };
-
-    return (
-        <div className="space-y-3 p-1">
-            <div>
-                <label className="text-xs font-bold text-gray-500 uppercase">Tema</label>
-                <input value={theme} onChange={e => setTheme(e.target.value)} placeholder="T.ex. Harry Potter, Natur..." className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white mt-1 focus:border-purple-500 outline-none" />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-                <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase">Målgrupp</label>
-                    <select value={audience} onChange={e => setAudience(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white mt-1">
-                        <option>Barn</option>
-                        <option>Ungdom</option>
-                        <option>Vuxna</option>
-                        <option>Företag</option>
-                    </select>
-                </div>
-                <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase">Antal CP</label>
-                    <input type="number" value={count} onChange={e => setCount(parseInt(e.target.value))} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white mt-1" />
-                </div>
-            </div>
-            
-            <button onClick={handleRun} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2">
-                <Wand2 className="w-4 h-4" /> Generera (Utkast)
-            </button>
-        </div>
-    );
-};
-
-const StorySection: React.FC<{ onApply: (updates: Partial<RaceEvent>) => void, raceData: RaceEvent }> = ({ onApply, raceData }) => {
-    const [text, setText] = useState('');
-    
-    const handleApply = () => {
-        if (!text.trim()) return;
-        const chapters = text.split(/\n\s*\n/).filter(t => t.trim().length > 0);
-        const newCheckpoints = [...raceData.checkpoints];
-        
-        // Strategy: Fill existing, then append new Drafts
-        chapters.forEach((chapter, i) => {
-            if (i < newCheckpoints.length) {
-                newCheckpoints[i] = { ...newCheckpoints[i], description: chapter, name: `Kapitel ${i+1}` };
-            } else {
-                newCheckpoints.push({
-                    id: `story-${Date.now()}-${i}`,
-                    name: `Kapitel ${i+1}`,
-                    location: null, // Draft
-                    radiusMeters: 20,
-                    type: 'mandatory',
-                    description: chapter,
-                    color: '#8b5cf6',
-                    points: 10
-                });
-            }
-        });
-        onApply({ checkpoints: newCheckpoints, checkpointOrder: 'sequential' });
-    };
-
-    return (
-        <div className="space-y-3 p-1">
-            <p className="text-xs text-gray-400">Klistra in din saga. Varje stycke blir en checkpoint. Överskott skapas som drafts.</p>
-            <textarea value={text} onChange={e => setText(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white h-24 resize-none focus:border-green-500 outline-none" placeholder="Det var en gång..." />
-            <button onClick={handleApply} className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded text-xs uppercase tracking-wider shadow-lg">Applicera Story</button>
-        </div>
-    );
-};
+const BLUEPRINTS: Blueprint[] = [
+    {
+        id: 'mystery',
+        title: 'Mysterium & Story',
+        description: 'En sammanhängande berättelse där varje checkpoint är ett kapitel.',
+        icon: Search,
+        colorFrom: 'from-purple-600',
+        colorTo: 'to-indigo-900',
+        promptTemplate: "Skapa ett mysterium/äventyr med en sammanhängande story. Varje checkpoint ska vara ett kapitel. Beskrivningen ska föra handlingen framåt. Lägg till en gåta eller fråga på varje plats som är kopplad till storyn."
+    },
+    {
+        id: 'quiz',
+        title: 'Tematiskt Quiz',
+        description: 'Tipspromenad med frågor.',
+        icon: BrainCircuit,
+        colorFrom: 'from-blue-600',
+        colorTo: 'to-cyan-800',
+        promptTemplate: "Skapa en tipspromenad (Quiz). Varje checkpoint ska ha en engagerande fråga med 3-4 svarsalternativ. Fokusera på kunskap och fakta inom temat."
+    },
+    {
+        id: 'action',
+        title: 'Action & Uppdrag',
+        description: 'Fysiska utmaningar.',
+        icon: Rocket,
+        colorFrom: 'from-orange-500',
+        colorTo: 'to-red-800',
+        promptTemplate: "Skapa ett action-fyllt event. Varje checkpoint ska innehålla en 'Challenge' (fysiskt uppdrag eller foto-uppdrag). Ingen storytext, rakt på sak. T.ex. 'Bygg en pyramid', 'Ta en selfie med en hund'."
+    },
+    {
+        id: 'family',
+        title: 'Familjeskoj',
+        description: 'Enkel mix för alla åldrar.',
+        icon: Smile,
+        colorFrom: 'from-green-500',
+        colorTo: 'to-emerald-800',
+        promptTemplate: "Skapa ett familjevänligt äventyr. Blanda enkla frågor för barn med roliga små uppdrag (t.ex. 'Hitta en kotte'). Håll tonen lekfull och uppmuntrande."
+    }
+];
 
 export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
   raceData,
@@ -154,7 +126,17 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
   onStartPlacing
 }) => {
   const [activeTab, setActiveTab] = useState<'guide' | 'build' | 'layers'>('build');
-  const [expandedContent, setExpandedContent] = useState<string | null>(null);
+  
+  // Architect State
+  const [selectedBlueprint, setSelectedBlueprint] = useState<BlueprintId | null>(null);
+  const [themeInput, setThemeInput] = useState('');
+  const [audience, setAudience] = useState('Vuxna / Blandat');
+  const [cpCount, setCpCount] = useState(5);
+
+  // Manual Tools State
+  const [showManualStory, setShowManualStory] = useState(false);
+  const [showManualBulk, setShowManualBulk] = useState(false);
+  const [manualText, setManualText] = useState('');
 
   // Checklist State
   const hasStart = !!raceData.startLocationConfirmed;
@@ -174,6 +156,97 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
       onUpdateRace({ checkpoints: updated });
   };
 
+  const handleArchitectRun = () => {
+      if (!selectedBlueprint) return;
+      const bp = BLUEPRINTS.find(b => b.id === selectedBlueprint);
+      if (!bp) return;
+
+      const prompt = `
+        ROLE: Du är "Adventure Architect", en expert på att skapa engagerande upplevelser.
+        UPPGIFT: Skapa ett komplett äventyr baserat på följande specifikation.
+        
+        BLUEPRINT: ${bp.title}
+        TEMA: ${themeInput || 'Allmänt/Blandat'}
+        MÅLGRUPP: ${audience}
+        ANTAL CHECKPOINTS: ${cpCount}
+        
+        INSTRUKTIONER FÖR BLUEPRINT (${bp.id}):
+        ${bp.promptTemplate}
+        
+        GENERELLA REGLER:
+        1. Använd verktyget 'update_race_plan'.
+        2. Generera ${cpCount} checkpoints.
+        3. VIKTIGT: Sätt 'location' till null (Draft Mode) på alla checkpoints så användaren får placera ut dem själv. Ge dem unika och beskrivande namn.
+        4. Språket ska vara Svenska.
+      `;
+
+      onGenerateContent(prompt);
+      // Reset logic handled by parent (loader)
+  };
+
+  const handleManualStoryApply = () => {
+      if (!manualText.trim()) return;
+      const chapters = manualText.split(/\n\s*\n/).filter(t => t.trim().length > 0);
+      const newCheckpoints = [...raceData.checkpoints];
+      
+      chapters.forEach((chapter, i) => {
+          const cpName = `Kapitel ${i + 1}`;
+          newCheckpoints.push({
+              id: `story-${Date.now()}-${i}`,
+              name: cpName,
+              location: null,
+              radiusMeters: 20,
+              type: 'mandatory',
+              description: chapter,
+              color: '#8b5cf6',
+              points: 10
+          });
+      });
+      onUpdateRace({ checkpoints: newCheckpoints });
+      setManualText('');
+      setShowManualStory(false);
+  };
+
+  const handleManualBulkApply = () => {
+      if (!manualText.trim()) return;
+      try {
+          const lines = manualText.split('\n').filter(l => l.trim().length > 0);
+          const newCheckpoints = [...raceData.checkpoints];
+          
+          lines.forEach((line, index) => {
+              const parts = line.split('|');
+              if (parts.length < 2) return;
+              const question = parts[0].trim();
+              const options = parts[1].split(',').map(o => o.trim());
+              const correctIdx = parts[2] ? parseInt(parts[2].trim()) : 0;
+              while (options.length < 2) options.push("Ja"); 
+
+              const quizData: QuizData = {
+                  question: question,
+                  options: options,
+                  correctOptionIndex: (correctIdx >= 0 && correctIdx < options.length) ? correctIdx : 0
+              };
+
+              newCheckpoints.push({
+                  id: `quiz-cp-${Date.now()}-${index}`,
+                  name: `Fråga ${index + 1}`,
+                  location: null, 
+                  radiusMeters: 25,
+                  type: 'mandatory',
+                  description: 'Svara rätt!',
+                  color: '#3b82f6',
+                  points: 10,
+                  quiz: quizData
+              });
+          });
+          onUpdateRace({ checkpoints: newCheckpoints });
+          setManualText('');
+          setShowManualBulk(false);
+      } catch (e) {
+          alert("Kunde inte tolka texten. Kontrollera formatet.");
+      }
+  };
+
   const ChecklistItem = ({ done, label, onClick, isActive }: { done: boolean, label: string, onClick?: () => void, isActive?: boolean }) => (
     <button onClick={onClick} className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${isActive ? 'bg-blue-900/20 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.2)]' : 'bg-gray-800/50 border-gray-700 hover:bg-gray-800'}`}>
       <div className={`shrink-0 ${done ? 'text-green-500' : isActive ? 'text-blue-400' : 'text-gray-500'}`}>
@@ -181,25 +254,6 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
       </div>
       <span className={`text-sm font-medium ${done ? 'text-gray-400 line-through' : 'text-gray-200'}`}>{label}</span>
     </button>
-  );
-
-  const AccordionItem = ({ id, title, icon, children, colorClass }: any) => (
-      <div className="border border-slate-800 rounded-xl overflow-hidden mb-2 bg-slate-900/30">
-          <button 
-            onClick={() => setExpandedContent(expandedContent === id ? null : id)}
-            className={`w-full flex items-center justify-between p-3 text-sm font-bold transition-colors hover:bg-slate-800 ${expandedContent === id ? 'bg-slate-800' : ''}`}
-          >
-              <div className={`flex items-center gap-2 ${colorClass}`}>
-                  {icon} <span>{title}</span>
-              </div>
-              {expandedContent === id ? <ChevronDown className="w-4 h-4 text-gray-500" /> : <ChevronRight className="w-4 h-4 text-gray-500" />}
-          </button>
-          {expandedContent === id && (
-              <div className="p-3 border-t border-slate-800 bg-slate-950/50">
-                  {children}
-              </div>
-          )}
-      </div>
   );
 
   return (
@@ -375,16 +429,131 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
 
                 <div className="border-t border-slate-800 my-2"></div>
 
-                {/* CONTENT STUDIO */}
+                {/* AI ADVENTURE ARCHITECT */}
                 <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Content Studio</label>
-                    <AccordionItem id="ai" title="AI Generator" icon={<Wand2 className="w-4 h-4" />} colorClass="text-purple-400">
-                        <AiGeneratorSection onGenerate={onGenerateContent} />
-                    </AccordionItem>
+                    <div className="flex items-center gap-2 mb-3">
+                        <Wand2 className="w-4 h-4 text-purple-400" />
+                        <label className="text-xs font-bold text-gray-500 uppercase">AI Adventure Architect</label>
+                    </div>
                     
-                    <AccordionItem id="story" title="Story Mode" icon={<BookOpen className="w-4 h-4" />} colorClass="text-green-400">
-                        <StorySection onApply={onUpdateRace} raceData={raceData} />
-                    </AccordionItem>
+                    <div className="space-y-2">
+                        {BLUEPRINTS.map(bp => {
+                            const isSelected = selectedBlueprint === bp.id;
+                            const Icon = bp.icon;
+                            
+                            return (
+                                <div key={bp.id} className={`border rounded-xl transition-all duration-300 overflow-hidden ${isSelected ? 'bg-slate-900 border-purple-500 shadow-lg' : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'}`}>
+                                    <button 
+                                        onClick={() => setSelectedBlueprint(isSelected ? null : bp.id)}
+                                        className="w-full flex items-center p-3 text-left"
+                                    >
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-gradient-to-br ${bp.colorFrom} ${bp.colorTo}`}>
+                                            <Icon className="w-4 h-4 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="text-sm font-bold text-gray-200">{bp.title}</div>
+                                            {!isSelected && <div className="text-[10px] text-gray-500 truncate">{bp.description}</div>}
+                                        </div>
+                                        {isSelected ? <ChevronDown className="w-4 h-4 text-purple-400" /> : <ChevronRight className="w-4 h-4 text-gray-600" />}
+                                    </button>
+                                    
+                                    {isSelected && (
+                                        <div className="p-3 pt-0 animate-in slide-in-from-top-2">
+                                            <div className="text-xs text-gray-400 mb-3 leading-relaxed">{bp.description}</div>
+                                            
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Tema</label>
+                                                    <input 
+                                                        value={themeInput}
+                                                        onChange={(e) => setThemeInput(e.target.value)}
+                                                        className="w-full bg-black/30 border border-slate-700 rounded p-2 text-sm text-white focus:border-purple-500 outline-none"
+                                                        placeholder="T.ex. Spökhus, 80-tal..."
+                                                    />
+                                                </div>
+                                                
+                                                <div className="flex gap-2">
+                                                    <div className="flex-1">
+                                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Målgrupp</label>
+                                                        <select 
+                                                            value={audience}
+                                                            onChange={(e) => setAudience(e.target.value)}
+                                                            className="w-full bg-black/30 border border-slate-700 rounded p-2 text-xs text-white"
+                                                        >
+                                                            <option>Barn</option>
+                                                            <option>Ungdom</option>
+                                                            <option>Vuxna</option>
+                                                            <option>Företag</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="w-16">
+                                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Antal</label>
+                                                        <input 
+                                                            type="number" 
+                                                            value={cpCount} 
+                                                            onChange={(e) => setCpCount(parseInt(e.target.value))} 
+                                                            className="w-full bg-black/30 border border-slate-700 rounded p-2 text-sm text-white text-center"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <button 
+                                                    onClick={handleArchitectRun}
+                                                    className={`w-full py-2 rounded font-bold text-xs uppercase tracking-wider text-white shadow-lg bg-gradient-to-r ${bp.colorFrom} ${bp.colorTo} hover:opacity-90 transition-opacity flex items-center justify-center gap-2`}
+                                                >
+                                                    <Wand2 className="w-3 h-3" /> Generera Utkast
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* MANUAL TOOLS */}
+                <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Manuella Verktyg</label>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button 
+                            onClick={() => { setShowManualStory(!showManualStory); setShowManualBulk(false); }}
+                            className={`p-2 rounded border text-xs font-bold transition-all flex items-center justify-center gap-2 ${showManualStory ? 'bg-green-900/20 border-green-600 text-green-400' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
+                        >
+                            <BookOpen className="w-3 h-3" /> Story Paste
+                        </button>
+                        <button 
+                            onClick={() => { setShowManualBulk(!showManualBulk); setShowManualStory(false); }}
+                            className={`p-2 rounded border text-xs font-bold transition-all flex items-center justify-center gap-2 ${showManualBulk ? 'bg-blue-900/20 border-blue-600 text-blue-400' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
+                        >
+                            <FileSpreadsheet className="w-3 h-3" /> Bulk Import
+                        </button>
+                    </div>
+
+                    {showManualStory && (
+                        <div className="mt-2 p-3 bg-gray-900 border border-green-900/30 rounded-xl animate-in slide-in-from-top-2">
+                            <textarea 
+                                value={manualText}
+                                onChange={(e) => setManualText(e.target.value)}
+                                className="w-full h-24 bg-black/30 border border-slate-700 rounded p-2 text-xs text-white mb-2 resize-none focus:border-green-500 outline-none"
+                                placeholder="Klistra in story. Dubbel radbrytning = Ny CP."
+                            />
+                            <button onClick={handleManualStoryApply} className="w-full bg-green-700 hover:bg-green-600 text-white text-xs font-bold py-1.5 rounded">Skapa CPs</button>
+                        </div>
+                    )}
+
+                    {showManualBulk && (
+                        <div className="mt-2 p-3 bg-gray-900 border border-blue-900/30 rounded-xl animate-in slide-in-from-top-2">
+                            <div className="text-[10px] text-gray-500 mb-1 font-mono">Format: Fråga | Alt1, Alt2 | RättIndex</div>
+                            <textarea 
+                                value={manualText}
+                                onChange={(e) => setManualText(e.target.value)}
+                                className="w-full h-24 bg-black/30 border border-slate-700 rounded p-2 text-xs text-white mb-2 resize-none focus:border-blue-500 outline-none font-mono"
+                                placeholder="Fråga... | A, B, C | 0"
+                            />
+                            <button onClick={handleManualBulkApply} className="w-full bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold py-1.5 rounded">Importera</button>
+                        </div>
+                    )}
                 </div>
             </div>
           )}

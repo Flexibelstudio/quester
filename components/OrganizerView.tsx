@@ -27,6 +27,7 @@ interface OrganizerViewProps {
   onUpgradeRequest: (reason?: string) => void;
   onTestRun: () => void;
   onDeleteEvent?: (id: string) => void;
+  onCreateTemplate?: (templateData: RaceEvent) => void; // New Prop
 }
 
 type ToolType = 'none' | 'start' | 'finish' | 'checkpoint';
@@ -48,7 +49,8 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
   isOnline,
   onUpgradeRequest,
   onTestRun,
-  onDeleteEvent
+  onDeleteEvent,
+  onCreateTemplate
 }) => {
   // --- LOCAL STATE ---
   const [activeTool, setActiveTool] = useState<ToolType>('none');
@@ -141,23 +143,11 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
   const handleContentGeneration = async (prompt: string) => {
     if (!geminiServiceRef.current || !isOnline) return;
     
-    if (prompt === "GENERATE_ZOMBIE_MODE") {
-        setAiLoaderMessage("Simulerar zombie-utbrott...");
-        const startLat = raceData.startLocation.lat;
-        const startLng = raceData.startLocation.lng;
-        prompt = `
-          TASK: Create a 'Zombie Run' scenario.
-          Start Location: { lat: ${startLat}, lng: ${startLng} }
-          Difficulty: Medium.
-          RULES:
-          1. Generate 3 "Safe Houses" (Mandatory, Green, 100p).
-          2. Generate 5 "Zombie Nests" (Optional, Red, -50p).
-          3. Write a dramatic intro description.
-          4. Set Category to 'Survival Run'.
-        `;
-    } else {
-        setAiLoaderMessage("Genererar innehåll...");
-    }
+    // Explicitly update loading message based on intent
+    if (prompt.includes("Mysterium")) setAiLoaderMessage("Väver en mystisk historia...");
+    else if (prompt.includes("Quiz")) setAiLoaderMessage("Skapar kluriga frågor...");
+    else if (prompt.includes("Action")) setAiLoaderMessage("Planerar fysiska utmaningar...");
+    else setAiLoaderMessage("AI-Arkitekten arbetar...");
     
     setIsGeneratingContent(true); 
     
@@ -286,7 +276,8 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
                 onUpdateRace(updates);
                 onSave(updates);
             }} 
-            onDelete={onDeleteEvent ? () => onDeleteEvent(raceData.id) : undefined} 
+            onDelete={onDeleteEvent ? () => onDeleteEvent(raceData.id) : undefined}
+            onCreateTemplate={onCreateTemplate} // Pass to dialog
         />
         
         <CheckpointEditorDialog 
