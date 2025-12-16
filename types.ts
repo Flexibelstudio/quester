@@ -13,7 +13,7 @@ export interface QuizData {
 export interface Checkpoint {
   id: string;
   name: string;
-  location: Coordinate | null; // Nullable for Draft Mode
+  location: Coordinate;
   radiusMeters: number;
   type: 'mandatory' | 'optional';
   description?: string;

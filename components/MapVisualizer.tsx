@@ -169,9 +169,8 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
   // Detect Zombie Survival Mode
   const isZombieMode = raceData.category === 'Survival Run' || raceData.mapStyle === 'dark';
 
-  // Calculate route positions - Filter out null locations!
-  const validCheckpoints = raceData.checkpoints.filter(cp => cp.location !== null);
-  const allCheckpointPositions = validCheckpoints.map(cp => [cp.location!.lat, cp.location!.lng] as [number, number]);
+  // Calculate route positions
+  const allCheckpointPositions = raceData.checkpoints.map(cp => [cp.location.lat, cp.location.lng] as [number, number]);
 
   const routePositions = [
     startPos,
@@ -284,7 +283,7 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
         </Marker>
 
         {/* Checkpoints */}
-        {validCheckpoints.map((cp, index) => {
+        {raceData.checkpoints.map((cp, index) => {
           // Determine color: Explicit color -> Type fallback
           const isMandatory = cp.type === 'mandatory';
           let cpColor = cp.color || (isMandatory ? '#3b82f6' : '#9B59B6');
@@ -309,7 +308,7 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
             <React.Fragment key={cp.id}>
                {/* Visual Circle (Not interactive, just shows radius) */}
                <Circle 
-                  center={[cp.location!.lat, cp.location!.lng]}
+                  center={[cp.location.lat, cp.location.lng]}
                   pathOptions={{ 
                       fillColor: cpColor, 
                       color: cpColor,
@@ -322,7 +321,7 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
               
               {/* Draggable Anchor/Handle Marker */}
               <Marker
-                position={[cp.location!.lat, cp.location!.lng]}
+                position={[cp.location.lat, cp.location.lng]}
                 icon={CustomIcon}
                 draggable={true}
                 eventHandlers={{
