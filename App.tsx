@@ -204,7 +204,26 @@ function AppContent() {
      setViewMode('participant');
   };
 
-  // --- TEMPLATE INSTANTIATION LOGIC ---
+  // --- TEMPLATE HANDLERS ---
+  
+  const handleCreateTemplate = async (templateData: RaceEvent) => {
+      if (!user) return;
+      
+      // Ensure owner is correct
+      templateData.ownerId = user.id;
+      templateData.ownerName = user.name;
+      templateData.ownerPhotoURL = user.photoURL;
+      
+      await api.events.saveEvent(templateData);
+      await refreshEvents();
+      
+      // Optionally switch to editing the new template
+      // setRaceData(templateData);
+      // setViewMode('organizer');
+      
+      alert("Mall sparad till biblioteket!");
+  };
+
   const handleUseTemplate = async (template: RaceEvent, location: { lat: number, lng: number }) => {
       if (!user) return;
       setIsTemplateProcessing(true);
@@ -417,6 +436,7 @@ function AppContent() {
               onClose={() => setDashboardSettingsEvent(null)}
               onSave={handleDashboardSettingsSave}
               onDelete={() => handleDeleteEvent(dashboardSettingsEvent.id)}
+              onCreateTemplate={handleCreateTemplate} // Added for template creation from dashboard settings
           />
       )}
 

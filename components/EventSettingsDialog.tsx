@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { RaceEvent, TerrainType, StartMode, LeaderboardMode, EventStatus, ScoreModel, WinCondition, CheckpointOrder } from '../types';
 import { RACE_CATEGORIES, EVENT_TYPES } from '../constants';
 import { api } from '../services/dataService';
-import { X, Save, Flag, Trophy, Globe, Upload, Loader2, ImageIcon, Calculator, Clock, AlertTriangle, Users, Play, Lock, Key, Trash2, LayoutTemplate, Compass, AlertOctagon, CheckCircle2, Mountain, Trees, Timer } from 'lucide-react';
+import { X, Save, Flag, Trophy, Globe, Upload, Loader2, ImageIcon, Calculator, Clock, AlertTriangle, Users, Play, Lock, Key, Trash2, LayoutTemplate, Compass, AlertOctagon, CheckCircle2, Mountain, Trees, Timer, Copy, MapPin } from 'lucide-react';
 
 interface EventSettingsDialogProps {
   raceData: RaceEvent;
@@ -11,14 +11,16 @@ interface EventSettingsDialogProps {
   onClose: () => void;
   onSave: (updates: Partial<RaceEvent>) => void;
   onDelete?: () => void;
+  onCreateTemplate?: (templateData: RaceEvent) => void; // New callback
 }
 
 type SettingsTab = 'concept' | 'rules' | 'logistics';
 
-export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceData, isOpen, onClose, onSave, onDelete }) => {
+export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceData, isOpen, onClose, onSave, onDelete, onCreateTemplate }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('concept');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false); // Modal for template choice
 
   // Helper to format ISO string to "YYYY-MM-DDTHH:mm" for local input
   const formatDateForInput = (isoString: string) => {
@@ -126,6 +128,45 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
       }
   };
 
+  const handleTemplateCreation = (mode: 'fixed' | 'flexible') => {
+      if (!onCreateTemplate) return;
+
+      const baseTemplate: RaceEvent = {
+          ...raceData,
+          ...formData, // Include unsaved form changes
+          id: `tpl-custom-${Date.now()}`, // New ID
+          name: `${formData.name} (Kopia)`,
+          isTemplate: true,
+          status: 'draft',
+          results: [], // Clear results
+          ratings: [], // Clear ratings
+          participantIds: [],
+          startDateTime: new Date().toISOString() // Reset time
+      };
+
+      if (mode === 'flexible') {
+          // BLUEPRINT MODE: Clear coordinates
+          baseTemplate.name = `${formData.name} (Blueprint)`;
+          baseTemplate.startCity = '';
+          baseTemplate.finishCity = '';
+          // Reset Start/Finish locations but keep radius config
+          baseTemplate.startLocation = { lat: 0, lng: 0, radiusMeters: baseTemplate.startLocation.radiusMeters };
+          baseTemplate.finishLocation = { lat: 0, lng: 0, radiusMeters: baseTemplate.finishLocation.radiusMeters };
+          
+          // Clear checkpoint locations
+          baseTemplate.checkpoints = baseTemplate.checkpoints.map(cp => ({
+              ...cp,
+              location: null, // Wipe coords
+              // Auto-generate a simple terrain hint if missing, based on name
+              terrainHint: cp.terrainHint || (cp.name.toLowerCase().includes('skog') ? 'Forest' : 'Open area')
+          }));
+      }
+
+      onCreateTemplate(baseTemplate);
+      setShowTemplateModal(false);
+      onClose();
+  };
+
   // Logic to set archetype
   const setGameType = (type: 'classic' | 'rogaining' | 'adventure') => {
       if (type === 'classic') {
@@ -162,6 +203,56 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
 
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      
+      {/* TEMPLATE CHOICE MODAL */}
+      {showTemplateModal && (
+          <div className="absolute inset-0 z-[2100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in zoom-in-95">
+              <div className="bg-gray-900 border border-gray-700 w-full max-w-md rounded-2xl shadow-2xl p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 bg-purple-900/30 rounded-full text-purple-400">
+                          <Copy className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-xl font-bold text-white">Spara som Mall</h3>
+                  </div>
+                  <p className="text-gray-400 text-sm mb-6">
+                      Hur vill du spara detta event?
+                  </p>
+                  
+                  <div className="space-y-3">
+                      <button 
+                          onClick={() => handleTemplateCreation('fixed')}
+                          className="w-full p-4 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-left transition-all group"
+                      >
+                          <div className="flex items-center gap-2 mb-1">
+                              <MapPin className="w-4 h-4 text-blue-400" />
+                              <span className="font-bold text-white">Exakt Kopia (Låst Plats)</span>
+                          </div>
+                          <p className="text-xs text-gray-500 group-hover:text-gray-400">
+                              Behåller alla GPS-koordinater. Bra för återkommande lopp på samma plats.
+                          </p>
+                      </button>
+
+                      <button 
+                          onClick={() => handleTemplateCreation('flexible')}
+                          className="w-full p-4 bg-purple-900/20 hover:bg-purple-900/30 border border-purple-500/30 hover:border-purple-500/50 rounded-xl text-left transition-all group"
+                      >
+                          <div className="flex items-center gap-2 mb-1">
+                              <LayoutTemplate className="w-4 h-4 text-purple-400" />
+                              <span className="font-bold text-white">Blueprint (Flyttbar Mall)</span>
+                          </div>
+                          <p className="text-xs text-gray-400 group-hover:text-gray-300">
+                              Rensar alla koordinater men behåller frågor och story. AI kan sedan placera ut detta event på vilken ort som helst.
+                          </p>
+                      </button>
+                  </div>
+
+                  <button onClick={() => setShowTemplateModal(false)} className="w-full mt-6 py-3 text-sm font-bold text-gray-500 hover:text-white">
+                      Avbryt
+                  </button>
+              </div>
+          </div>
+      )}
+
       <div className="bg-gray-900 border border-gray-700 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
@@ -459,14 +550,24 @@ export const EventSettingsDialog: React.FC<EventSettingsDialogProps> = ({ raceDa
                       </div>
                   </div>
 
-                  {/* Delete Zone */}
-                  {onDelete && (
-                      <div className="mt-8 pt-6 border-t border-red-900/30">
+                  {/* Template & Delete Zone */}
+                  <div className="mt-8 pt-6 border-t border-gray-800 flex flex-col gap-3">
+                      {onCreateTemplate && (
+                          <button 
+                            type="button" 
+                            onClick={() => setShowTemplateModal(true)} 
+                            className="w-full py-3 bg-purple-900/20 hover:bg-purple-900/30 text-purple-400 border border-purple-500/30 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                          >
+                              <Copy className="w-4 h-4" /> Spara som Mall (Blueprint)
+                          </button>
+                      )}
+                      
+                      {onDelete && (
                           <button type="button" onClick={handleDelete} className="w-full py-3 bg-red-900/10 hover:bg-red-900/20 text-red-500 border border-red-900/30 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2">
                               <Trash2 className="w-4 h-4" /> Radera Event Permanent
                           </button>
-                      </div>
-                  )}
+                      )}
+                  </div>
               </div>
           )}
 
