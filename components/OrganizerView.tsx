@@ -59,6 +59,9 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [editingCheckpoint, setEditingCheckpoint] = useState<Checkpoint | null>(null);
   
+  // New state to track if we are editing a special location (Start/Finish)
+  const [editingSpecialType, setEditingSpecialType] = useState<'checkpoint' | 'start' | 'finish'>('checkpoint');
+  
   // Dialog State
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   
@@ -202,7 +205,7 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
     }
 
     if (activeTool === 'start') {
-      onUpdateRace({ startLocation: coord, startLocationConfirmed: true });
+      onUpdateRace({ startLocation: { ...raceData.startLocation, ...coord }, startLocationConfirmed: true });
     } else if (activeTool === 'finish') {
       onUpdateRace({ finishLocation: { ...raceData.finishLocation, ...coord }, finishLocationConfirmed: true });
     } else if (activeTool === 'checkpoint') {
@@ -237,6 +240,22 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
       setActiveTool('none');
   };
 
+  const handleEditSpecial = (type: 'start' | 'finish') => {
+      setEditingSpecialType(type);
+      
+      const fakeCheckpoint: Checkpoint = {
+          id: type,
+          name: type === 'start' ? 'Startplats' : 'Målområde',
+          location: type === 'start' ? raceData.startLocation : raceData.finishLocation,
+          radiusMeters: type === 'start' ? (raceData.startLocation.radiusMeters || 50) : raceData.finishLocation.radiusMeters,
+          type: 'mandatory',
+          points: 0,
+          color: '#ffffff' // Ignored
+      };
+      
+      setEditingCheckpoint(fakeCheckpoint);
+  };
+
   return (
     <div className="flex h-screen w-screen bg-gray-950 text-gray-100 font-sans overflow-hidden">
         <AILoader isVisible={isGeneratingContent} message={aiLoaderMessage} />
@@ -266,7 +285,21 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
             onDelete={onDeleteEvent ? () => onDeleteEvent(raceData.id) : undefined} 
         />
         
-        <CheckpointEditorDialog checkpoint={editingCheckpoint} isOpen={!!editingCheckpoint} onClose={() => setEditingCheckpoint(null)} onSave={(updatedCp) => onUpdateRace({ checkpoints: raceData.checkpoints.map(cp => cp.id === updatedCp.id ? updatedCp : cp) })} />
+        <CheckpointEditorDialog 
+            checkpoint={editingCheckpoint} 
+            isOpen={!!editingCheckpoint} 
+            onClose={() => { setEditingCheckpoint(null); setEditingSpecialType('checkpoint'); }} 
+            variant={editingSpecialType}
+            onSave={(updatedCp) => {
+                if (updatedCp.id === 'start') {
+                    onUpdateRace({ startLocation: { ...raceData.startLocation, radiusMeters: updatedCp.radiusMeters }});
+                } else if (updatedCp.id === 'finish') {
+                    onUpdateRace({ finishLocation: { ...raceData.finishLocation, radiusMeters: updatedCp.radiusMeters }});
+                } else {
+                    onUpdateRace({ checkpoints: raceData.checkpoints.map(cp => cp.id === updatedCp.id ? updatedCp : cp) });
+                }
+            }} 
+        />
         <AnalysisDialog analysis={analysisData} isOpen={isAnalysisOpen} onClose={() => setIsAnalysisOpen(false)} />
         {isResultsOpen && <ResultManager raceData={raceData} onClose={() => setIsResultsOpen(false)} onUpdateResults={(results) => onUpdateRace({ results })} />}
 
@@ -277,7 +310,7 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
             raceData={raceData}
             onUpdateRace={onUpdateRace}
             onExit={onExit}
-            onEditCheckpoint={(id) => { const cp = raceData.checkpoints.find(c => c.id === id); if(cp) setEditingCheckpoint(cp); }}
+            onEditCheckpoint={(id) => { const cp = raceData.checkpoints.find(c => c.id === id); if(cp) { setEditingCheckpoint(cp); setEditingSpecialType('checkpoint'); } }}
             onDeleteCheckpoint={(id) => onUpdateRace({ checkpoints: raceData.checkpoints.filter(cp => cp.id !== id) })}
             activeTool={activeTool}
             setActiveTool={setActiveTool}
@@ -310,13 +343,14 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
                     activeTool={placingCheckpointId ? 'checkpoint' : activeTool}
                     onMapClick={handleMapClick}
                     onDeleteCheckpoint={(id) => onUpdateRace({ checkpoints: raceData.checkpoints.filter(cp => cp.id !== id) })}
-                    onEditCheckpoint={(id) => { const cp = raceData.checkpoints.find(c => c.id === id); if(cp) setEditingCheckpoint(cp); }}
+                    onEditCheckpoint={(id) => { const cp = raceData.checkpoints.find(c => c.id === id); if(cp) { setEditingCheckpoint(cp); setEditingSpecialType('checkpoint'); } }}
                     onUpdateLocation={(id, coord, type) => {
-                            if (type === 'start') onUpdateRace({ startLocation: coord, startLocationConfirmed: true });
+                            if (type === 'start') onUpdateRace({ startLocation: { ...raceData.startLocation, ...coord }, startLocationConfirmed: true });
                             else if (type === 'finish') onUpdateRace({ finishLocation: { ...raceData.finishLocation, ...coord }, finishLocationConfirmed: true });
                             else if (type === 'checkpoint' && id) onUpdateRace({ checkpoints: raceData.checkpoints.map(cp => cp.id === id ? { ...cp, location: coord } : cp) });
                     }}
                     hideLegend={false}
+                    onEditSpecial={handleEditSpecial}
                 />
             </div>
 

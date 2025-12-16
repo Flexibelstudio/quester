@@ -42,7 +42,7 @@ export const INITIAL_RACE_STATE: RaceEvent = {
   startDateTime: new Date(Date.now() + 3600 * 1000).toISOString(), // Default start in 1 hour
   startMode: 'mass_start',
   manualStartEnabled: true, // Default to true for better UX
-  startLocation: { ...DEFAULT_COORDINATES },
+  startLocation: { ...DEFAULT_COORDINATES, radiusMeters: 50 }, // Added radiusMeters
   startLocationConfirmed: false, 
   finishLocation: { ...DEFAULT_COORDINATES, radiusMeters: 50 },
   finishLocationConfirmed: false,

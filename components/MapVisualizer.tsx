@@ -70,6 +70,7 @@ interface MapVisualizerProps {
   onEditCheckpoint: (id: string) => void;
   onUpdateLocation?: (id: string | null, coord: Coordinate, type: 'start' | 'finish' | 'checkpoint') => void;
   hideLegend?: boolean;
+  onEditSpecial?: (type: 'start' | 'finish') => void; // New prop for editing start/finish props
 }
 
 // Component to handle map clicks
@@ -159,7 +160,7 @@ const TILE_LAYERS = {
   }
 };
 
-export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, activeTool = 'none', onDeleteCheckpoint, onEditCheckpoint, onUpdateLocation, hideLegend = false }) => {
+export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, activeTool = 'none', onDeleteCheckpoint, onEditCheckpoint, onUpdateLocation, hideLegend = false, onEditSpecial }) => {
   // Default to Stockholm if no coords
   const startPos: [number, number] = [raceData.startLocation.lat, raceData.startLocation.lng];
   const finishPos: [number, number] = [raceData.finishLocation.lat, raceData.finishLocation.lng];
@@ -182,10 +183,6 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
   // Default to google_standard if not specified
   const mapStyle = raceData.mapStyle || 'google_standard';
   const currentLayer = TILE_LAYERS[mapStyle] || TILE_LAYERS.google_standard;
-
-  // Helpers for Legend
-  const hasTimeBonus = raceData.checkpoints.some(cp => (cp.timeModifierSeconds || 0) < 0);
-  const hasTimePenalty = raceData.checkpoints.some(cp => (cp.timeModifierSeconds || 0) > 0);
 
   return (
     <div className={`absolute inset-0 z-0 overflow-hidden ${isEditing ? 'cursor-crosshair' : ''}`}>
@@ -234,7 +231,18 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
             </>
         )}
 
-        {/* Start Marker */}
+        {/* Start Marker & Area */}
+        <Circle 
+          center={startPos}
+          pathOptions={{ 
+              fillColor: '#22c55e', 
+              color: '#15803d',
+              fillOpacity: 0.2,
+              dashArray: '5, 10'
+          }}
+          radius={raceData.startLocation.radiusMeters || 50}
+          interactive={false}
+        />
         <Marker 
             position={startPos} 
             icon={StartIcon(raceData.startLocationConfirmed)}
@@ -248,9 +256,17 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
             }}
         >
           <Popup>
-            <strong>Start:</strong> {raceData.name}
-            {!raceData.startLocationConfirmed && <div className="text-red-500 font-bold text-[10px] mt-1 uppercase">Ej bekräftad (Preliminär)</div>}
-            <div className="text-xs text-gray-500 mt-1">Dra för att flytta</div>
+            <div className="text-gray-800 min-w-[120px]">
+                <strong>Start:</strong> {raceData.name}
+                {!raceData.startLocationConfirmed && <div className="text-red-500 font-bold text-[10px] mt-1 uppercase">Ej bekräftad (Preliminär)</div>}
+                <div className="text-xs text-gray-500 mt-1 mb-2">Radie: {raceData.startLocation.radiusMeters || 50}m</div>
+                <button 
+                    onClick={() => onEditSpecial && onEditSpecial('start')}
+                    className="w-full text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded font-semibold transition-colors border border-gray-300"
+                >
+                    Redigera Radie
+                </button>
+            </div>
           </Popup>
         </Marker>
 
@@ -277,9 +293,17 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
             }}
         >
            <Popup>
-            <strong>Mål:</strong> Radie {raceData.finishLocation.radiusMeters}m
-            {!raceData.finishLocationConfirmed && <div className="text-red-500 font-bold text-[10px] mt-1 uppercase">Ej bekräftad (Preliminär)</div>}
-            <div className="text-xs text-gray-500 mt-1">Dra för att flytta</div>
+            <div className="text-gray-800 min-w-[120px]">
+                <strong>Mål:</strong> Radie {raceData.finishLocation.radiusMeters}m
+                {!raceData.finishLocationConfirmed && <div className="text-red-500 font-bold text-[10px] mt-1 uppercase">Ej bekräftad (Preliminär)</div>}
+                <div className="text-xs text-gray-500 mt-1 mb-2">Dra för att flytta</div>
+                <button 
+                    onClick={() => onEditSpecial && onEditSpecial('finish')}
+                    className="w-full text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded font-semibold transition-colors border border-gray-300"
+                >
+                    Redigera Radie
+                </button>
+            </div>
           </Popup>
         </Marker>
 

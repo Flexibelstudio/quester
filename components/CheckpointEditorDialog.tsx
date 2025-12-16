@@ -1,15 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { Checkpoint, QuizData } from '../types';
-import { X, Save, HelpCircle, Zap, MapPin, List, CheckCircle2, Clock, Timer, Camera } from 'lucide-react';
+import { X, Save, HelpCircle, Zap, MapPin, List, CheckCircle2, Clock, Timer, Camera, Flag } from 'lucide-react';
 
 interface CheckpointEditorDialogProps {
   checkpoint: Checkpoint | null;
   isOpen: boolean;
   onClose: () => void;
   onSave: (updatedCp: Checkpoint) => void;
+  variant?: 'checkpoint' | 'start' | 'finish'; // New prop to handle simplified Start/Finish editing
 }
 
-export const CheckpointEditorDialog: React.FC<CheckpointEditorDialogProps> = ({ checkpoint, isOpen, onClose, onSave }) => {
+export const CheckpointEditorDialog: React.FC<CheckpointEditorDialogProps> = ({ checkpoint, isOpen, onClose, onSave, variant = 'checkpoint' }) => {
   const [data, setData] = useState<Checkpoint | null>(null);
   const [activeTab, setActiveTab] = useState<'general' | 'interaction'>('general');
   const [interactionType, setInteractionType] = useState<'none' | 'quiz' | 'challenge'>('none');
@@ -71,6 +73,8 @@ export const CheckpointEditorDialog: React.FC<CheckpointEditorDialogProps> = ({ 
     });
   };
 
+  const isSpecial = variant !== 'checkpoint';
+
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <div className="bg-gray-800 border border-gray-700 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
@@ -78,123 +82,166 @@ export const CheckpointEditorDialog: React.FC<CheckpointEditorDialogProps> = ({ 
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-700 flex justify-between items-center bg-gray-900/50 shrink-0">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            Redigera Checkpoint
+            {variant === 'start' ? 'Redigera Startplats' : variant === 'finish' ? 'Redigera Målområde' : 'Redigera Checkpoint'}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-700 bg-gray-900/30 shrink-0">
-            <button 
-                onClick={() => setActiveTab('general')}
-                className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors flex items-center justify-center gap-2 ${activeTab === 'general' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
-            >
-                <List className="w-4 h-4" /> Grundinfo
-            </button>
-            <button 
-                onClick={() => setActiveTab('interaction')}
-                className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors flex items-center justify-center gap-2 ${activeTab === 'interaction' ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
-            >
-                {interactionType === 'quiz' ? <HelpCircle className="w-4 h-4" /> : interactionType === 'challenge' ? <Zap className="w-4 h-4" /> : <MapPin className="w-4 h-4" />}
-                Interaktion / Uppdrag
-            </button>
-        </div>
+        {/* Tabs - Hide if special location */}
+        {!isSpecial && (
+            <div className="flex border-b border-gray-700 bg-gray-900/30 shrink-0">
+                <button 
+                    onClick={() => setActiveTab('general')}
+                    className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors flex items-center justify-center gap-2 ${activeTab === 'general' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+                >
+                    <List className="w-4 h-4" /> Grundinfo
+                </button>
+                <button 
+                    onClick={() => setActiveTab('interaction')}
+                    className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors flex items-center justify-center gap-2 ${activeTab === 'interaction' ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+                >
+                    {interactionType === 'quiz' ? <HelpCircle className="w-4 h-4" /> : interactionType === 'challenge' ? <Zap className="w-4 h-4" /> : <MapPin className="w-4 h-4" />}
+                    Interaktion / Uppdrag
+                </button>
+            </div>
+        )}
 
         {/* Content */}
         <div className="p-6 overflow-y-auto custom-scrollbar">
             {activeTab === 'general' ? (
                 <div className="space-y-4">
-                    <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Namn</label>
-                        <input
-                            type="text"
-                            value={data.name}
-                            onChange={(e) => setData({ ...data, name: e.target.value })}
-                            className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-                    
-                    {/* Scores & Time Modifier */}
-                    <div className="grid grid-cols-2 gap-4">
-                         <div>
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                                <Zap className="w-3 h-3 text-yellow-500" /> Poäng (Score)
-                            </label>
+                    {/* Special Header for Start/Finish Context */}
+                    {isSpecial && (
+                        <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-xl flex items-start gap-3 mb-4">
+                            <div className="p-2 bg-blue-500/20 rounded-lg">
+                                {variant === 'start' ? <MapPin className="w-5 h-5 text-green-400" /> : <Flag className="w-5 h-5 text-red-400" />}
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-white mb-1">
+                                    {variant === 'start' ? 'Startzon' : 'Målzon'}
+                                </h3>
+                                <p className="text-xs text-blue-200">
+                                    Här ställer du in hur stor radien ska vara för {variant === 'start' ? 'startplatsen' : 'målgången'}. 
+                                    En större radie gör det lättare för GPS:en att registrera {variant === 'start' ? 'närvaro' : 'målgång'}.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {!isSpecial && (
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Namn</label>
                             <input
-                                type="number"
-                                value={data.points || 0}
-                                onChange={(e) => setData({ ...data, points: parseInt(e.target.value) || 0 })}
+                                type="text"
+                                value={data.name}
+                                onChange={(e) => setData({ ...data, name: e.target.value })}
                                 className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-blue-400" /> Tidsjustering (Minuter)
-                            </label>
-                            <div className="relative">
+                    )}
+                    
+                    {/* Scores & Time Modifier - Only for checkpoints */}
+                    {!isSpecial && (
+                        <div className="grid grid-cols-2 gap-4">
+                             <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                    <Zap className="w-3 h-3 text-yellow-500" /> Poäng (Score)
+                                </label>
                                 <input
                                     type="number"
-                                    value={timeModMinutes}
-                                    onChange={(e) => setTimeModMinutes(parseFloat(e.target.value) || 0)}
-                                    placeholder="-5 för 5 min avdrag"
-                                    className={`w-full bg-gray-900 border rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${timeModMinutes < 0 ? 'border-green-500 text-green-400 focus:ring-green-500' : timeModMinutes > 0 ? 'border-red-500 text-red-400 focus:ring-red-500' : 'border-gray-600 focus:ring-blue-500'}`}
+                                    value={data.points || 0}
+                                    onChange={(e) => setData({ ...data, points: parseInt(e.target.value) || 0 })}
+                                    className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium pointer-events-none">
-                                    {timeModMinutes < 0 ? 'AVDRAG' : timeModMinutes > 0 ? 'STRAFF' : 'INGEN'}
-                                </div>
                             </div>
-                            <p className="text-[10px] text-gray-500 mt-1">Negativt värde = Drar av tid från slutresultatet (Bra).</p>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                    <Clock className="w-3 h-3 text-blue-400" /> Tidsjustering (Minuter)
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        value={timeModMinutes}
+                                        onChange={(e) => setTimeModMinutes(parseFloat(e.target.value) || 0)}
+                                        placeholder="-5 för 5 min avdrag"
+                                        className={`w-full bg-gray-900 border rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${timeModMinutes < 0 ? 'border-green-500 text-green-400 focus:ring-green-500' : timeModMinutes > 0 ? 'border-red-500 text-red-400 focus:ring-red-500' : 'border-gray-600 focus:ring-blue-500'}`}
+                                    />
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium pointer-events-none">
+                                        {timeModMinutes < 0 ? 'AVDRAG' : timeModMinutes > 0 ? 'STRAFF' : 'INGEN'}
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-gray-500 mt-1">Negativt värde = Drar av tid från slutresultatet (Bra).</p>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Typ</label>
-                            <select
-                                value={data.type}
-                                onChange={(e) => setData({ ...data, type: e.target.value as 'mandatory' | 'optional' })}
-                                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="mandatory">Obligatorisk (Krav)</option>
-                                <option value="optional">Valfri (Extra)</option>
-                            </select>
-                        </div>
-                        <div>
+                        {!isSpecial && (
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Typ</label>
+                                <select
+                                    value={data.type}
+                                    onChange={(e) => setData({ ...data, type: e.target.value as 'mandatory' | 'optional' })}
+                                    className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="mandatory">Obligatorisk (Krav)</option>
+                                    <option value="optional">Valfri (Extra)</option>
+                                </select>
+                            </div>
+                        )}
+                        <div className={isSpecial ? 'col-span-2' : ''}>
                              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Radie (meter)</label>
-                             <input
-                                type="number"
-                                value={data.radiusMeters}
-                                onChange={(e) => setData({ ...data, radiusMeters: parseInt(e.target.value) || 25 })}
-                                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
+                             <div className="flex items-center gap-3">
+                                 <input
+                                    type="range"
+                                    min="10"
+                                    max="200"
+                                    step="5"
+                                    value={data.radiusMeters}
+                                    onChange={(e) => setData({ ...data, radiusMeters: parseInt(e.target.value) || 25 })}
+                                    className="flex-1 accent-blue-500 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                                />
+                                <input
+                                    type="number"
+                                    value={data.radiusMeters}
+                                    onChange={(e) => setData({ ...data, radiusMeters: parseInt(e.target.value) || 25 })}
+                                    className="w-20 bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                             </div>
+                             <p className="text-xs text-gray-500 mt-1">Standardradie är vanligtvis 20-50m.</p>
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Färgmarkör</label>
-                        <div className="flex gap-3 flex-wrap">
-                            {['#3b82f6', '#10B981', '#F1C40F', '#E74C3C', '#9B59B6', '#EC4899', '#6366f1'].map(c => (
-                                <button
-                                    key={c}
-                                    type="button"
-                                    onClick={() => setData({ ...data, color: c })}
-                                    className={`w-8 h-8 rounded-full border-2 transition-transform ${data.color === c ? 'border-white scale-110' : 'border-transparent hover:scale-110'}`}
-                                    style={{ backgroundColor: c }}
-                                />
-                            ))}
+                    {!isSpecial && (
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Färgmarkör</label>
+                            <div className="flex gap-3 flex-wrap">
+                                {['#3b82f6', '#10B981', '#F1C40F', '#E74C3C', '#9B59B6', '#EC4899', '#6366f1'].map(c => (
+                                    <button
+                                        key={c}
+                                        type="button"
+                                        onClick={() => setData({ ...data, color: c })}
+                                        className={`w-8 h-8 rounded-full border-2 transition-transform ${data.color === c ? 'border-white scale-110' : 'border-transparent hover:scale-110'}`}
+                                        style={{ backgroundColor: c }}
+                                    />
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                    <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Beskrivning</label>
-                        <textarea
-                            value={data.description || ''}
-                            onChange={(e) => setData({ ...data, description: e.target.value })}
-                            className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
-                            placeholder="Beskriv platsen, terrängen eller ledtrådar..."
-                        />
-                    </div>
+                    )}
+                    
+                    {!isSpecial && (
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Beskrivning</label>
+                            <textarea
+                                value={data.description || ''}
+                                onChange={(e) => setData({ ...data, description: e.target.value })}
+                                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
+                                placeholder="Beskriv platsen, terrängen eller ledtrådar..."
+                            />
+                        </div>
+                    )}
                 </div>
             ) : (
                 <div className="space-y-6">

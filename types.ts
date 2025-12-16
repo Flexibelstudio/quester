@@ -120,7 +120,7 @@ export interface RaceEvent {
   startDateTime: string;
   startMode?: StartMode; // New field for start logic
   manualStartEnabled?: boolean; // New field: toggle start button availability
-  startLocation: Coordinate;
+  startLocation: Coordinate & { radiusMeters?: number }; // Modified to include optional radius
   startLocationConfirmed?: boolean; // New: True if user has manually placed/confirmed start
   finishLocation: Coordinate & { radiusMeters: number };
   finishLocationConfirmed?: boolean; // New: True if user has manually placed/confirmed finish
