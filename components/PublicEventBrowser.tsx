@@ -47,6 +47,7 @@ export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, 
   
   // Leaderboard State
   const [isGlobalLeaderboardOpen, setIsGlobalLeaderboardOpen] = useState(false);
+  const [leaderboardMode, setLeaderboardMode] = useState<'zombie_survival' | 'christmas_hunt'>('zombie_survival');
   const [selectedLeaderboardEvent, setSelectedLeaderboardEvent] = useState<RaceEvent | null>(null);
 
   // Dialog State
@@ -162,6 +163,11 @@ export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, 
       setEventToForfeit(null);
   };
 
+  const openGlobalLeaderboard = (mode: 'zombie_survival' | 'christmas_hunt') => {
+      setLeaderboardMode(mode);
+      setIsGlobalLeaderboardOpen(true);
+  };
+
   // Safe Navigation for Config
   const activeZombie = systemConfig?.featuredModes?.zombie_survival?.isActive;
   const activeChristmas = systemConfig?.featuredModes?.christmas_hunt?.isActive;
@@ -186,7 +192,7 @@ export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, 
         icon={AlertTriangle}
       />
 
-      <GlobalLeaderboard isOpen={isGlobalLeaderboardOpen} onClose={() => setIsGlobalLeaderboardOpen(false)} />
+      <GlobalLeaderboard isOpen={isGlobalLeaderboardOpen} onClose={() => setIsGlobalLeaderboardOpen(false)} defaultMode={leaderboardMode} />
       <EventLeaderboardDialog isOpen={!!selectedLeaderboardEvent} onClose={() => setSelectedLeaderboardEvent(null)} event={selectedLeaderboardEvent} />
 
       {/* Background Ambience - Fixed */}
@@ -321,18 +327,23 @@ export const PublicEventBrowser: React.FC<PublicEventBrowserProps> = ({ events, 
                           <Gamepad2 className="w-5 h-5 text-green-400" />
                           <h2 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Live Events & Instant Games</h2>
                       </div>
-                      
-                      <button 
-                        onClick={() => setIsGlobalLeaderboardOpen(true)}
-                        className="flex items-center gap-2 text-xs font-bold text-yellow-400 bg-yellow-900/20 px-3 py-1.5 rounded-full border border-yellow-600/30 hover:bg-yellow-900/40 transition-colors"
-                      >
-                          <Trophy className="w-3 h-3" /> Topplistor
-                      </button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       
-                      {activeZombie && <ZombieSurvivalButton onGameCreated={onDirectRaceCreate} userTier={userTier} />}
-                      {activeChristmas && <ChristmasHuntButton onGameCreated={onDirectRaceCreate} userTier={userTier} />}
+                      {activeZombie && (
+                          <ZombieSurvivalButton 
+                            onGameCreated={onDirectRaceCreate} 
+                            userTier={userTier} 
+                            onShowLeaderboard={() => openGlobalLeaderboard('zombie_survival')}
+                          />
+                      )}
+                      {activeChristmas && (
+                          <ChristmasHuntButton 
+                            onGameCreated={onDirectRaceCreate} 
+                            userTier={userTier} 
+                            onShowLeaderboard={() => openGlobalLeaderboard('christmas_hunt')}
+                          />
+                      )}
                   </div>
               </div>
           </div>

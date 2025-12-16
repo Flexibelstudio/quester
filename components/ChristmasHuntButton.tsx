@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Gift, Snowflake, RefreshCw, TriangleAlert, Home, Trees, Mountain } from 'lucide-react';
+import { Gift, Snowflake, RefreshCw, TriangleAlert, Home, Trees, Mountain, Trophy } from 'lucide-react';
 import { GeminiService } from '../services/gemini';
 import { RaceEvent } from '../types';
 import { INITIAL_RACE_STATE } from '../constants';
@@ -12,6 +12,7 @@ interface ChristmasHuntButtonProps {
   onAuthRequired?: () => void;
   autoStart?: boolean;
   onAutoStartConsumed?: () => void;
+  onShowLeaderboard?: () => void; // New prop
 }
 
 const LOADING_MESSAGES = [
@@ -30,7 +31,8 @@ export const ChristmasHuntButton: React.FC<ChristmasHuntButtonProps> = ({
     isGuest, 
     onAuthRequired, 
     autoStart, 
-    onAutoStartConsumed 
+    onAutoStartConsumed,
+    onShowLeaderboard
 }) => {
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
@@ -248,6 +250,18 @@ export const ChristmasHuntButton: React.FC<ChristmasHuntButtonProps> = ({
                 <Snowflake className="w-4 h-4" /> STARTA SPELET
             </button>
             
+            {/* LEADERBOARD BUTTON */}
+            {onShowLeaderboard && !loading && (
+                <div className="absolute top-2 right-2 z-20">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onShowLeaderboard(); }}
+                        className="flex items-center gap-1 text-[10px] font-bold text-yellow-400 bg-black/60 hover:bg-black/80 px-2 py-1 rounded-full border border-yellow-600/30 transition-colors"
+                    >
+                        <Trophy className="w-3 h-3" /> Topplista
+                    </button>
+                </div>
+            )}
+
             {error && (
                     <div className="mt-3 flex items-center gap-2 text-xs font-bold text-red-400 bg-red-950/50 p-2 rounded border border-red-900/50">
                     <TriangleAlert className="w-4 h-4" />

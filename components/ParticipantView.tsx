@@ -11,6 +11,7 @@ import { useGrinchLogic } from '../hooks/useGrinchLogic';
 import { useChristmasLogic } from '../hooks/useChristmasLogic';
 import { SnowfallOverlay } from './SnowfallOverlay';
 import { api } from '../services/dataService'; // DataService
+import { GlobalLeaderboard } from './GlobalLeaderboard';
 
 interface ParticipantViewProps {
   raceData: RaceEvent;
@@ -590,8 +591,9 @@ const FinishDialog: React.FC<{
     penaltyPoints: number;
     elapsedTime: string;
     onRate: (score: number, comment: string) => void;
-    isChristmas?: boolean; // Added isChristmas prop
-}> = ({ isOpen, totalPoints, basePoints, penaltyPoints, elapsedTime, onRate, isChristmas }) => {
+    isChristmas?: boolean;
+    onShowGlobalLeaderboard?: () => void; // New Prop
+}> = ({ isOpen, totalPoints, basePoints, penaltyPoints, elapsedTime, onRate, isChristmas, onShowGlobalLeaderboard }) => {
     const [score, setScore] = useState(0);
     const [comment, setComment] = useState('');
     if (!isOpen) return null;
@@ -644,6 +646,19 @@ const FinishDialog: React.FC<{
                          )}
                     </div>
                 </div>
+                
+                {/* Instant Game Leaderboard Button */}
+                {onShowGlobalLeaderboard && (
+                    <div className="mb-6">
+                        <button 
+                            onClick={onShowGlobalLeaderboard}
+                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold bg-yellow-600/20 border border-yellow-500/50 text-yellow-500 hover:bg-yellow-600/30 transition-colors uppercase tracking-wider text-xs"
+                        >
+                            <Trophy className="w-4 h-4" /> Se hur du ligger till globalt
+                        </button>
+                    </div>
+                )}
+
                 <div className={`border-t pt-6 ${isChristmas ? 'border-sky-100' : 'border-slate-800'}`}>
                     <h3 className={`text-center text-sm font-bold uppercase tracking-wider mb-4 ${theme.headerText}`}>Vad tyckte du om loppet?</h3>
                     <div className="flex justify-center gap-2 mb-4">
@@ -813,6 +828,9 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hasSeenBriefing, setHasSeenBriefing] = useState(false); // Controls Mission Briefing
   const [showGiveUpDialog, setShowGiveUpDialog] = useState(false);
+
+  // Leaderboard state
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
   // Profile Image State with Live DiceBear Fallback
   const [profileImage, setProfileImage] = useState<string | undefined>(userProfile?.photoURL);
@@ -1618,6 +1636,9 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
       confirmBtn: 'bg-red-600 text-white hover:bg-red-500 shadow-lg shadow-red-900/30'
   };
 
+  // Determine leaderboard mode based on race category
+  const leaderboardMode = isChristmasMode ? 'christmas_hunt' : 'zombie_survival';
+
   if (authStep === 'login' || authStep === 'profile' || authStep === 'lobby') {
       return (
         <div className={`h-full w-full flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans ${isZombieMode ? 'bg-black text-green-500 font-mono' : isChristmasMode ? 'bg-sky-200 text-slate-800' : 'bg-slate-950'}`}>
@@ -1703,6 +1724,12 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
             onDeploy={() => setHasSeenBriefing(true)}
         />
 
+        <GlobalLeaderboard 
+            isOpen={isLeaderboardOpen} 
+            onClose={() => setIsLeaderboardOpen(false)} 
+            defaultMode={leaderboardMode} 
+        />
+
         {/* RED HORROR VIGNETTE & SCANLINES (ZOMBIE MODE ONLY) */}
         {isZombieMode && (
             <>
@@ -1731,6 +1758,9 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
             elapsedTime={elapsedString} 
             onRate={handleRateAndExit} 
             isChristmas={isChristmasMode} 
+            onShowGlobalLeaderboard={
+                (isZombieMode || isChristmasMode) ? () => setIsLeaderboardOpen(true) : undefined
+            }
         />
         
         <GameMenu 

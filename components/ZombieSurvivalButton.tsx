@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Skull, Radiation, Biohazard, TriangleAlert, Map as MapIcon, Zap } from 'lucide-react';
+import { Skull, Radiation, Biohazard, TriangleAlert, Map as MapIcon, Zap, Trophy } from 'lucide-react';
 import { GeminiService } from '../services/gemini';
 import { RaceEvent, Checkpoint, NavGraph, NavNode } from '../types';
 import { INITIAL_RACE_STATE } from '../constants';
@@ -12,6 +12,7 @@ interface ZombieSurvivalButtonProps {
   onAuthRequired?: () => void;
   autoStart?: boolean;
   onAutoStartConsumed?: () => void;
+  onShowLeaderboard?: () => void; // New prop
 }
 
 const LOADING_MESSAGES = [
@@ -28,7 +29,8 @@ export const ZombieSurvivalButton: React.FC<ZombieSurvivalButtonProps> = ({
     isGuest, 
     onAuthRequired, 
     autoStart, 
-    onAutoStartConsumed 
+    onAutoStartConsumed,
+    onShowLeaderboard
 }) => {
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
@@ -375,6 +377,18 @@ export const ZombieSurvivalButton: React.FC<ZombieSurvivalButtonProps> = ({
                 </div>
             </div>
         </button>
+        
+        {/* LEADERBOARD BUTTON */}
+        {onShowLeaderboard && !loading && (
+            <div className="absolute top-2 left-2 z-20">
+                <button
+                    onClick={(e) => { e.stopPropagation(); onShowLeaderboard(); }}
+                    className="flex items-center gap-1 text-[10px] font-bold text-yellow-400 bg-black/60 hover:bg-black/80 px-2 py-1 rounded-full border border-yellow-600/30 transition-colors"
+                >
+                    <Trophy className="w-3 h-3" /> Topplista
+                </button>
+            </div>
+        )}
         
         {error && (
              <div className="mt-2 flex items-center gap-2 text-xs font-bold text-red-500 bg-red-950/30 p-2 rounded border border-red-900">
