@@ -415,11 +415,11 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                              </div>
                              <h3 className={`text-lg font-bold mb-1 ${activeArchetype === 'rogaining' ? 'text-white' : 'text-gray-300'}`}>Poängjakt</h3>
                              <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                                 Samla max poäng på begränsad tid. Valfri ordning. Strategi och vägval avgör.
+                                 Samla max poäng på begränsad tid. Valfri ordning. Tidsöverskridelse ger straffpoäng!
                              </p>
                              <div className="mt-auto flex flex-wrap gap-2">
                                  <span className="text-[10px] font-bold uppercase px-2 py-1 bg-gray-900 border border-gray-700 rounded text-gray-400">Fri Ordning</span>
-                                 <span className="text-[10px] font-bold uppercase px-2 py-1 bg-gray-900 border border-gray-700 rounded text-gray-400">Maxtid</span>
+                                 <span className="text-[10px] font-bold uppercase px-2 py-1 bg-gray-900 border border-gray-700 rounded text-gray-400">Straff</span>
                              </div>
                          </button>
 
@@ -454,8 +454,8 @@ export const RaceCreationWizard: React.FC<RaceCreationWizardProps> = ({ onCancel
                                  <div className="flex items-center gap-3">
                                      <Clock className="w-6 h-6 text-yellow-500" />
                                      <div>
-                                         <h4 className="text-sm font-bold text-yellow-100">Tidsgräns (Maxtid)</h4>
-                                         <p className="text-xs text-yellow-200/70">Hur länge får deltagarna vara ute?</p>
+                                         <h4 className="text-sm font-bold text-yellow-100">Tidsgräns & Straff</h4>
+                                         <p className="text-xs text-yellow-200/70">10 poängs avdrag per påbörjad minut över tiden.</p>
                                      </div>
                                  </div>
                                  <div className="flex items-center gap-2">

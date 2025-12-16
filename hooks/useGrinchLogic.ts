@@ -6,11 +6,12 @@ import { Checkpoint } from '../types';
 const DETECTION_RADIUS = 60; // meters (Wake up distance)
 const CATCH_RADIUS = 8;      // meters (Win condition - slightly generous for GPS drift)
 const BOUNDARY_RADIUS = 250; // meters (Max distance from spawn before circling back)
+const MAX_FLEE_DISTANCE = 40; // meters (NEW: If he gets this far from player, he stops/rests)
 
 // --- MOVEMENT PHYSICS ---
 const SPRINT_SPEED = 5.5;    // m/s (Very fast run, hard to catch)
-const SPRINT_DURATION = 8000; // ms (How long he runs)
-const REST_DURATION = 4000;   // ms (How long he stands still panting)
+const SPRINT_DURATION = 8000; // ms (Max run duration if player keeps up)
+const REST_DURATION = 6000;   // ms (How long he stands still panting/sleeping)
 
 // Math Constants
 const METERS_PER_DEG_LAT = 111132;
@@ -123,13 +124,21 @@ export const useGrinchLogic = (
                         }
                     }
 
-                    // B. FLEEING -> RESTING (Interval Logic)
+                    // B. FLEEING -> RESTING (Interval Logic OR Distance Logic)
                     else if (nextState === 'fleeing') {
-                        if (now > nextStateChange) {
+                        const timeIsUp = now > nextStateChange;
+                        const isTooFar = distToPlayer > MAX_FLEE_DISTANCE; // "The Leash"
+
+                        if (timeIsUp || isTooFar) {
                             nextState = 'resting';
                             nextStateChange = now + REST_DURATION;
                             updated = true;
-                            setStatusMessage("HAN FICK HÅLL AV GRÖTEN! TA HONOM NU! 🎅");
+                            
+                            if (isTooFar) {
+                                setStatusMessage("GRINCHEN TAPPADE BORT DIG! HAN TAR EN TUPPLUR! 💤");
+                            } else {
+                                setStatusMessage("HAN FICK HÅLL AV GRÖTEN! TA HONOM NU! 🥵");
+                            }
                         }
                     }
 
@@ -170,6 +179,7 @@ export const useGrinchLogic = (
                         let fleeVy = fleeMag > 0 ? dLatM / fleeMag : 0;
 
                         // Rubber Band Logic: If too far from spawn, steer back
+                        // But prioritze MAX_FLEE_DISTANCE logic (state change) over this movement tweak
                         if (distFromSpawn > BOUNDARY_RADIUS) {
                             const spawnDLatM = (grinch.spawnLat - grinch.lat) * METERS_PER_DEG_LAT;
                             const spawnDLngM = (grinch.spawnLng - grinch.lng) * (METERS_PER_DEG_LAT * Math.cos(degToRad(grinch.lat)));

@@ -161,6 +161,7 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
   const hasFinish = !!raceData.finishLocationConfirmed;
   const hasCheckpoints = raceData.checkpoints.length > 0;
   const isPublished = raceData.status === 'published' || raceData.status === 'active';
+  const isSequential = raceData.checkpointOrder === 'sequential';
 
   // Filter Checkpoints
   const draftCheckpoints = raceData.checkpoints.filter(cp => !cp.location);
@@ -338,8 +339,28 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
                             <span className="text-xs font-bold text-blue-400 uppercase">Nästa Checkpoint</span>
                             <span className="text-[10px] bg-blue-900/30 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">Klicka på kartan</span>
                         </div>
+                        
                         <div className="space-y-3">
                             <input value={cpConfig.name} onChange={e => setCpConfig({...cpConfig, name: e.target.value})} className="w-full bg-slate-900 border border-blue-500/30 rounded p-2 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="Namn (t.ex. CP 1)" />
+                            
+                            {/* Type Selector - Hidden if Sequential */}
+                            {!isSequential && (
+                                <div className="flex bg-slate-900 rounded p-1 border border-blue-500/30">
+                                    <button 
+                                        onClick={() => setCpConfig({...cpConfig, type: 'mandatory'})}
+                                        className={`flex-1 py-1.5 text-xs font-bold rounded transition-colors ${cpConfig.type === 'mandatory' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                                    >
+                                        Obligatorisk
+                                    </button>
+                                    <button 
+                                        onClick={() => setCpConfig({...cpConfig, type: 'optional'})}
+                                        className={`flex-1 py-1.5 text-xs font-bold rounded transition-colors ${cpConfig.type === 'optional' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                                    >
+                                        Valfri (Extra)
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="flex gap-2">
                                 <input type="number" value={cpConfig.points} onChange={e => setCpConfig({...cpConfig, points: parseInt(e.target.value)})} className="w-1/3 bg-slate-900 border border-blue-500/30 rounded p-2 text-sm text-white text-center font-mono" placeholder="Poäng" />
                                 <div className="flex-1 flex gap-1 bg-slate-900 rounded border border-blue-500/30 p-1">
@@ -418,7 +439,12 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2"><span className="font-bold text-gray-200 text-sm truncate">{cp.name}</span>{(cp.quiz || cp.challenge) && <Sparkles className="w-3 h-3 text-yellow-500" />}</div>
-                                <div className="text-[10px] text-gray-500 truncate">{cp.points} poäng</div>
+                                <div className="text-[10px] text-gray-500 truncate flex items-center gap-2">
+                                    <span>{cp.points} poäng</span>
+                                    {cp.type === 'optional' && !isSequential && (
+                                        <span className="text-purple-400 border border-purple-500/30 px-1 rounded bg-purple-900/20">Valfri</span>
+                                    )}
+                                </div>
                               </div>
                               <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                                 <button onClick={() => handleUnplace(cp.id)} className="p-1.5 text-gray-400 hover:text-yellow-400 hover:bg-slate-700 rounded" title="Ta bort från kartan (Gör till utkast)"><XCircle className="w-4 h-4" /></button>

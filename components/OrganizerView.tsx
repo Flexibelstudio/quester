@@ -214,12 +214,16 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
           onUpgradeRequest(check.message);
           return;
       }
+      
+      // Strict Logic: If Sequential (Banlopp), force Mandatory regardless of config state
+      const effectiveType = raceData.checkpointOrder === 'sequential' ? 'mandatory' : cpConfig.type;
+
       const newCheckpoint: Checkpoint = {
         id: Date.now().toString(),
         name: cpConfig.name,
         location: coord,
         radiusMeters: 25,
-        type: cpConfig.type,
+        type: effectiveType,
         points: cpConfig.points,
         color: cpConfig.color,
         description: 'Manuell placering',
@@ -290,6 +294,7 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
             isOpen={!!editingCheckpoint} 
             onClose={() => { setEditingCheckpoint(null); setEditingSpecialType('checkpoint'); }} 
             variant={editingSpecialType}
+            checkpointOrder={raceData.checkpointOrder}
             onSave={(updatedCp) => {
                 if (updatedCp.id === 'start') {
                     onUpdateRace({ startLocation: { ...raceData.startLocation, radiusMeters: updatedCp.radiusMeters }});

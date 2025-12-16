@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Circle, Marker, useMap, Popup, Polyline, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -585,10 +586,12 @@ const MissionBriefingDialog: React.FC<{
 const FinishDialog: React.FC<{
     isOpen: boolean;
     totalPoints: number;
+    basePoints: number;
+    penaltyPoints: number;
     elapsedTime: string;
     onRate: (score: number, comment: string) => void;
     isChristmas?: boolean; // Added isChristmas prop
-}> = ({ isOpen, totalPoints, elapsedTime, onRate, isChristmas }) => {
+}> = ({ isOpen, totalPoints, basePoints, penaltyPoints, elapsedTime, onRate, isChristmas }) => {
     const [score, setScore] = useState(0);
     const [comment, setComment] = useState('');
     if (!isOpen) return null;
@@ -633,6 +636,12 @@ const FinishDialog: React.FC<{
                     <div className={`${theme.cardBg} p-4 rounded-xl text-center`}>
                          <div className={`text-xs uppercase font-bold tracking-wider mb-1 ${theme.subText}`}>Poäng</div>
                          <div className={`text-2xl font-mono font-bold ${theme.accentText}`}>{totalPoints}</div>
+                         {/* Display Penalty breakdown if it exists */}
+                         {penaltyPoints > 0 && (
+                             <div className="text-[10px] text-red-400 mt-1 font-bold">
+                                 (-{penaltyPoints}p Straff)
+                             </div>
+                         )}
                     </div>
                 </div>
                 <div className={`border-t pt-6 ${isChristmas ? 'border-sky-100' : 'border-slate-800'}`}>
@@ -833,6 +842,9 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   // App State
   const [selectedCheckpoint, setSelectedCheckpoint] = useState<Checkpoint | null>(null);
   const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
+  
+  // State for result breakdown
+  const [finishResultData, setFinishResultData] = useState<{basePoints: number, penaltyPoints: number, totalPoints: number}>({ basePoints: 0, penaltyPoints: 0, totalPoints: 0 });
 
   // Photo / Camera State
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -1468,24 +1480,51 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
       // Play sound
       playSynthSound('finish');
 
+      // --- SCORING LOGIC FOR ROGAINING ---
+      let finalPoints = totalPoints;
+      let penalty = 0;
+      let calculatedTime = elapsedString;
+
       if ((isZombieMode || isChristmasMode) && startTime) {
-          const modeKey = isZombieMode ? 'zombie_survival' : 'christmas_hunt';
-          // Calculate time with penalty
+          // System modes (Zombie/Xmas) use standard point accumulation + potential penalties handled in game logic hooks
+          // But Christmas mode has explicit penalty time (seconds)
           const penaltyMs = isChristmasMode ? (timePenalty * 1000) : 0;
           const timeSec = ((Date.now() - startTime) + penaltyMs) / 1000;
+          
+          const modeKey = isZombieMode ? 'zombie_survival' : 'christmas_hunt';
           
           await api.leaderboard.saveScore({
               id: participantId,
               playerName: teamNameInput,
               groupTag: finalGroupTag,
-              score: totalPoints,
+              score: finalPoints,
               timeSeconds: timeSec,
               timeString: elapsedString,
               timestamp: new Date().toISOString(),
               location: userLocation ? { lat: userLocation[0], lng: userLocation[1] } : { lat: 0, lng: 0 },
               mode: modeKey
           });
+      } else if (raceData.scoreModel === 'rogaining' && startTime) {
+          // --- ROGAINING CALCULATION ---
+          const now = Date.now();
+          const durationMs = now - startTime;
+          const durationMinutes = durationMs / (1000 * 60);
+          const timeLimit = raceData.timeLimitMinutes || 60; // Default 60 if not set
+          
+          if (durationMinutes > timeLimit) {
+              const overMinutes = Math.ceil(durationMinutes - timeLimit); // Every started minute counts
+              const pointsPerMinute = raceData.pointsPerMinute || 10;
+              penalty = overMinutes * pointsPerMinute;
+              finalPoints = Math.max(0, totalPoints - penalty);
+          }
       }
+
+      // Store result for dialog
+      setFinishResultData({
+          basePoints: totalPoints,
+          penaltyPoints: penalty,
+          totalPoints: finalPoints
+      });
 
       if (onUpdateResult) {
           onUpdateResult({
@@ -1493,7 +1532,9 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
               name: teamNameInput,
               teamName: finalGroupTag,
               finishTime: elapsedString,
-              totalPoints: totalPoints,
+              totalPoints: finalPoints,
+              basePoints: totalPoints, // Store raw score
+              timePenaltyPoints: penalty, // Store penalty
               checkpointsVisited: checkedInIds.size,
               visitedCheckpointIds: Array.from(checkedInIds),
               status: 'finished', // Final status
@@ -1682,7 +1723,15 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
             </div>
         )}
 
-        <FinishDialog isOpen={isFinishDialogOpen} totalPoints={totalPoints} elapsedTime={elapsedString} onRate={handleRateAndExit} isChristmas={isChristmasMode} />
+        <FinishDialog 
+            isOpen={isFinishDialogOpen} 
+            totalPoints={finishResultData.totalPoints} 
+            basePoints={finishResultData.basePoints}
+            penaltyPoints={finishResultData.penaltyPoints}
+            elapsedTime={elapsedString} 
+            onRate={handleRateAndExit} 
+            isChristmas={isChristmasMode} 
+        />
         
         <GameMenu 
             isOpen={isMenuOpen} 

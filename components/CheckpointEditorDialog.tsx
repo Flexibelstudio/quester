@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Checkpoint, QuizData } from '../types';
+import { Checkpoint, QuizData, CheckpointOrder } from '../types';
 import { X, Save, HelpCircle, Zap, MapPin, List, CheckCircle2, Clock, Timer, Camera, Flag } from 'lucide-react';
 
 interface CheckpointEditorDialogProps {
@@ -9,9 +9,10 @@ interface CheckpointEditorDialogProps {
   onClose: () => void;
   onSave: (updatedCp: Checkpoint) => void;
   variant?: 'checkpoint' | 'start' | 'finish'; // New prop to handle simplified Start/Finish editing
+  checkpointOrder?: CheckpointOrder; // New prop to control visibility of Type selector
 }
 
-export const CheckpointEditorDialog: React.FC<CheckpointEditorDialogProps> = ({ checkpoint, isOpen, onClose, onSave, variant = 'checkpoint' }) => {
+export const CheckpointEditorDialog: React.FC<CheckpointEditorDialogProps> = ({ checkpoint, isOpen, onClose, onSave, variant = 'checkpoint', checkpointOrder }) => {
   const [data, setData] = useState<Checkpoint | null>(null);
   const [activeTab, setActiveTab] = useState<'general' | 'interaction'>('general');
   const [interactionType, setInteractionType] = useState<'none' | 'quiz' | 'challenge'>('none');
@@ -74,6 +75,7 @@ export const CheckpointEditorDialog: React.FC<CheckpointEditorDialogProps> = ({ 
   };
 
   const isSpecial = variant !== 'checkpoint';
+  const isSequential = checkpointOrder === 'sequential';
 
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -178,7 +180,7 @@ export const CheckpointEditorDialog: React.FC<CheckpointEditorDialogProps> = ({ 
                     )}
 
                     <div className="grid grid-cols-2 gap-4">
-                        {!isSpecial && (
+                        {!isSpecial && !isSequential && (
                             <div>
                                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Typ</label>
                                 <select
@@ -191,7 +193,7 @@ export const CheckpointEditorDialog: React.FC<CheckpointEditorDialogProps> = ({ 
                                 </select>
                             </div>
                         )}
-                        <div className={isSpecial ? 'col-span-2' : ''}>
+                        <div className={isSpecial || isSequential ? 'col-span-2' : ''}>
                              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Radie (meter)</label>
                              <div className="flex items-center gap-3">
                                  <input
