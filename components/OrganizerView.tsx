@@ -19,7 +19,7 @@ interface OrganizerViewProps {
   userProfile: UserProfile;
   tierConfigs: Record<string, TierConfig>;
   onUpdateRace: (updates: Partial<RaceEvent>) => void;
-  onSave: () => void;
+  onSave: (updates?: Partial<RaceEvent>) => void;
   onExit: () => void;
   hasUnsavedChanges: boolean;
   isOnline: boolean;
@@ -189,11 +189,10 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
           return;
       }
       if (confirm("Är du redo att publicera?")) {
-          onUpdateRace({ status: 'published' });
-          setTimeout(() => {
-              onSave();
-              setIsShareOpen(true);
-          }, 100);
+          // Pass the status update DIRECTLY to save, bypassing React state lag.
+          // This ensures the saved object in DB has status='published' immediately.
+          onSave({ status: 'published' });
+          setIsShareOpen(true);
       }
   };
 
@@ -261,7 +260,19 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
         
         {/* --- DIALOGS --- */}
         <ShareDialog isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} eventName={raceData.name} accessCode={raceData.accessCode || ''} />
-        <EventSettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} raceData={raceData} onSave={onUpdateRace} onDelete={onDeleteEvent ? () => onDeleteEvent(raceData.id) : undefined} />
+        
+        <EventSettingsDialog 
+            isOpen={isSettingsOpen} 
+            onClose={() => setIsSettingsOpen(false)} 
+            raceData={raceData} 
+            onSave={(updates) => {
+                // Update local state AND persist immediately to avoid "Unsaved Changes" warning
+                onUpdateRace(updates);
+                onSave(updates);
+            }} 
+            onDelete={onDeleteEvent ? () => onDeleteEvent(raceData.id) : undefined} 
+        />
+        
         <CheckpointEditorDialog checkpoint={editingCheckpoint} isOpen={!!editingCheckpoint} onClose={() => setEditingCheckpoint(null)} onSave={(updatedCp) => onUpdateRace({ checkpoints: raceData.checkpoints.map(cp => cp.id === updatedCp.id ? updatedCp : cp) })} />
         <AnalysisDialog analysis={analysisData} isOpen={isAnalysisOpen} onClose={() => setIsAnalysisOpen(false)} />
         {isResultsOpen && <ResultManager raceData={raceData} onClose={() => setIsResultsOpen(false)} onUpdateResults={(results) => onUpdateRace({ results })} />}

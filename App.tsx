@@ -211,9 +211,11 @@ function AppContent() {
       setHasUnsavedChanges(true);
   }, []);
 
-  const handleManualSave = async () => {
-      // Ensure ownerId is preserved or set
-      const dataToSave = { ...raceData };
+  // UPDATED: Accepts optional overrides to ensure atomic saving of critical state (like Publish)
+  const handleManualSave = async (dataOverride?: Partial<RaceEvent>) => {
+      // Merge current state with any overrides (e.g., status: 'published')
+      const dataToSave = { ...raceData, ...(dataOverride || {}) };
+      
       if (user) {
           // Only force override owner info if it is missing OR if it's not a special system ID
           // This prevents overwriting 'QUESTER_SYSTEM' with the admin's personal ID during edit
@@ -228,6 +230,12 @@ function AppContent() {
       
       await api.events.saveEvent(dataToSave);
       await refreshEvents();
+      
+      // If we had overrides, update local state to match to ensure UI sync
+      if (dataOverride) {
+          setRaceData(dataToSave);
+      }
+
       setHasUnsavedChanges(false);
       
       const originalText = document.title;
