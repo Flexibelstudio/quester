@@ -737,6 +737,11 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   const isZombieMode = raceData.category === 'Survival Run' || raceData.mapStyle === 'dark';
   const isChristmasMode = raceData.category === 'Christmas Hunt';
   
+  // Filter out drafts for game logic
+  const activeCheckpoints = useMemo(() => {
+      return (raceData.checkpoints || []).filter(cp => cp.location !== null);
+  }, [raceData.checkpoints]);
+
   // --- CHRISTMAS GAME STATE (WARMTH & BAG) ---
   const { 
       warmth, 
@@ -752,7 +757,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   } = useChristmasLogic(
       userLocation, 
       raceData.startLocation,
-      raceData.checkpoints || [], // Pass all CPs so logic can find bonfires
+      activeCheckpoints, // Pass filtered CPs
       isChristmasMode, 
       (t) => {
           setNotificationToast(t);
@@ -859,21 +864,24 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
              
              // Spawn Helicopter if all 4 found
              if (newRadioCount === 4 && !extractionPoint) {
-                 const extractionLoc = {
-                     lat: cp.location.lat + 0.003, // Roughly 300m away
-                     lng: cp.location.lng + 0.003
-                 };
-                 setExtractionPoint({
-                     id: 'extraction-heli',
-                     name: 'EXTRACTION POINT',
-                     location: extractionLoc,
-                     radiusMeters: 50,
-                     type: 'mandatory',
-                     color: '#10B981',
-                     description: 'Get to the chopper!'
-                 });
-                 playSynthSound('alarm');
-                 setNotificationToast({ title: "EXTRACTION INBOUND", message: "Go to the LZ!", type: 'success' });
+                 // We need location for extraction point, based on current CP
+                 if (cp.location) {
+                    const extractionLoc = {
+                        lat: cp.location.lat + 0.003, // Roughly 300m away
+                        lng: cp.location.lng + 0.003
+                    };
+                    setExtractionPoint({
+                        id: 'extraction-heli',
+                        name: 'EXTRACTION POINT',
+                        location: extractionLoc,
+                        radiusMeters: 50,
+                        type: 'mandatory',
+                        color: '#10B981',
+                        description: 'Get to the chopper!'
+                    });
+                    playSynthSound('alarm');
+                    setNotificationToast({ title: "EXTRACTION INBOUND", message: "Go to the LZ!", type: 'success' });
+                 }
              }
          } else if (cp.name.includes('Supply')) {
              // 50% chance for Flare or Medkit
@@ -893,7 +901,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
      }
      
      // --- AUTO-SAVE (RESUME FEATURE) ---
-     const currentPoints = Array.from(newSet).reduce((sum, id) => sum + ((raceData.checkpoints || []).find(c => c.id === id)?.points || 0), 0);
+     const currentPoints = Array.from(newSet).reduce((sum, id) => sum + ((activeCheckpoints.find(c => c.id === id)?.points || 0)), 0);
      
      if (onUpdateResult && !isTestMode) {
          const finalGroupTag = orgInput && subGroupInput ? `${orgInput} - ${subGroupInput}` : orgInput || subGroupInput;
@@ -915,7 +923,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   };
 
   // --- CHRISTMAS HUNT STATE (Depends on performCheckIn) ---
-  const { grinches, statusMessage: grinchStatus } = useGrinchLogic(userLocation, raceData.checkpoints || [], isChristmasMode, (cp, success) => {
+  const { grinches, statusMessage: grinchStatus } = useGrinchLogic(userLocation, activeCheckpoints, isChristmasMode, (cp, success) => {
       if (success) { performCheckIn(cp); } 
   });
 
@@ -1089,16 +1097,20 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   const [roamingZombies, setRoamingZombies] = useState<Array<{id: string, lat: number, lng: number, angle: number, lastAttackTime: number}>>([]);
 
   useEffect(() => {
-    if (isZombieMode && (raceData.checkpoints || []).length > 0 && roamingZombies.length === 0 && !isGameOver) { 
-        const nests = raceData.checkpoints.filter(cp => (cp.points && cp.points < 0) || cp.name.toLowerCase().includes('nest'));
-        const spawns = nests.length > 0 ? nests : raceData.checkpoints;
+    if (isZombieMode && activeCheckpoints.length > 0 && roamingZombies.length === 0 && !isGameOver) { 
+        const nests = activeCheckpoints.filter(cp => (cp.points && cp.points < 0) || cp.name.toLowerCase().includes('nest'));
+        const spawns = nests.length > 0 ? nests : activeCheckpoints;
         const zombies = Array.from({ length: 3 }).map((_, i) => {
             const spawn = spawns[i % spawns.length];
-            return { id: `hunter-${i}-${Date.now()}`, lat: spawn.location.lat, lng: spawn.location.lng, angle: 0, lastAttackTime: 0 };
-        });
+            // Safe since we filtered activeCheckpoints
+            if (spawn.location) {
+                return { id: `hunter-${i}-${Date.now()}`, lat: spawn.location.lat, lng: spawn.location.lng, angle: 0, lastAttackTime: 0 };
+            }
+            return null;
+        }).filter(z => z !== null) as any[];
         setRoamingZombies(zombies);
     }
-  }, [isZombieMode, raceData, isGameOver, roamingZombies.length]);
+  }, [isZombieMode, activeCheckpoints, isGameOver, roamingZombies.length]);
 
   useEffect(() => {
     if (!isZombieMode || isGameOver) return;
@@ -1145,16 +1157,16 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
   }, [isZombieMode, isGameOver]);
 
   const allZombieThreats = useMemo(() => {
-    const staticThreats = (raceData.checkpoints || []).filter(cp => (cp.points && cp.points < 0));
+    const staticThreats = activeCheckpoints.filter(cp => (cp.points && cp.points < 0));
     const dynamicThreats = roamingZombies.map(z => ({
         id: z.id, name: 'STALKER', location: { lat: z.lat, lng: z.lng }, radiusMeters: 10, type: 'optional' as const, points: -100
     }));
-    return [...(raceData.checkpoints || []), ...dynamicThreats] as Checkpoint[];
-  }, [raceData.checkpoints, roamingZombies]);
+    return [...activeCheckpoints, ...dynamicThreats] as Checkpoint[];
+  }, [activeCheckpoints, roamingZombies]);
 
   // --- AUDIO LOGIC HOOKS ---
   const { toggleAudio: toggleZombieAudio, nearestZombieDistance, audioEnabled: zombieAudioEnabled } = useZombieAudio(userLocation, allZombieThreats, isZombieMode);
-  const { toggleAudio: toggleXmasAudio, nearestDistance: nearestGrinchDistance, audioEnabled: xmasAudioEnabled } = useChristmasAudio(userLocation, raceData.checkpoints || [], isChristmasMode);
+  const { toggleAudio: toggleXmasAudio, nearestDistance: nearestGrinchDistance, audioEnabled: xmasAudioEnabled } = useChristmasAudio(userLocation, activeCheckpoints, isChristmasMode);
 
   // UNIFIED AUDIO CONTROLS
   const audioEnabled = isZombieMode ? zombieAudioEnabled : isChristmasMode ? xmasAudioEnabled : false;
@@ -1172,8 +1184,8 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
 
   const totalPoints = useMemo(() => {
       if (isChristmasMode) return christmasScore;
-      return Array.from(checkedInIds).reduce((sum, id) => sum + (raceData.checkpoints.find(c => c.id === id)?.points || 0), 0);
-  }, [checkedInIds, raceData.checkpoints, christmasScore, isChristmasMode]);
+      return Array.from(checkedInIds).reduce((sum, id) => sum + (activeCheckpoints.find(c => c.id === id)?.points || 0), 0);
+  }, [checkedInIds, activeCheckpoints, christmasScore, isChristmasMode]);
   
   useEffect(() => { if (initialJoinCode && !isTestMode) setAccessCodeInput(initialJoinCode); }, [initialJoinCode, isTestMode]);
   
@@ -1394,10 +1406,13 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
         if (hasStarted) {
             
             // 1. Check Standard Checkpoints
-            const targets = [...(raceData.checkpoints || [])];
-            if (extractionPoint) targets.push(extractionPoint);
+            const targets = [...activeCheckpoints];
+            if (extractionPoint && extractionPoint.location) targets.push(extractionPoint);
 
             targets.forEach(cp => {
+                // Safeguard: Checkpoint must have location
+                if (!cp.location) return;
+
                 if (checkedInIds.has(cp.id)) return;
                 // For Zombie mode, threats are handled by roaming logic mostly
                 // For Christmas mode, Grinches are handled by useGrinchLogic, but static checkpoints can still be fallback
@@ -1427,7 +1442,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
     };
     const watchId = navigator.geolocation.watchPosition((p) => { handlePosUpdate(p.coords.latitude, p.coords.longitude, p.coords.accuracy); }, err => console.error(err), { enableHighAccuracy: true });
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [authStep, hasStarted, checkedInIds, raceData.checkpoints, isGameOver, isChristmasMode, isFinishDialogOpen, extractionPoint, isFrozen]); // Added isFrozen dependency to stop updates if frozen? No, location updates still happen, but checkin is blocked.
+  }, [authStep, hasStarted, checkedInIds, activeCheckpoints, isGameOver, isChristmasMode, isFinishDialogOpen, extractionPoint, isFrozen]); // Added isFrozen dependency to stop updates if frozen? No, location updates still happen, but checkin is blocked.
 
   // --- DIALOG THEMES ---
   const dialogTheme = isChristmasMode ? {
@@ -2011,7 +2026,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                 )}
                 
                 {/* Helicopter Extraction Zone (Zombie Mode) */}
-                {isZombieMode && extractionPoint && (
+                {isZombieMode && extractionPoint && extractionPoint.location && (
                     <Marker position={[extractionPoint.location.lat, extractionPoint.location.lng]} icon={createCustomIcon('#10B981', false, false, false, 0, 0, 0, false, 'Extraction')} />
                 )}
                 
@@ -2075,9 +2090,11 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                             );
                         })}
                         {/* RENDER STATIC BONFIRES SEPARATELY */}
-                        {(raceData.checkpoints || [])
+                        {(activeCheckpoints || [])
                             .filter(cp => cp.name.toLowerCase().includes('eldstad') || cp.name.toLowerCase().includes('bonfire') || cp.name.toLowerCase().includes('värme'))
-                            .map(cp => (
+                            .map(cp => {
+                                if (!cp.location) return null;
+                                return (
                                 <Marker 
                                     key={cp.id}
                                     position={[cp.location.lat, cp.location.lng]}
@@ -2089,13 +2106,16 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                                         </div>
                                     </Tooltip>
                                 </Marker>
-                            ))
+                            )})
                         }
                      </>
                 ) : (
                     /* Standard Checkpoints rendering */
-                    (raceData.checkpoints || []).map((cp, index) => {
+                    (activeCheckpoints || []).map((cp, index) => {
                         if (cp.id === 'extraction-heli') return null; // Handled separately
+                        // Double check location is not null (though activeCheckpoints should guarantee)
+                        if (!cp.location) return null;
+
                         const isChecked = checkedInIds.has(cp.id);
                         const isZombieCP = isZombieCheckpoint(cp);
                         // Default radius logic fallback to visualize zone
@@ -2132,7 +2152,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
             <div className="absolute bottom-0 left-0 right-0 z-[2000] p-4 animate-in slide-in-from-bottom duration-300">
                 <div className={`backdrop-blur-xl border rounded-3xl p-6 shadow-2xl pb-24 overflow-hidden max-h-[80vh] overflow-y-auto ${isZombieMode ? 'bg-black/95 border-red-900 text-green-500 font-mono' : 'bg-slate-900/95 border-white/10 text-white'}`}>
                     <div className="flex justify-between items-start mb-4">
-                        <div><h2 className={`text-2xl font-bold leading-tight ${isZombieMode ? 'text-red-500 uppercase tracking-widest' : 'text-white'}`}>{selectedCheckpoint.name}</h2>{checkedInIds.has(selectedCheckpoint.id) ? (<span className={`inline-flex items-center gap-1 text-xs font-bold mt-1 px-2 py-0.5 rounded-full border ${isZombieMode ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-green-900/30 text-green-400 border-green-800'}`}><CheckCircle2 className="w-3 h-3" /> SECURED</span>) : (<span className="inline-flex items-center gap-1 text-xs font-bold mt-1 px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700"><Navigation className="w-3 h-3" /> DISTANCE: {(userLocation ? getDistanceMeters(userLocation[0], userLocation[1], selectedCheckpoint.location.lat, selectedCheckpoint.location.lng).toFixed(0) : '?')} M</span>)}</div>
+                        <div><h2 className={`text-2xl font-bold leading-tight ${isZombieMode ? 'text-red-500 uppercase tracking-widest' : 'text-white'}`}>{selectedCheckpoint.name}</h2>{checkedInIds.has(selectedCheckpoint.id) ? (<span className={`inline-flex items-center gap-1 text-xs font-bold mt-1 px-2 py-0.5 rounded-full border ${isZombieMode ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-green-900/30 text-green-400 border-green-800'}`}><CheckCircle2 className="w-3 h-3" /> SECURED</span>) : (<span className="inline-flex items-center gap-1 text-xs font-bold mt-1 px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700"><Navigation className="w-3 h-3" /> DISTANCE: {(userLocation && selectedCheckpoint.location ? getDistanceMeters(userLocation[0], userLocation[1], selectedCheckpoint.location.lat, selectedCheckpoint.location.lng).toFixed(0) : '?')} M</span>)}</div>
                         <button onClick={() => setSelectedCheckpoint(null)} className="p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white"><X className="w-4 h-4"/></button>
                     </div>
                     <div className={`rounded-xl p-4 mb-6 border ${isZombieMode ? 'bg-gray-900/50 border-red-900/30 text-green-400' : 'bg-gray-800/50 border-white/5 text-gray-300'}`}><p className="text-sm leading-relaxed">{selectedCheckpoint.description || "Ingen beskrivning."}</p>{selectedCheckpoint.points && selectedCheckpoint.points < 0 && (<div className="mt-4 pt-4 border-t border-red-900/30 flex gap-3"><div className="p-2 bg-red-900/20 rounded-lg text-red-500 h-fit"><Skull className="w-5 h-5 animate-pulse" /></div><div><div className="text-xs font-bold text-red-500 uppercase tracking-wide mb-1">HAZARD ZONE</div><p className="text-sm text-red-300 italic">This area is heavily infected. Keep your distance!</p></div></div>)}</div>
@@ -2179,7 +2199,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                              </div>
                              
                              {/* MANUAL OVERRIDE BUTTON - Now shown if < 80m and started (GPS Drift Fallback) */}
-                             {userLocation && getDistanceMeters(userLocation[0], userLocation[1], selectedCheckpoint.location.lat, selectedCheckpoint.location.lng) < 80 && hasStarted && (
+                             {userLocation && selectedCheckpoint.location && getDistanceMeters(userLocation[0], userLocation[1], selectedCheckpoint.location.lat, selectedCheckpoint.location.lng) < 80 && hasStarted && (
                                  <button 
                                     onClick={() => performCheckIn(selectedCheckpoint)}
                                     className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"

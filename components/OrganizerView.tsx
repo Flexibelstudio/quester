@@ -51,6 +51,7 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
 }) => {
   // --- LOCAL STATE ---
   const [activeTool, setActiveTool] = useState<ToolType>('none');
+  const [placingCheckpointId, setPlacingCheckpointId] = useState<string | null>(null); // New: ID of draft being placed
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isResultsOpen, setIsResultsOpen] = useState(false);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
@@ -90,9 +91,15 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
                  updatedData.checkpoints = updatedData.checkpoints.map(newCp => {
                      const existingCp = currentRaceData.checkpoints.find(c => c.id === newCp.id);
                      if (existingCp) {
+                         // Preserve location if AI returns partial update, or overwrite if newCp has location
+                         // If AI returns null location (draft), it overwrites existing location?
+                         // Instruction says: "Copy exact same coordinates... if exisiting".
+                         // Safe to assume we keep existing unless new is explicitly provided AND different?
+                         // Actually, let's trust the AI output but fallback to existing location if new is missing/null AND it's an update.
+                         // But for Draft Mode feature, we allow AI to create nulls.
                          return {
                              ...newCp,
-                             location: existingCp.location,
+                             location: newCp.location || existingCp.location, // Prefer new, fallback to old
                              radiusMeters: existingCp.radiusMeters
                          };
                      }
@@ -159,8 +166,10 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
   };
 
   const handlePublish = async () => {
-      if (raceData.checkpoints.length === 0 || !isLocationSet) {
-          alert("Du måste ha start, mål och checkpoints för att publicera.");
+      // Allow publishing even if some drafts exist? Probably not recommended, but let's enforce at least 1 valid CP
+      const validCPs = raceData.checkpoints.filter(cp => cp.location);
+      if (validCPs.length === 0 || !isLocationSet) {
+          alert("Du måste ha start, mål och minst en placerad checkpoint för att publicera.");
           return;
       }
       if (confirm("Är du redo att publicera?")) {
@@ -173,6 +182,19 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
   };
 
   const handleMapClick = (coord: Coordinate) => {
+    // 1. PLACING DRAFT MODE
+    if (placingCheckpointId) {
+        onUpdateRace({
+            checkpoints: raceData.checkpoints.map(cp => 
+                cp.id === placingCheckpointId ? { ...cp, location: coord } : cp
+            )
+        });
+        setPlacingCheckpointId(null);
+        setActiveTool('none'); // Reset
+        return;
+    }
+
+    // 2. STANDARD TOOLS
     if (activeTool === 'start') {
       onUpdateRace({ startLocation: coord, startLocationConfirmed: true });
     } else if (activeTool === 'finish') {
@@ -203,6 +225,19 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
       }
     }
   };
+
+  const handleStartPlacing = (id: string) => {
+      setPlacingCheckpointId(id);
+      setActiveTool('none'); // We handle the "tool" visually via MapVisualizer props or just overlay hint?
+      // Actually, MapVisualizer uses activeTool to determine if cursor is crosshair.
+      // Let's rely on `activeTool` not being 'none' OR pass a specific prop.
+      // For simplicity, we can temporarily set activeTool to 'checkpoint' visually, 
+      // but logic handles placingId first.
+  };
+
+  // Derived state for MapVisualizer to show crosshair
+  // We want crosshair if activeTool is set OR if placingCheckpointId is set
+  const showCrosshair = activeTool !== 'none' || !!placingCheckpointId;
 
   return (
     <div className="flex h-screen w-screen bg-gray-950 text-gray-100 font-sans overflow-hidden">
@@ -235,15 +270,26 @@ export const OrganizerView: React.FC<OrganizerViewProps> = ({
             onTestRun={onTestRun}
             onSettings={() => setIsSettingsOpen(true)}
             onShare={() => setIsShareOpen(true)}
+            onStartPlacing={handleStartPlacing}
         />
 
         {/* --- MAIN AREA (Map) --- */}
         <div className="flex-1 relative h-full w-full">
             
+            {/* Placement Toast */}
+            {placingCheckpointId && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1500] bg-purple-900/90 text-white px-6 py-3 rounded-full shadow-2xl border border-purple-500 animate-in slide-in-from-top-4 flex items-center gap-3">
+                    <span className="animate-pulse w-3 h-3 bg-purple-400 rounded-full"></span>
+                    <span className="font-bold text-sm">Klicka på kartan för att placera {raceData.checkpoints.find(c => c.id === placingCheckpointId)?.name}</span>
+                    <button onClick={() => setPlacingCheckpointId(null)} className="ml-2 bg-purple-800 hover:bg-purple-700 rounded-full p-1 text-xs">Avbryt</button>
+                </div>
+            )}
+
             <div className="absolute inset-0 z-0">
                 <MapVisualizer 
                     raceData={raceData} 
-                    activeTool={activeTool}
+                    // Pass checkpoint tool style if placing draft, or standard activeTool
+                    activeTool={placingCheckpointId ? 'checkpoint' : activeTool}
                     onMapClick={handleMapClick}
                     onDeleteCheckpoint={(id) => onUpdateRace({ checkpoints: raceData.checkpoints.filter(cp => cp.id !== id) })}
                     onEditCheckpoint={(id) => { const cp = raceData.checkpoints.find(c => c.id === id); if(cp) setEditingCheckpoint(cp); }}

@@ -6,7 +6,7 @@ import {
   CheckCircle2, Circle, Sparkles, Trash2, Edit2, 
   LayoutList, ListTodo, PanelLeftClose, PanelLeftOpen,
   Hammer, Wand2, Skull, BookOpen, ChevronDown, ChevronRight, PlayCircle, MousePointer2,
-  Settings2, Play, Share2
+  Settings2, Play, Share2, MapPin, XCircle
 } from 'lucide-react';
 
 interface CheckpointConfig {
@@ -36,6 +36,7 @@ interface MissionControlPanelProps {
   onTestRun: () => void;
   onSettings: () => void;
   onShare: () => void;
+  onStartPlacing: (id: string) => void; // New prop for draft mode
 }
 
 const StatusBadge: React.FC<{ status: EventStatus }> = ({ status }) => {
@@ -59,9 +60,13 @@ const AiGeneratorSection: React.FC<{ onGenerate: (prompt: string) => void }> = (
     const [theme, setTheme] = useState('');
     const [count, setCount] = useState(5);
     const [audience, setAudience] = useState('Vuxna / Motionärer');
+    const [createDrafts, setCreateDrafts] = useState(true);
 
     const handleRun = () => {
-        const prompt = `Skapa ${count} st blandade quiz-frågor och utmaningar. Målgrupp: ${audience}. Tema: ${theme || 'Äventyr'}. Applicera på checkpoints.`;
+        let prompt = `Skapa ${count} st blandade quiz-frågor och utmaningar. Målgrupp: ${audience}. Tema: ${theme || 'Äventyr'}. Applicera på checkpoints.`;
+        if (createDrafts) {
+            prompt += " Sätt 'location' till null för att skapa Drafts (oplacerade checkpoints).";
+        }
         onGenerate(prompt);
     };
 
@@ -86,6 +91,10 @@ const AiGeneratorSection: React.FC<{ onGenerate: (prompt: string) => void }> = (
                     <input type="number" value={count} onChange={e => setCount(parseInt(e.target.value))} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white mt-1" />
                 </div>
             </div>
+            <label className="flex items-center gap-2 cursor-pointer p-2 bg-slate-900 rounded border border-slate-800">
+                <input type="checkbox" checked={createDrafts} onChange={e => setCreateDrafts(e.target.checked)} className="rounded border-gray-600 bg-gray-800 text-purple-600" />
+                <span className="text-xs text-gray-300">Skapa som utkast (placera senare)</span>
+            </label>
             <button onClick={handleRun} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2">
                 <Wand2 className="w-4 h-4" /> Generera
             </button>
@@ -100,6 +109,8 @@ const StorySection: React.FC<{ onApply: (updates: Partial<RaceEvent>) => void, r
         if (!text.trim()) return;
         const chapters = text.split(/\n\s*\n/).filter(t => t.trim().length > 0);
         const newCheckpoints = [...raceData.checkpoints];
+        
+        // Strategy: Fill existing, then append new Drafts
         chapters.forEach((chapter, i) => {
             if (i < newCheckpoints.length) {
                 newCheckpoints[i] = { ...newCheckpoints[i], description: chapter, name: `Kapitel ${i+1}` };
@@ -107,7 +118,7 @@ const StorySection: React.FC<{ onApply: (updates: Partial<RaceEvent>) => void, r
                 newCheckpoints.push({
                     id: `story-${Date.now()}-${i}`,
                     name: `Kapitel ${i+1}`,
-                    location: { lat: raceData.startLocation.lat + (Math.random()-0.5)*0.005, lng: raceData.startLocation.lng + (Math.random()-0.5)*0.005 },
+                    location: null, // Draft
                     radiusMeters: 20,
                     type: 'mandatory',
                     description: chapter,
@@ -121,7 +132,7 @@ const StorySection: React.FC<{ onApply: (updates: Partial<RaceEvent>) => void, r
 
     return (
         <div className="space-y-3 p-1">
-            <p className="text-xs text-gray-400">Klistra in din saga. Varje stycke blir en checkpoint.</p>
+            <p className="text-xs text-gray-400">Klistra in din saga. Varje stycke blir en checkpoint. Överskott skapas som drafts.</p>
             <textarea value={text} onChange={e => setText(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white h-24 resize-none focus:border-green-500 outline-none" placeholder="Det var en gång..." />
             <button onClick={handleApply} className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded text-xs uppercase tracking-wider shadow-lg">Applicera Story</button>
         </div>
@@ -144,7 +155,8 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
   onGenerateContent,
   onTestRun,
   onSettings,
-  onShare
+  onShare,
+  onStartPlacing
 }) => {
   const [activeTab, setActiveTab] = useState<'guide' | 'build' | 'layers'>('build');
   const [expandedContent, setExpandedContent] = useState<string | null>(null);
@@ -154,6 +166,17 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
   const hasFinish = !!raceData.finishLocationConfirmed;
   const hasCheckpoints = raceData.checkpoints.length > 0;
   const isPublished = raceData.status === 'published' || raceData.status === 'active';
+
+  // Filter Checkpoints
+  const draftCheckpoints = raceData.checkpoints.filter(cp => !cp.location);
+  const placedCheckpoints = raceData.checkpoints.filter(cp => !!cp.location);
+
+  const handleUnplace = (id: string) => {
+      const updated = raceData.checkpoints.map(cp => 
+          cp.id === id ? { ...cp, location: null } : cp
+      );
+      onUpdateRace({ checkpoints: updated });
+  };
 
   const ChecklistItem = ({ done, label, onClick, isActive }: { done: boolean, label: string, onClick?: () => void, isActive?: boolean }) => (
     <button onClick={onClick} className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${isActive ? 'bg-blue-900/20 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.2)]' : 'bg-gray-800/50 border-gray-700 hover:bg-gray-800'}`}>
@@ -350,25 +373,67 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
             </div>
           )}
 
-          {/* TAB: LAYERS (List) */}
+          {/* TAB: LAYERS (List with Draft Support) */}
           {activeTab === 'layers' && (
-            <div className="space-y-3 animate-in fade-in duration-300">
-              {raceData.checkpoints.length === 0 && <div className="text-center py-8 text-gray-500 text-sm">Inga checkpoints än.</div>}
-              {raceData.checkpoints.map((cp, idx) => (
-                   <div key={cp.id} className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex items-center gap-3 group hover:border-slate-500 transition-colors">
-                      <div className="flex flex-col items-center gap-1">
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm" style={{ backgroundColor: cp.color || '#3b82f6' }}>{idx + 1}</div>
+            <div className="space-y-6 animate-in fade-in duration-300">
+              
+              {/* Drafts Section */}
+              {draftCheckpoints.length > 0 && (
+                  <div>
+                      <h4 className="text-xs font-bold text-purple-400 uppercase mb-3 flex items-center gap-2">
+                          <Wand2 className="w-3 h-3" /> Att Placera ({draftCheckpoints.length})
+                      </h4>
+                      <div className="space-y-2">
+                          {draftCheckpoints.map((cp, idx) => (
+                              <div key={cp.id} className="bg-purple-900/10 border border-purple-500/30 rounded-xl p-3 flex items-center gap-3 group hover:bg-purple-900/20 transition-colors">
+                                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-purple-300 bg-purple-900/50 border border-purple-500/50">
+                                      {idx + 1}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                      <div className="font-bold text-purple-200 text-sm truncate">{cp.name}</div>
+                                      <div className="text-[10px] text-purple-400/70 truncate flex items-center gap-1">
+                                          {(cp.quiz || cp.challenge) && <Sparkles className="w-3 h-3" />}
+                                          {cp.quiz ? 'Quiz' : cp.challenge ? 'Utmaning' : 'Checkpoint'}
+                                      </div>
+                                  </div>
+                                  <button 
+                                    onClick={() => onStartPlacing(cp.id)}
+                                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg shadow-lg flex items-center gap-1 transition-transform active:scale-95"
+                                  >
+                                      <MapPin className="w-3 h-3" /> Placera
+                                  </button>
+                                  <button onClick={() => onEditCheckpoint(cp.id)} className="p-1.5 text-gray-400 hover:text-white hover:bg-slate-700 rounded"><Edit2 className="w-4 h-4" /></button>
+                              </div>
+                          ))}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2"><span className="font-bold text-gray-200 text-sm truncate">{cp.name}</span>{(cp.quiz || cp.challenge) && <Sparkles className="w-3 h-3 text-yellow-500" />}</div>
-                        <div className="text-[10px] text-gray-500 truncate">{cp.points} poäng</div>
-                      </div>
-                      <div className="flex gap-1">
-                        <button onClick={() => onEditCheckpoint(cp.id)} className="p-1.5 text-gray-400 hover:text-white hover:bg-slate-700 rounded"><Edit2 className="w-4 h-4" /></button>
-                        <button onClick={() => onDeleteCheckpoint(cp.id)} className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-900/30 rounded"><Trash2 className="w-4 h-4" /></button>
-                      </div>
-                   </div>
-              ))}
+                  </div>
+              )}
+
+              {/* Placed Section */}
+              <div>
+                  <h4 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2">
+                      <MapPin className="w-3 h-3" /> På Kartan ({placedCheckpoints.length})
+                  </h4>
+                  {placedCheckpoints.length === 0 && <div className="text-center py-8 text-gray-500 text-sm italic">Kartan är tom.</div>}
+                  <div className="space-y-2">
+                      {placedCheckpoints.map((cp, idx) => (
+                           <div key={cp.id} className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex items-center gap-3 group hover:border-slate-500 transition-colors">
+                              <div className="flex flex-col items-center gap-1">
+                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm" style={{ backgroundColor: cp.color || '#3b82f6' }}>{idx + 1}</div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2"><span className="font-bold text-gray-200 text-sm truncate">{cp.name}</span>{(cp.quiz || cp.challenge) && <Sparkles className="w-3 h-3 text-yellow-500" />}</div>
+                                <div className="text-[10px] text-gray-500 truncate">{cp.points} poäng</div>
+                              </div>
+                              <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => handleUnplace(cp.id)} className="p-1.5 text-gray-400 hover:text-yellow-400 hover:bg-slate-700 rounded" title="Ta bort från kartan (Gör till utkast)"><XCircle className="w-4 h-4" /></button>
+                                <button onClick={() => onEditCheckpoint(cp.id)} className="p-1.5 text-gray-400 hover:text-white hover:bg-slate-700 rounded"><Edit2 className="w-4 h-4" /></button>
+                                <button onClick={() => onDeleteCheckpoint(cp.id)} className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-900/30 rounded"><Trash2 className="w-4 h-4" /></button>
+                              </div>
+                           </div>
+                      ))}
+                  </div>
+              </div>
             </div>
           )}
         </div>
