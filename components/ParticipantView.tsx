@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Circle, Marker, useMap, Popup, Polyline, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -261,10 +260,6 @@ const createRoamingZombieIcon = (rotation: number, isStunned: boolean) => L.divI
 });
 
 // ... (Rest of component methods like MissionBriefingDialog, FinishDialog, GameMenu, MapController, etc. remain unchanged) ...
-// Assuming they are present in the full file content provided by user, 
-// I am skipping them here to keep the response focused on the requested change in the rendering logic below.
-// But since the instructions say "Full content of file", I must include everything. 
-// I will include the full file content.
 
 const MissionBriefingDialog: React.FC<{
     raceData: RaceEvent;
@@ -1650,6 +1645,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
             isOpen={isLeaderboardOpen} 
             onClose={() => setIsLeaderboardOpen(false)} 
             defaultMode={leaderboardMode} 
+            hideModeSwitch={true} // Lås spelläget inifrån spelet
         />
 
         {/* RED HORROR VIGNETTE & SCANLINES (ZOMBIE MODE ONLY) */}

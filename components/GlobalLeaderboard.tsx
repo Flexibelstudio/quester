@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { GlobalScoreEntry, Coordinate } from '../types';
 import { api } from '../services/dataService'; // DataService
@@ -8,6 +7,7 @@ interface GlobalLeaderboardProps {
   isOpen: boolean;
   onClose: () => void;
   defaultMode?: 'zombie_survival' | 'christmas_hunt';
+  hideModeSwitch?: boolean; // Ny prop för att låsa spelläget
 }
 
 // Helper for distance (moved locally or can be imported if shared)
@@ -20,12 +20,17 @@ function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   return R * c;
 }
 
-export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({ isOpen, onClose, defaultMode = 'zombie_survival' }) => {
+export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({ isOpen, onClose, defaultMode = 'zombie_survival', hideModeSwitch = false }) => {
   const [mode, setMode] = useState<'zombie_survival' | 'christmas_hunt'>(defaultMode);
   const [filterType, setFilterType] = useState<'global' | 'local' | 'group'>('global');
   const [scores, setScores] = useState<GlobalScoreEntry[]>([]);
   const [userLocation, setUserLocation] = useState<Coordinate | null>(null);
   const [groupFilter, setGroupFilter] = useState('');
+
+  // Update mode if defaultMode changes (e.g. when opening from different game types)
+  useEffect(() => {
+    setMode(defaultMode);
+  }, [defaultMode, isOpen]);
 
   // Get location for local filter
   useEffect(() => {
@@ -82,20 +87,22 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({ isOpen, on
                 </div>
                 <div>
                     <h2 className="text-2xl font-black text-white uppercase tracking-tight">Topplistor</h2>
-                    <div className="flex gap-2 mt-1">
-                        <button 
-                            onClick={() => setMode('zombie_survival')}
-                            className={`px-3 py-1 rounded-full text-xs font-bold uppercase transition-colors ${mode === 'zombie_survival' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
-                        >
-                            Zombie Run
-                        </button>
-                        <button 
-                            onClick={() => setMode('christmas_hunt')}
-                            className={`px-3 py-1 rounded-full text-xs font-bold uppercase transition-colors ${mode === 'christmas_hunt' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
-                        >
-                            Christmas Hunt
-                        </button>
-                    </div>
+                    {!hideModeSwitch && (
+                        <div className="flex gap-2 mt-1">
+                            <button 
+                                onClick={() => setMode('zombie_survival')}
+                                className={`px-3 py-1 rounded-full text-xs font-bold uppercase transition-colors ${mode === 'zombie_survival' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                            >
+                                Zombie Run
+                            </button>
+                            <button 
+                                onClick={() => setMode('christmas_hunt')}
+                                className={`px-3 py-1 rounded-full text-xs font-bold uppercase transition-colors ${mode === 'christmas_hunt' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                            >
+                                Christmas Hunt
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
             <button onClick={onClose} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors text-white">

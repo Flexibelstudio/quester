@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Gift, Snowflake, RefreshCw, TriangleAlert, Home, Trees, Mountain, Trophy } from 'lucide-react';
+import { Gift, Snowflake, Home, Trees, Mountain, Trophy, ArrowRight, X } from 'lucide-react';
 import { RaceEvent, Checkpoint } from '../types';
 import { INITIAL_RACE_STATE } from '../constants';
 
@@ -11,7 +10,7 @@ interface ChristmasHuntButtonProps {
   onAuthRequired?: () => void;
   autoStart?: boolean;
   onAutoStartConsumed?: () => void;
-  onShowLeaderboard?: () => void; // New prop
+  onShowLeaderboard?: () => void;
 }
 
 const LOADING_MESSAGES = [
@@ -36,7 +35,7 @@ export const ChristmasHuntButton: React.FC<ChristmasHuntButtonProps> = ({
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
   const [error, setError] = useState<string | null>(null);
-  const [scale, setScale] = useState<GameScale>('medium');
+  const [viewMode, setViewMode] = useState<'cover' | 'config'>('cover');
 
   useEffect(() => {
     if (!loading) return;
@@ -49,16 +48,14 @@ export const ChristmasHuntButton: React.FC<ChristmasHuntButtonProps> = ({
     return () => clearInterval(interval);
   }, [loading]);
 
-  // Handle Auto-Start after login
   useEffect(() => {
       if (autoStart && !loading && !error) {
-          handleStart();
+          handleStart('medium');
           if (onAutoStartConsumed) onAutoStartConsumed();
       }
   }, [autoStart]);
 
-  const handleStart = () => {
-    // 1. Auth Gate
+  const handleStart = (selectedScale: GameScale) => {
     if (isGuest && onAuthRequired) {
         onAuthRequired();
         return;
@@ -76,7 +73,7 @@ export const ChristmasHuntButton: React.FC<ChristmasHuntButtonProps> = ({
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        await generateHunt(latitude, longitude);
+        await generateHunt(latitude, longitude, selectedScale);
       },
       (err) => {
         console.error(err);
@@ -87,86 +84,46 @@ export const ChristmasHuntButton: React.FC<ChristmasHuntButtonProps> = ({
     );
   };
 
-  const getScaleParams = (s: GameScale) => {
-      switch(s) {
-          case 'small': return { 
-              minDist: 40, maxDist: 100, 
-              fireMin: 20, fireMax: 50,
-              desc: 'Bakgården (Litet)' 
-          };
-          case 'large': return { 
-              minDist: 300, maxDist: 600, 
-              fireMin: 150, fireMax: 300,
-              desc: 'Skogen (Stort)' 
-          };
-          default: return { 
-              minDist: 150, maxDist: 300, 
-              fireMin: 80, fireMax: 150,
-              desc: 'Parken (Medium)' 
-          };
-      }
-  };
-
-  // Helper to create offset coordinate
-  const createOffset = (lat: number, lng: number, distanceMeters: number, angleRad: number) => {
-      // 1 degree lat ~ 111132 meters
-      const dLat = (distanceMeters * Math.cos(angleRad)) / 111132;
-      // 1 degree lng ~ 111132 * cos(lat) meters
-      const dLng = (distanceMeters * Math.sin(angleRad)) / (111132 * Math.cos(lat * Math.PI / 180));
-      
-      return {
-          lat: lat + dLat,
-          lng: lng + dLng
-      };
-  };
-
-  const generateHunt = async (lat: number, lng: number) => {
-    const params = getScaleParams(scale);
+  const generateHunt = async (lat: number, lng: number, currentScale: GameScale) => {
+    const params = currentScale === 'small' ? { minDist: 40, maxDist: 100, fireMin: 20, fireMax: 50 } : 
+                  currentScale === 'large' ? { minDist: 300, maxDist: 600, fireMin: 150, fireMax: 300 } : 
+                  { minDist: 150, maxDist: 300, fireMin: 80, fireMax: 150 };
+    
     const checkpoints: Checkpoint[] = [];
+    const createOffset = (lat: number, lng: number, distanceMeters: number, angleRad: number) => ({
+        lat: lat + (distanceMeters * Math.cos(angleRad)) / 111132,
+        lng: lng + (distanceMeters * Math.sin(angleRad)) / (111132 * Math.cos(lat * Math.PI / 180))
+    });
 
-    // 1. Generate GIFTS (5-7 items)
     const numGifts = 5 + Math.floor(Math.random() * 3);
     for (let i = 0; i < numGifts; i++) {
-        const angle = Math.random() * 2 * Math.PI;
-        const dist = params.minDist + Math.random() * (params.maxDist - params.minDist);
-        const loc = createOffset(lat, lng, dist, angle);
-
         checkpoints.push({
             id: `gift-${i}-${Date.now()}`,
             name: `Stolen Gift #${i + 1}`,
-            location: loc,
+            location: createOffset(lat, lng, params.minDist + Math.random() * (params.maxDist - params.minDist), Math.random() * 2 * Math.PI),
             radiusMeters: 20,
             type: 'mandatory',
             points: 500,
-            color: '#f87171', // Red
-            description: "A Grinch is guarding this gift. Chase them down to reclaim it!"
+            color: '#f87171'
         });
     }
-
-    // 2. Generate BONFIRES (2 items)
     for (let i = 0; i < 2; i++) {
-        // Place bonfires slightly apart (offset angle by at least 90 deg)
-        const angle = (i * Math.PI) + (Math.random() * Math.PI / 2); 
-        const dist = params.fireMin + Math.random() * (params.fireMax - params.fireMin);
-        const loc = createOffset(lat, lng, dist, angle);
-
         checkpoints.push({
             id: `fire-${i}-${Date.now()}`,
             name: "Eldstad (Värme)",
-            location: loc,
+            location: createOffset(lat, lng, params.fireMin + Math.random() * (params.fireMax - params.fireMin), (i * Math.PI) + (Math.random() * Math.PI / 2)),
             radiusMeters: 20,
             type: 'optional',
             points: 0,
-            color: '#f97316', // Orange
-            description: "SAFE ZONE. Regenerate warmth here."
+            color: '#f97316'
         });
     }
 
     const finalEvent: RaceEvent = {
         ...INITIAL_RACE_STATE,
         id: `xmas-${Date.now()}`,
-        name: `The Great Christmas Hunt (${scale.toUpperCase()})`,
-        description: `The Grinch's helpers have stolen the presents! Use the map to find gifts. CAUTION: It's freezing! Return to the Sleigh (Start) or find a Bonfire (Eldstad) to warm up.`,
+        name: `The Great Christmas Hunt`,
+        description: `Rädda julen!`,
         category: 'Christmas Hunt',
         status: 'active',
         startDateTime: new Date().toISOString(),
@@ -176,107 +133,107 @@ export const ChristmasHuntButton: React.FC<ChristmasHuntButtonProps> = ({
         finishLocation: { lat, lng, radiusMeters: 50 },
         checkpoints: checkpoints,
         isInstantGame: true,
-        // Ensure mapStyle is standard so snow overlay works best
         mapStyle: 'standard' 
     } as RaceEvent;
 
-    // Simulate delay for effect
-    setTimeout(() => {
-        setLoading(false);
-        onGameCreated(finalEvent);
-    }, 2000);
+    setTimeout(() => { setLoading(false); onGameCreated(finalEvent); }, 2000);
   };
 
   return (
-    <div className={`relative w-full overflow-hidden rounded-xl border border-blue-200/50 bg-slate-900 p-6 transition-all shadow-lg`}>
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-slate-950 opacity-80 pointer-events-none"></div>
+    <div 
+        onClick={() => { if (!loading && viewMode === 'cover') setViewMode('config'); }}
+        className={`relative w-full overflow-hidden rounded-xl border border-blue-900/50 bg-slate-900 px-6 py-4 min-h-[120px] transition-all shadow-lg flex flex-col justify-center
+            ${viewMode === 'cover' ? 'hover:border-blue-500 hover:shadow-[0_0_40px_rgba(59,130,246,0.2)] cursor-pointer group' : 'border-blue-500/50'}
+            ${loading ? 'cursor-not-allowed opacity-80' : ''}
+        `}
+    >
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-950/30 to-slate-950 opacity-80 pointer-events-none"></div>
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/snow.png')] opacity-10 pointer-events-none"></div>
         
         {loading && (
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center rounded-xl">
-                <Snowflake className="w-12 h-12 text-blue-300 animate-[spin_3s_linear_infinite]" />
-                <div className="mt-4 font-mono text-blue-300 text-sm font-bold uppercase tracking-widest animate-pulse">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-40 flex flex-col items-center justify-center rounded-xl">
+                <Snowflake className="w-8 h-8 text-blue-300 animate-[spin_3s_linear_infinite] mb-2" />
+                <div className="font-mono text-blue-300 text-[10px] font-bold uppercase tracking-widest animate-pulse">
                     {loadingMsg}
                 </div>
-                </div>
+            </div>
         )}
 
-        <div className="relative z-10">
-            {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
-                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl border-2 bg-blue-950/50 shadow-inner border-blue-800`}>
-                    <Gift className={`h-7 w-7 text-blue-400`} />
-                </div>
-                <div className="text-left">
-                    <h3 className="text-xl font-black italic uppercase tracking-tighter text-white">
-                        Christmas Hunt
-                    </h3>
-                    
-                    {/* INTENSITY METER */}
-                    <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Intensitet:</span>
-                        <div className="flex gap-1">
-                            <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_5px_green]"></div>
-                            <div className="w-2 h-2 rounded-full bg-slate-700"></div>
-                            <div className="w-2 h-2 rounded-full bg-slate-700"></div>
+        {/* TOP LEFT LEADERBOARD */}
+        {onShowLeaderboard && !loading && viewMode === 'cover' && (
+            <div className="absolute top-2 left-2 z-20">
+                <button
+                    onClick={(e) => { e.stopPropagation(); onShowLeaderboard(); }}
+                    className="flex items-center gap-1 text-[8px] font-bold text-yellow-500/80 bg-black/40 hover:bg-black/80 hover:text-yellow-400 px-2 py-0.5 rounded-full border border-yellow-900/30 transition-all backdrop-blur-sm"
+                >
+                    <Trophy className="w-2.5 h-2.5" /> Topplista
+                </button>
+            </div>
+        )}
+
+        {/* CLOSE CONFIG */}
+        {viewMode === 'config' && !loading && (
+             <div className="absolute top-2 right-2 z-30">
+                <button
+                    onClick={(e) => { e.stopPropagation(); setViewMode('cover'); }}
+                    className="p-1 rounded-full bg-black/40 text-gray-400 hover:text-white transition-colors"
+                >
+                    <X className="w-3.5 h-3.5" />
+                </button>
+            </div>
+        )}
+
+        <div className="relative z-10 w-full">
+            {viewMode === 'cover' ? (
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border-2 bg-blue-950/40 shadow-inner border-blue-900 group-hover:border-blue-400 transition-colors`}>
+                            <Gift className={`h-7 w-7 text-blue-400 group-hover:text-white transition-colors`} />
+                        </div>
+                        <div className="text-left">
+                            <h3 className="text-xl font-black italic uppercase tracking-tight text-white group-hover:text-blue-400 transition-colors leading-none mb-2">
+                                Christmas Hunt
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-bold text-blue-400/70 uppercase tracking-widest">Intensitet:</span>
+                                <div className="flex gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></div>
+                                    <div className="w-2 h-2 rounded-full bg-slate-800 border border-slate-700/50"></div>
+                                    <div className="w-2 h-2 rounded-full bg-slate-800 border border-slate-700/50"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    <div>
+                         <span className="inline-block rounded-full border border-blue-400/30 bg-blue-900/10 px-5 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-blue-300 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all shadow-lg">
+                            STARTA JAKTEN
+                         </span>
+                    </div>
                 </div>
-            </div>
-
-            {/* Scale Selector */}
-            <div className="mb-6">
-                <label className="text-[10px] font-bold text-blue-300 uppercase tracking-widest mb-2 block">Välj Områdesstorlek</label>
-                <div className="grid grid-cols-3 gap-2">
-                    <button 
-                        onClick={() => setScale('small')}
-                        className={`flex flex-col items-center justify-center p-2 rounded-lg border transition-all ${scale === 'small' ? 'bg-blue-600 border-white text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'}`}
-                    >
-                        <Home className="w-5 h-5 mb-1" />
-                        <span className="text-[10px] font-bold">Bakgård</span>
-                    </button>
-                    <button 
-                        onClick={() => setScale('medium')}
-                        className={`flex flex-col items-center justify-center p-2 rounded-lg border transition-all ${scale === 'medium' ? 'bg-blue-600 border-white text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'}`}
-                    >
-                        <Trees className="w-5 h-5 mb-1" />
-                        <span className="text-[10px] font-bold">Park</span>
-                    </button>
-                    <button 
-                        onClick={() => setScale('large')}
-                        className={`flex flex-col items-center justify-center p-2 rounded-lg border transition-all ${scale === 'large' ? 'bg-blue-600 border-white text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'}`}
-                    >
-                        <Mountain className="w-5 h-5 mb-1" />
-                        <span className="text-[10px] font-bold">Skog</span>
-                    </button>
-                </div>
-            </div>
-            
-            {/* Action Button */}
-            <button
-                onClick={handleStart}
-                disabled={loading}
-                className="w-full py-3 rounded-lg border border-blue-400 bg-blue-600 text-sm font-bold text-white shadow-lg hover:bg-blue-500 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            >
-                <Snowflake className="w-4 h-4" /> STARTA SPELET
-            </button>
-            
-            {/* LEADERBOARD BUTTON */}
-            {onShowLeaderboard && !loading && (
-                <div className="absolute top-2 right-2 z-20">
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onShowLeaderboard(); }}
-                        className="flex items-center gap-1 text-[10px] font-bold text-yellow-400 bg-black/60 hover:bg-black/80 px-2 py-1 rounded-full border border-yellow-600/30 transition-colors"
-                    >
-                        <Trophy className="w-3 h-3" /> Topplista
-                    </button>
+            ) : (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <h4 className="text-center text-white font-black uppercase tracking-widest mb-4 text-[10px] opacity-70">Välj Storlek</h4>
+                    <div className="flex gap-2">
+                        <button onClick={() => handleStart('small')} className="flex-1 flex flex-col items-center p-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-blue-900/40 hover:border-blue-500 transition-all group">
+                            <Home className="w-4 h-4 text-slate-400 group-hover:text-blue-400 mb-1" />
+                            <span className="font-bold text-white text-[10px]">LITEN</span>
+                        </button>
+                        <button onClick={() => handleStart('medium')} className="flex-1 flex flex-col items-center p-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-blue-900/40 hover:border-blue-500 transition-all group">
+                            <Trees className="w-4 h-4 text-slate-400 group-hover:text-blue-400 mb-1" />
+                            <span className="font-bold text-white text-[10px]">MEDIUM</span>
+                        </button>
+                        <button onClick={() => handleStart('large')} className="flex-1 flex flex-col items-center p-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-blue-900/40 hover:border-blue-500 transition-all group">
+                            <Mountain className="w-4 h-4 text-slate-400 group-hover:text-blue-400 mb-1" />
+                            <span className="font-bold text-white text-[10px]">STOR</span>
+                        </button>
+                    </div>
                 </div>
             )}
 
             {error && (
-                    <div className="mt-3 flex items-center gap-2 text-xs font-bold text-red-400 bg-red-950/50 p-2 rounded border border-red-900/50">
-                    <TriangleAlert className="w-4 h-4" />
+                <div className="mt-2 text-[10px] font-bold text-red-400 bg-red-950/50 p-2 rounded border border-red-900/50">
                     {error}
-                    </div>
+                </div>
             )}
         </div>
     </div>
