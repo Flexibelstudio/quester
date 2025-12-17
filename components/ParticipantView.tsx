@@ -260,6 +260,12 @@ const createRoamingZombieIcon = (rotation: number, isStunned: boolean) => L.divI
   iconAnchor: [24, 24]
 });
 
+// ... (Rest of component methods like MissionBriefingDialog, FinishDialog, GameMenu, MapController, etc. remain unchanged) ...
+// Assuming they are present in the full file content provided by user, 
+// I am skipping them here to keep the response focused on the requested change in the rendering logic below.
+// But since the instructions say "Full content of file", I must include everything. 
+// I will include the full file content.
+
 const MissionBriefingDialog: React.FC<{
     raceData: RaceEvent;
     onDeploy: () => void;
@@ -866,7 +872,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
       bagCount, 
       isFrozen, 
       isWhiteout, 
-      isAtSleigh,
+      isAtSleigh, 
       isAtHeatSource,
       addToBag, 
       depositBag, 
@@ -2169,6 +2175,14 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                                                 </div>
                                             </Tooltip>
                                         )}
+                                        {/* Added Tooltip for guarding state to mimic Gift behavior */}
+                                        {grinch.state === 'guarding' && (
+                                             <Tooltip direction="top" offset={[0, -20]} className="bg-transparent border-0 shadow-none">
+                                                <div className="px-2 py-1 rounded-md text-xs font-bold text-white shadow-md bg-red-600 whitespace-nowrap border border-white/20">
+                                                    🎁 PAKET
+                                                </div>
+                                            </Tooltip>
+                                        )}
                                     </Marker>
                                     
                                     {/* Movement Trail (Debug/Visual Aid) */}
@@ -2181,37 +2195,6 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                                 </React.Fragment>
                             );
                         })}
-
-                        {/* RENDER GIFTS (Standard Checkpoints that aren't bonfires) */}
-                        {(activeCheckpoints || [])
-                            .filter(cp => {
-                                const n = cp.name.toLowerCase();
-                                return !n.includes('eldstad') && !n.includes('bonfire') && !n.includes('värme');
-                            })
-                            .map(cp => {
-                                if (!cp.location) return null;
-                                const isChecked = checkedInIds.has(cp.id);
-                                // Force color to standard gift red for consistency if not specified
-                                const color = cp.color || '#f87171';
-                                
-                                return (
-                                    <Marker
-                                        key={cp.id}
-                                        position={[cp.location.lat, cp.location.lng]}
-                                        icon={createCustomIcon(color, isChecked, false, false, cp.points || 0, 0, 0, false, 'Gift')}
-                                        eventHandlers={{ click: () => { if (!isChecked) { setSelectedCheckpoint(cp); } } }}
-                                    >
-                                        {!isChecked && (
-                                            <Tooltip direction="top" offset={[0, -20]} className="bg-transparent border-0 shadow-none">
-                                                <div className="px-2 py-1 rounded-md text-xs font-bold text-white shadow-md bg-red-600 whitespace-nowrap border border-white/20">
-                                                    🎁 PAKET
-                                                </div>
-                                            </Tooltip>
-                                        )}
-                                    </Marker>
-                                )
-                            })
-                        }
 
                         {/* RENDER STATIC BONFIRES SEPARATELY */}
                         {(activeCheckpoints || [])
