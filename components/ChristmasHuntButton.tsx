@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Gift, Snowflake, RefreshCw, TriangleAlert, Home, Trees, Mountain, Trophy } from 'lucide-react';
-import { GeminiService } from '../services/gemini';
-import { RaceEvent } from '../types';
+import { RaceEvent, Checkpoint } from '../types';
 import { INITIAL_RACE_STATE } from '../constants';
 
 interface ChristmasHuntButtonProps {
@@ -91,90 +90,101 @@ export const ChristmasHuntButton: React.FC<ChristmasHuntButtonProps> = ({
   const getScaleParams = (s: GameScale) => {
       switch(s) {
           case 'small': return { 
-              giftRange: '40-100m', 
-              fireRange: '20-50m',
+              minDist: 40, maxDist: 100, 
+              fireMin: 20, fireMax: 50,
               desc: 'Bakgården (Litet)' 
           };
           case 'large': return { 
-              giftRange: '300-600m', 
-              fireRange: '150-300m',
+              minDist: 300, maxDist: 600, 
+              fireMin: 150, fireMax: 300,
               desc: 'Skogen (Stort)' 
           };
           default: return { 
-              giftRange: '150-300m', 
-              fireRange: '80-150m',
+              minDist: 150, maxDist: 300, 
+              fireMin: 80, fireMax: 150,
               desc: 'Parken (Medium)' 
           };
       }
   };
 
+  // Helper to create offset coordinate
+  const createOffset = (lat: number, lng: number, distanceMeters: number, angleRad: number) => {
+      // 1 degree lat ~ 111132 meters
+      const dLat = (distanceMeters * Math.cos(angleRad)) / 111132;
+      // 1 degree lng ~ 111132 * cos(lat) meters
+      const dLng = (distanceMeters * Math.sin(angleRad)) / (111132 * Math.cos(lat * Math.PI / 180));
+      
+      return {
+          lat: lat + dLat,
+          lng: lng + dLng
+      };
+  };
+
   const generateHunt = async (lat: number, lng: number) => {
-    let generatedData: Partial<RaceEvent> = {};
     const params = getScaleParams(scale);
+    const checkpoints: Checkpoint[] = [];
 
-    const gemini = new GeminiService(
-      (data) => { generatedData = { ...generatedData, ...data }; },
-      () => {}
-    );
+    // 1. Generate GIFTS (5-7 items)
+    const numGifts = 5 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < numGifts; i++) {
+        const angle = Math.random() * 2 * Math.PI;
+        const dist = params.minDist + Math.random() * (params.maxDist - params.minDist);
+        const loc = createOffset(lat, lng, dist, angle);
 
-    gemini.startNewSession('CREATOR');
+        checkpoints.push({
+            id: `gift-${i}-${Date.now()}`,
+            name: `Stolen Gift #${i + 1}`,
+            location: loc,
+            radiusMeters: 20,
+            type: 'mandatory',
+            points: 500,
+            color: '#f87171', // Red
+            description: "A Grinch is guarding this gift. Chase them down to reclaim it!"
+        });
+    }
 
-    const prompt = `
-      ROLE: You are the 'Holiday Architect'.
-      TASK: Create a 'Christmas Hunt' (Juljakten) Pursuit Game using update_race_plan.
-      CONTEXT: User Start Location: { lat: ${lat}, lng: ${lng} }.
-      SCALE: ${params.desc}.
-      
-      INSTRUCTIONS:
-      1. GENERATE GEOGRAPHY:
-         - Start/Finish: Use provided coordinates.
-         - **CHECKPOINTS (GIFTS):** Create 5-7 checkpoints approx ${params.giftRange} from start. 
-           - Name: "Stolen Gift #[1-7]"
-           - Color: '#f87171' (Red)
-           - Points: 500
-           - Type: 'mandatory'
-           - Description: "A Grinch is guarding this gift. Chase them down to reclaim it!"
-         
-         - **CHECKPOINTS (BONFIRES):** Create exactly 2 checkpoints named "Eldstad (Värme)" approx ${params.fireRange} from start, preferably apart from each other.
-           - Name: "Eldstad (Värme)"
-           - Color: '#f97316' (Orange)
-           - Points: 0
-           - Type: 'optional'
-           - Description: "SAFE ZONE. Regenerate warmth here."
-      
-      2. GENERATE NARRATIVE:
-         - Name: "The Great Christmas Hunt (${scale.toUpperCase()})"
-         - Description: "The Grinch's helpers have stolen the presents! Use the map to find gifts within ${params.giftRange}. CAUTION: It's freezing! Return to the Sleigh (Start) or find a Bonfire (Eldstad) to warm up."
-         - Category: 'Christmas Hunt'
-         - Map Style: 'standard'
-      
-      EXECUTE update_race_plan NOW.
-    `;
+    // 2. Generate BONFIRES (2 items)
+    for (let i = 0; i < 2; i++) {
+        // Place bonfires slightly apart (offset angle by at least 90 deg)
+        const angle = (i * Math.PI) + (Math.random() * Math.PI / 2); 
+        const dist = params.fireMin + Math.random() * (params.fireMax - params.fireMin);
+        const loc = createOffset(lat, lng, dist, angle);
 
-    try {
-      await gemini.sendMessage(prompt);
+        checkpoints.push({
+            id: `fire-${i}-${Date.now()}`,
+            name: "Eldstad (Värme)",
+            location: loc,
+            radiusMeters: 20,
+            type: 'optional',
+            points: 0,
+            color: '#f97316', // Orange
+            description: "SAFE ZONE. Regenerate warmth here."
+        });
+    }
 
-      const finalEvent: RaceEvent = {
+    const finalEvent: RaceEvent = {
         ...INITIAL_RACE_STATE,
-        ...generatedData,
         id: `xmas-${Date.now()}`,
-        category: 'Christmas Hunt', // CRITICAL FIX: Ensure category is set correctly
+        name: `The Great Christmas Hunt (${scale.toUpperCase()})`,
+        description: `The Grinch's helpers have stolen the presents! Use the map to find gifts. CAUTION: It's freezing! Return to the Sleigh (Start) or find a Bonfire (Eldstad) to warm up.`,
+        category: 'Christmas Hunt',
         status: 'active',
         startDateTime: new Date().toISOString(),
         startMode: 'self_start',
         winCondition: 'most_points', 
-        startLocation: generatedData.startLocation || { lat, lng },
-        finishLocation: generatedData.finishLocation || { lat, lng, radiusMeters: 50 },
+        startLocation: { lat, lng },
+        finishLocation: { lat, lng, radiusMeters: 50 },
+        checkpoints: checkpoints,
         isInstantGame: true,
-      } as RaceEvent;
+        // Ensure mapStyle is standard so snow overlay works best
+        mapStyle: 'standard' 
+    } as RaceEvent;
 
-      onGameCreated(finalEvent);
-
-    } catch (err) {
-      console.error(err);
-      setError("Connection lost. Christmas is cancelled.");
-      setLoading(false);
-    }
+    // Simulate delay for effect
+    setTimeout(() => {
+        setLoading(false);
+        onGameCreated(finalEvent);
+    }, 2000);
   };
 
   return (

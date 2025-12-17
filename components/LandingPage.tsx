@@ -28,7 +28,7 @@ interface LandingPageProps {
   onOpenProfile?: () => void;
   onOpenSystemAdmin?: () => void;
   onCreateEvent?: () => void;
-  onGoToDashboard?: () => void; // New Prop
+  onGoToDashboard?: () => void;
 }
 
 const TIER_VISUALS: Record<UserTier, {
