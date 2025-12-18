@@ -1,15 +1,8 @@
 
-
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
-import { RaceEvent, UserTier, TierConfig, SystemConfig, UserProfile } from '../types';
+import { RaceEvent, UserTier, TierConfig, SystemConfig, UserProfile, ContactRequest } from '../types';
 import { api } from '../services/dataService'; // DataService
-import { ShieldAlert, Search, Lock, Unlock, Users, Star, Calendar, Globe, EyeOff, ArrowLeft, Banknote, ListPlus, Save, Skull, Gift, AlertOctagon, Terminal, Loader2, MousePointerClick, X, Trash2, Trophy, MoreVertical, Edit2 } from 'lucide-react';
+import { ShieldAlert, Search, Lock, Unlock, Users, Star, Calendar, Globe, EyeOff, ArrowLeft, Banknote, ListPlus, Save, Skull, Gift, AlertOctagon, Terminal, Loader2, MousePointerClick, X, Trash2, Trophy, MoreVertical, Edit2, Mail, MessageSquare, Clock } from 'lucide-react';
 
 interface SystemAdminViewProps {
   events: RaceEvent[];
@@ -22,7 +15,7 @@ interface SystemAdminViewProps {
 }
 
 export const SystemAdminView: React.FC<SystemAdminViewProps> = ({ events, onUpdateEvent, tierConfigs, onUpdateTierConfig, onExit, userProfile, onDeleteEvent }) => {
-  const [activeTab, setActiveTab] = useState<'features' | 'events' | 'pricing' | 'users'>('features');
+  const [activeTab, setActiveTab] = useState<'features' | 'events' | 'pricing' | 'users' | 'leads'>('features');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
   
@@ -38,6 +31,10 @@ export const SystemAdminView: React.FC<SystemAdminViewProps> = ({ events, onUpda
   const [userEvents, setUserEvents] = useState<RaceEvent[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
+  // Leads State
+  const [leads, setLeads] = useState<ContactRequest[]>([]);
+  const [isLoadingLeads, setIsLoadingLeads] = useState(false);
+
   // --- ACCESS CONTROL CHECK (Role Based) ---
   useEffect(() => {
     // Check role from Firestore profile
@@ -52,13 +49,19 @@ export const SystemAdminView: React.FC<SystemAdminViewProps> = ({ events, onUpda
       api.config.getConfig().then(setSystemConfig);
   }, []);
 
-  // Fetch users when tab is active
+  // Fetch data when tabs are active
   useEffect(() => {
       if (activeTab === 'users' && isAuthorized) {
           setIsLoadingUsers(true);
           api.users.getAllUsers().then(users => {
               setAllUsers(users);
               setIsLoadingUsers(false);
+          });
+      } else if (activeTab === 'leads' && isAuthorized) {
+          setIsLoadingLeads(true);
+          api.leads.getAllRequests().then(requests => {
+              setLeads(requests);
+              setIsLoadingLeads(false);
           });
       }
   }, [activeTab, isAuthorized]);
@@ -107,6 +110,12 @@ export const SystemAdminView: React.FC<SystemAdminViewProps> = ({ events, onUpda
     u.id.includes(searchTerm)
   );
 
+  const filteredLeads = leads.filter(l => 
+    l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    l.organization.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    l.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const toggleLock = (event: RaceEvent) => {
     const isCurrentlyLocked = event.isLockedByAdmin || false;
     
@@ -122,6 +131,13 @@ export const SystemAdminView: React.FC<SystemAdminViewProps> = ({ events, onUpda
   const handleDeleteRequest = (id: string) => {
       if (window.confirm("Är du säker på att du vill radera detta event permanent? Det går inte att ångra.")) {
           onDeleteEvent(id);
+      }
+  };
+
+  const handleDeleteLead = async (id: string) => {
+      if (confirm("Vill du ta bort denna förfrågan permanent?")) {
+          await api.leads.deleteRequest(id);
+          setLeads(prev => prev.filter(l => l.id !== id));
       }
   };
 
@@ -241,6 +257,12 @@ export const SystemAdminView: React.FC<SystemAdminViewProps> = ({ events, onUpda
                   Användare & Konton
               </button>
               <button 
+                onClick={() => setActiveTab('leads')}
+                className={`pb-3 px-4 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap shrink-0 ${activeTab === 'leads' ? 'border-red-500 text-white bg-red-900/10' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+              >
+                  Leads ({leads.length})
+              </button>
+              <button 
                 onClick={() => setActiveTab('pricing')}
                 className={`pb-3 px-4 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap shrink-0 ${activeTab === 'pricing' ? 'border-red-500 text-white bg-red-900/10' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
               >
@@ -324,7 +346,7 @@ export const SystemAdminView: React.FC<SystemAdminViewProps> = ({ events, onUpda
                               {/* Toggle Switch */}
                               <button 
                                  onClick={() => toggleGlobalFeature('christmas_hunt')}
-                                 className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 ${systemConfig.featuredModes.christmas_hunt.isActive ? 'bg-green-600' : 'bg-gray-700'}`}
+                                 className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 ${systemConfig.featuredModes.christmas_hunt.isActive ? 'bg-green-600' : 'bg-gray-700'}`}
                               >
                                   <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300 ${systemConfig.featuredModes.christmas_hunt.isActive ? 'translate-x-6' : 'translate-x-0'}`}></div>
                               </button>
@@ -334,6 +356,83 @@ export const SystemAdminView: React.FC<SystemAdminViewProps> = ({ events, onUpda
                           </p>
                       </div>
                   </div>
+              </div>
+          )}
+
+          {/* TAB: LEADS (New) */}
+          {activeTab === 'leads' && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold flex items-center gap-2"><Mail className="w-6 h-6 text-blue-400" /> Intresseanmälningar (MASTER)</h2>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+                        <input 
+                            type="text" 
+                            placeholder="Sök leads..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="bg-gray-900 border border-gray-800 rounded-xl py-2 pl-9 pr-4 text-sm text-white outline-none focus:border-blue-500"
+                        />
+                    </div>
+                </div>
+
+                <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-950 text-gray-500 text-[10px] uppercase font-bold tracking-widest border-b border-gray-800">
+                                <tr>
+                                    <th className="px-6 py-4">Inkommet</th>
+                                    <th className="px-6 py-4">Kontakt</th>
+                                    <th className="px-6 py-4">Organisation</th>
+                                    <th className="px-6 py-4">Meddelande</th>
+                                    <th className="px-6 py-4 text-right">Åtgärd</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-800">
+                                {isLoadingLeads ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                                            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                                            Hämtar förfrågningar...
+                                        </td>
+                                    </tr>
+                                ) : filteredLeads.length === 0 ? (
+                                    <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500 italic">Inga förfrågningar hittades.</td></tr>
+                                ) : (
+                                    filteredLeads.map(lead => (
+                                        <tr key={lead.id} className="hover:bg-gray-800/30 transition-colors group">
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm text-white font-mono">{new Date(lead.timestamp).toLocaleDateString()}</div>
+                                                <div className="text-[10px] text-gray-600 flex items-center gap-1"><Clock className="w-3 h-3"/> {new Date(lead.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="font-bold text-white">{lead.name}</div>
+                                                <a href={`mailto:${lead.email}`} className="text-xs text-blue-400 hover:underline flex items-center gap-1"><Mail className="w-3 h-3"/> {lead.email}</a>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm text-gray-300 font-bold">{lead.organization}</div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-xs text-gray-400 max-w-xs line-clamp-2 italic" title={lead.message}>
+                                                    {lead.message ? `"${lead.message}"` : <span className="opacity-30">Inget meddelande</span>}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button 
+                                                    onClick={() => handleDeleteLead(lead.id)}
+                                                    className="p-2 text-gray-600 hover:text-red-500 transition-colors rounded-lg hover:bg-red-900/20"
+                                                    title="Radera"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
               </div>
           )}
 

@@ -16,6 +16,7 @@ import { ProfileDialog } from './components/ProfileDialog';
 import { EventSettingsDialog } from './components/EventSettingsDialog'; // Hoisted
 import { ErrorBoundary } from './components/ErrorBoundary'; 
 import { TemplateBrowser } from './components/TemplateBrowser'; // NEW
+import { ContactFormDialog } from './components/ContactFormDialog'; // NEW
 import { WifiOff, Loader2 } from 'lucide-react';
 import { accessControlService } from './services/accessControl';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -43,6 +44,7 @@ function AppContent() {
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [isTemplateBrowserOpen, setIsTemplateBrowserOpen] = useState(false); // New flag
   const [isTemplateProcessing, setIsTemplateProcessing] = useState(false); // Loading state for template AI
+  const [isContactFormOpen, setIsContactFormOpen] = useState(false); // NEW: Global contact form trigger
 
   // NEW: State to hold the specific reason why the upgrade dialog was opened
   const [upgradeTriggerMessage, setUpgradeTriggerMessage] = useState<string>('');
@@ -399,6 +401,7 @@ function AppContent() {
     <div className="h-screen w-screen flex flex-col bg-gray-900 text-gray-100 font-sans">
       <UpgradeDialog 
         currentTier={safeProfile.tier} 
+        userProfile={safeProfile}
         isOpen={isUpgradeOpen} 
         onClose={() => {
             setIsUpgradeOpen(false);
@@ -407,6 +410,13 @@ function AppContent() {
         onUpgrade={handleUpgrade} 
         tierConfigs={tierConfigs}
         customMessage={upgradeTriggerMessage} 
+      />
+
+      {/* Global Contact Form */}
+      <ContactFormDialog 
+        isOpen={isContactFormOpen}
+        onClose={() => setIsContactFormOpen(false)}
+        user={safeProfile}
       />
       
       {/* Template Browser Modal */}
@@ -446,6 +456,11 @@ function AppContent() {
         <LandingPage 
             userProfile={safeProfile}
             onSelectTier={(t) => { 
+                if (t === 'MASTER') {
+                    setIsContactFormOpen(true);
+                    return;
+                }
+
                 const isGuest = safeProfile.id === 'guest';
                 const tierLevels: Record<string, number> = { 'SCOUT': 0, 'CREATOR': 1, 'MASTER': 2 };
                 

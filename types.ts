@@ -200,6 +200,17 @@ export interface UserProfile {
   photoURL?: string; 
 }
 
+export interface ContactRequest {
+  id: string;
+  name: string;
+  email: string;
+  organization: string;
+  message: string;
+  timestamp: string;
+  userId?: string;
+  status: 'new' | 'contacted' | 'closed';
+}
+
 // --- SYSTEM CONFIG (GLOBAL EVENTS) ---
 
 export interface GlobalFeatureConfig {

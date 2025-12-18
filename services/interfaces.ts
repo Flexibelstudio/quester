@@ -1,6 +1,5 @@
 
-
-import { RaceEvent, GlobalScoreEntry, SystemConfig, UserProfile, ParticipantResult, UserTier } from '../types';
+import { RaceEvent, GlobalScoreEntry, SystemConfig, UserProfile, ParticipantResult, UserTier, ContactRequest } from '../types';
 
 export interface IEventService {
     getAllEvents(userId?: string, includePrivate?: boolean): Promise<RaceEvent[]>;
@@ -42,4 +41,10 @@ export interface IUserService {
 
 export interface IStorageService {
     uploadBlob(path: string, file: Blob): Promise<string>;
+}
+
+export interface ILeadService {
+    saveRequest(request: ContactRequest): Promise<void>;
+    getAllRequests(): Promise<ContactRequest[]>;
+    deleteRequest(id: string): Promise<void>;
 }

@@ -12,6 +12,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { ZombieSurvivalButton } from './ZombieSurvivalButton';
 import { ChristmasHuntButton } from './ChristmasHuntButton';
 import { GlobalLeaderboard } from './GlobalLeaderboard';
+import { TermsDialog } from './TermsDialog';
+import { AboutUsDialog } from './AboutUsDialog';
 
 // Mock Google Icon
 const GoogleIcon = () => (
@@ -120,6 +122,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [leaderboardMode, setLeaderboardMode] = useState<'zombie_survival' | 'christmas_hunt'>('zombie_survival');
+  
+  // Dialog State
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [termsTab, setTermsTab] = useState<'terms' | 'privacy'>('terms');
+  const [isAboutUsOpen, setIsAboutUsOpen] = useState(false);
 
   useEffect(() => {
     api.config.getConfig().then(cfg => {
@@ -140,6 +147,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
     <div className="h-[100dvh] w-full bg-slate-950 text-white font-sans flex flex-col relative overflow-y-auto overflow-x-hidden">
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       <GlobalLeaderboard isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} defaultMode={leaderboardMode} />
+      <TermsDialog isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} initialTab={termsTab} />
+      <AboutUsDialog isOpen={isAboutUsOpen} onClose={() => setIsAboutUsOpen(false)} />
 
       {/* Background Ambience */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
@@ -165,7 +174,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
       {/* HERO SECTION */}
       <div className="relative z-10 container mx-auto px-4 pt-12 pb-24 flex flex-col items-center text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-900/20 border border-blue-500/30 text-blue-300 text-xs font-bold uppercase tracking-widest mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <Sparkles className="w-3 h-3" /> Digitala Tipspromenader & GPS-Äventyr
+            <Sparkles className="w-3 h-3" /> GPS-Äventyr & Digitala Uppdrag
         </div>
 
         <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-8 text-white leading-[0.9] max-w-4xl drop-shadow-2xl">
@@ -184,7 +193,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
 
         <div className="mt-12 flex items-center gap-4 text-slate-500">
             <div className="flex items-center gap-2 bg-blue-950/30 px-3 py-1.5 rounded-full border border-blue-900/30"><Smartphone className="w-4 h-4" /><span className="text-[10px] font-bold uppercase tracking-widest">Ingen nedladdning</span></div>
-            <div className="flex items-center gap-2 bg-green-950/30 px-3 py-1.5 rounded-full border border-green-900/30"><Zap className="w-4 h-4" /><span className="text-[10px] font-bold uppercase tracking-widest">AI-Banläggare</span></div>
+            <div className="flex items-center gap-2 bg-green-950/30 px-3 py-1.5 rounded-full border border-green-900/30"><Map className="w-4 h-4" /><span className="text-[10px] font-bold uppercase tracking-widest">Full frihet på kartan</span></div>
         </div>
       </div>
 
@@ -205,8 +214,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
                           <span className="absolute -top-4 -left-4 w-10 h-10 bg-slate-900 rounded-full border-2 border-blue-500 flex items-center justify-center font-black text-blue-400">1</span>
                           <PenTool className="w-10 h-10 text-white" />
                       </div>
-                      <h3 className="text-2xl font-bold mb-3 text-white">Välj eller Skapa</h3>
-                      <p className="text-slate-400 leading-relaxed max-w-[280px]">Använd en färdig mall eller låt vår AI rita en bana med quiz-frågor där du står just nu.</p>
+                      <h3 className="text-2xl font-bold mb-3 text-white">Designa din rutt</h3>
+                      <p className="text-slate-400 leading-relaxed max-w-[280px]">Välj en färdig mall eller placera ut dina egna checkpoints direkt på kartan.</p>
                   </div>
 
                   <div className="flex flex-col items-center text-center group">
@@ -224,7 +233,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
                           <Play className="w-10 h-10 text-white fill-current" />
                       </div>
                       <h3 className="text-2xl font-bold mb-3 text-white">Gå ut och tävla</h3>
-                      <p className="text-slate-400 leading-relaxed max-w-[280px]">Följ kartan, checka in via GPS och svara på frågor. Se resultaten i realtid på en live-topplista.</p>
+                      <p className="text-slate-400 leading-relaxed max-w-[280px]">Följ kartan, checka in via GPS och svara på frågor.</p>
                   </div>
               </div>
           </div>
@@ -342,9 +351,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
           <div className="max-w-7xl mx-auto px-6 text-center">
                 <div className="flex items-center justify-center gap-2 mb-8 opacity-50"><Compass className="w-6 h-6" /><span className="font-black text-xl tracking-tighter">QUESTER</span></div>
                 <div className="flex flex-wrap justify-center gap-x-12 gap-y-4 text-sm text-gray-500 mb-10 font-bold uppercase tracking-widest">
-                    <a href="#" className="hover:text-white transition-colors">Om Oss</a>
-                    <a href="#" className="hover:text-white transition-colors">Integritet</a>
-                    <a href="#" className="hover:text-white transition-colors">Villkor</a>
+                    <button onClick={() => setIsAboutUsOpen(true)} className="hover:text-white transition-colors">Om Oss</button>
+                    <button onClick={() => { setTermsTab('privacy'); setIsTermsOpen(true); }} className="hover:text-white transition-colors">Integritet</button>
+                    <button onClick={() => { setTermsTab('terms'); setIsTermsOpen(true); }} className="hover:text-white transition-colors">Villkor</button>
                 </div>
                 <div className="text-gray-600 text-[10px] font-bold uppercase tracking-widest">©2025 SmartStudio. Ett verktyg för rörelse och äventyr.</div>
           </div>

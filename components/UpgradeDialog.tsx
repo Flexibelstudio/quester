@@ -1,10 +1,12 @@
 
 import React, { useState } from 'react';
-import { UserTier, TierConfig } from '../types';
-import { X, Star, Zap, Crown, Map, Loader2, CreditCard, Lock, AlertTriangle, Unlock } from 'lucide-react';
+import { UserTier, TierConfig, UserProfile } from '../types';
+import { X, Star, Zap, Crown, Map, Loader2, CreditCard, Lock, AlertTriangle, Unlock, Mail } from 'lucide-react';
+import { ContactFormDialog } from './ContactFormDialog';
 
 interface UpgradeDialogProps {
   currentTier: UserTier;
+  userProfile: UserProfile;
   isOpen: boolean;
   onClose: () => void;
   onUpgrade: (tier: UserTier) => void;
@@ -26,14 +28,21 @@ const TIER_VISUALS: Record<UserTier, {
   }
 };
 
-export const UpgradeDialog: React.FC<UpgradeDialogProps> = ({ currentTier, isOpen, onClose, onUpgrade, tierConfigs, customMessage }) => {
+export const UpgradeDialog: React.FC<UpgradeDialogProps> = ({ currentTier, userProfile, isOpen, onClose, onUpgrade, tierConfigs, customMessage }) => {
   const [processingTier, setProcessingTier] = useState<UserTier | null>(null);
+  const [isContactFormOpen, setIsContactFormOpen] = useState(false);
 
   if (!isOpen) return null;
 
   const handleTierSelect = (tier: UserTier) => {
-      // For Free Tier or Offert, skip payment
-      if (tier === 'SCOUT' || tier === 'MASTER') {
+      // MASTER opens the contact form instead of instant upgrade
+      if (tier === 'MASTER') {
+          setIsContactFormOpen(true);
+          return;
+      }
+
+      // SCOUT is free
+      if (tier === 'SCOUT') {
           onUpgrade(tier);
           return;
       }
@@ -49,16 +58,22 @@ export const UpgradeDialog: React.FC<UpgradeDialogProps> = ({ currentTier, isOpe
   return (
     <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-300">
        
+       <ContactFormDialog 
+          isOpen={isContactFormOpen} 
+          onClose={() => setIsContactFormOpen(false)} 
+          user={userProfile} 
+       />
+
        {/* PAYMENT OVERLAY */}
        {processingTier && (
            <div className="absolute inset-0 z-[3100] bg-black/80 flex flex-col items-center justify-center animate-in fade-in duration-500">
                <div className="bg-white text-black p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
                    <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-                   <h3 className="text-xl font-bold mb-2">Connecting to Stripe...</h3>
-                   <p className="text-gray-500 text-sm mb-6">Securing your connection for {tierConfigs[processingTier].displayName} Upgrade.</p>
+                   <h3 className="text-xl font-bold mb-2">Ansluter till Stripe...</h3>
+                   <p className="text-gray-500 text-sm mb-6">Säkrar anslutningen för uppgradering till {tierConfigs[processingTier].displayName}.</p>
                    
                    <div className="flex items-center justify-center gap-2 text-xs font-bold text-gray-400 bg-gray-100 py-2 rounded">
-                       <Lock className="w-3 h-3" /> 256-BIT ENCRYPTION
+                       <Lock className="w-3 h-3" /> 256-BIT KRYPTERING
                    </div>
                </div>
            </div>
@@ -112,6 +127,7 @@ export const UpgradeDialog: React.FC<UpgradeDialogProps> = ({ currentTier, isOpe
                   const isCurrent = currentTier === tierKey;
                   const isRecommended = config.isRecommended;
                   const Icon = visual.icon;
+                  const isMaster = tierKey === 'MASTER';
 
                   return (
                     <div 
@@ -154,26 +170,37 @@ export const UpgradeDialog: React.FC<UpgradeDialogProps> = ({ currentTier, isOpe
                             ))}
                         </ul>
 
-                        <button
-                            onClick={() => handleTierSelect(tierKey)}
-                            disabled={isCurrent}
-                            className={`w-full py-4 rounded-xl font-bold transition-all uppercase tracking-wide text-sm flex items-center justify-center gap-2 ${
-                                isCurrent
-                                ? 'bg-gray-800 text-gray-500 cursor-default border border-gray-700'
-                                : isRecommended
-                                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/30'
-                                    : 'bg-white text-black hover:bg-gray-200'
-                            }`}
-                        >
-                            {isCurrent ? (
-                                'Nuvarande Nivå'
-                            ) : (
-                                <>
-                                    {tierKey === 'CREATOR' && <CreditCard className="w-4 h-4" />}
-                                    {config.buttonText}
-                                </>
-                            )}
-                        </button>
+                        <div className="flex flex-col items-center">
+                          <button
+                              onClick={() => handleTierSelect(tierKey)}
+                              disabled={isCurrent}
+                              className={`w-full py-4 rounded-xl font-bold transition-all uppercase tracking-wide text-sm flex items-center justify-center gap-2 ${
+                                  isCurrent
+                                  ? 'bg-gray-800 text-gray-500 cursor-default border border-gray-700'
+                                  : isRecommended
+                                      ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/30'
+                                      : isMaster
+                                          ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg'
+                                          : 'bg-white text-black hover:bg-gray-200'
+                              }`}
+                          >
+                              {isCurrent ? (
+                                  'Nuvarande Nivå'
+                              ) : (
+                                  <>
+                                      {tierKey === 'CREATOR' && <CreditCard className="w-4 h-4" />}
+                                      {isMaster && <Mail className="w-4 h-4" />}
+                                      {config.buttonText}
+                                  </>
+                              )}
+                          </button>
+                          
+                          {isMaster && (
+                            <p className="text-[10px] text-gray-500 mt-3 text-center uppercase font-bold tracking-widest">
+                                Frågor? Maila oss på <span className="text-indigo-400">hej@smartstudio.se</span>
+                            </p>
+                          )}
+                        </div>
                     </div>
                   );
               })}

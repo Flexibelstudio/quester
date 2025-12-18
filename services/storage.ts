@@ -1,11 +1,34 @@
 
-
-import { RaceEvent, UserProfile, ParticipantResult, UserTier } from '../types';
+import { RaceEvent, UserProfile, ParticipantResult, UserTier, ContactRequest } from '../types';
 import { INITIAL_RACE_STATE } from '../constants';
-import { IEventService, IAuthService, IStorageService, IUserService } from './interfaces';
+import { IEventService, IAuthService, IStorageService, IUserService, ILeadService } from './interfaces';
 
 const STORAGE_KEY = 'race_day_events';
+const LEADS_KEY = 'quester_leads';
 const MOCK_USER_ID = 'mock-user-123';
+
+// --- MOCK LEAD SERVICE ---
+export class MockLeadService implements ILeadService {
+    async saveRequest(request: ContactRequest): Promise<void> {
+        const stored = localStorage.getItem(LEADS_KEY);
+        const leads: ContactRequest[] = stored ? JSON.parse(stored) : [];
+        leads.push(request);
+        localStorage.setItem(LEADS_KEY, JSON.stringify(leads));
+    }
+
+    async getAllRequests(): Promise<ContactRequest[]> {
+        const stored = localStorage.getItem(LEADS_KEY);
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    async deleteRequest(id: string): Promise<void> {
+        const stored = localStorage.getItem(LEADS_KEY);
+        if (stored) {
+            const leads: ContactRequest[] = JSON.parse(stored);
+            localStorage.setItem(LEADS_KEY, JSON.stringify(leads.filter(l => l.id !== id)));
+        }
+    }
+}
 
 // --- MOCK STORAGE SERVICE ---
 export class MockStorageService implements IStorageService {

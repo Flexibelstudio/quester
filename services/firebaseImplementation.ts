@@ -1,3 +1,4 @@
+
 import { 
     collection, 
     getDocs, 
@@ -11,7 +12,8 @@ import {
     arrayUnion, 
     onSnapshot,
     Firestore,
-    DocumentData
+    DocumentData,
+    orderBy
 } from "firebase/firestore";
 // @ts-ignore
 import { 
@@ -34,8 +36,30 @@ import {
     FirebaseStorage
 } from "firebase/storage";
 import { db, auth, storage } from "./firebaseConfig";
-import { IEventService, ILeaderboardService, ISystemConfigService, IAuthService, IStorageService, IUserService } from "./interfaces";
-import { RaceEvent, GlobalScoreEntry, SystemConfig, UserProfile, ParticipantResult, UserTier } from "../types";
+import { IEventService, ILeaderboardService, ISystemConfigService, IAuthService, IStorageService, IUserService, ILeadService } from "./interfaces";
+import { RaceEvent, GlobalScoreEntry, SystemConfig, UserProfile, ParticipantResult, UserTier, ContactRequest } from "../types";
+
+// --- FIREBASE LEAD SERVICE ---
+export class FirebaseLeadService implements ILeadService {
+    private collectionName = "leads";
+
+    async saveRequest(request: ContactRequest): Promise<void> {
+        if (!db) throw new Error("Firebase not initialized");
+        await setDoc(doc(db as Firestore, this.collectionName, request.id), request);
+    }
+
+    async getAllRequests(): Promise<ContactRequest[]> {
+        if (!db) throw new Error("Firebase not initialized");
+        const q = query(collection(db as Firestore, this.collectionName), orderBy("timestamp", "desc"));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(d => d.data() as ContactRequest);
+    }
+
+    async deleteRequest(id: string): Promise<void> {
+        if (!db) throw new Error("Firebase not initialized");
+        await deleteDoc(doc(db as Firestore, this.collectionName, id));
+    }
+}
 
 // --- FIREBASE AUTH SERVICE ---
 export class FirebaseAuthService implements IAuthService {

@@ -1,16 +1,14 @@
 
-
-
 import { isMockMode } from "./firebaseConfig";
-import { IEventService, ILeaderboardService, ISystemConfigService, IAuthService, IStorageService, IUserService } from "./interfaces";
+import { IEventService, ILeaderboardService, ISystemConfigService, IAuthService, IStorageService, IUserService, ILeadService } from "./interfaces";
 
 // Mock Implementations
-import { MockEventService, MockAuthService, MockStorageService, MockUserService } from "./storage";
+import { MockEventService, MockAuthService, MockStorageService, MockUserService, MockLeadService } from "./storage";
 import { MockLeaderboardService } from "./leaderboard";
 import { MockConfigService } from "./systemConfig";
 
 // Firebase Implementations
-import { FirebaseEventService, FirebaseLeaderboardService, FirebaseConfigService, FirebaseAuthService, FirebaseStorageService, FirebaseUserService } from "./firebaseImplementation";
+import { FirebaseEventService, FirebaseLeaderboardService, FirebaseConfigService, FirebaseAuthService, FirebaseStorageService, FirebaseUserService, FirebaseLeadService } from "./firebaseImplementation";
 
 class DataService {
     public events: IEventService;
@@ -19,6 +17,7 @@ class DataService {
     public auth: IAuthService;
     public storage: IStorageService;
     public users: IUserService;
+    public leads: ILeadService;
     public isOffline: boolean;
 
     constructor() {
@@ -32,6 +31,7 @@ class DataService {
             this.auth = new MockAuthService();
             this.storage = new MockStorageService();
             this.users = new MockUserService();
+            this.leads = new MockLeadService();
         } else {
             console.log("DataService: Using PROD (Firebase) services.");
             this.events = new FirebaseEventService();
@@ -40,6 +40,7 @@ class DataService {
             this.auth = new FirebaseAuthService();
             this.storage = new FirebaseStorageService();
             this.users = new FirebaseUserService();
+            this.leads = new FirebaseLeadService();
         }
     }
 }
