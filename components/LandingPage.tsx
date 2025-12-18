@@ -343,11 +343,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onBrowse
                 <div className="flex items-center justify-center gap-2 mb-8 opacity-50"><Compass className="w-6 h-6" /><span className="font-black text-xl tracking-tighter">QUESTER</span></div>
                 <div className="flex flex-wrap justify-center gap-x-12 gap-y-4 text-sm text-gray-500 mb-10 font-bold uppercase tracking-widest">
                     <a href="#" className="hover:text-white transition-colors">Om Oss</a>
-                    <a href="#" className="hover:text-white transition-colors">Support</a>
                     <a href="#" className="hover:text-white transition-colors">Integritet</a>
                     <a href="#" className="hover:text-white transition-colors">Villkor</a>
                 </div>
-                <div className="text-gray-600 text-[10px] font-bold uppercase tracking-widest">© 2025 Quester AI. Ett verktyg för rörelse och äventyr.</div>
+                <div className="text-gray-600 text-[10px] font-bold uppercase tracking-widest">©2025 SmartStudio. Ett verktyg för rörelse och äventyr.</div>
           </div>
       </footer>
     </div>
