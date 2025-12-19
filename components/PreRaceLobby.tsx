@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Clock, MapPin, Volume2, ShieldCheck, Zap, Users, Radio, Snowflake, Bell, Gift } from 'lucide-react';
+import { Clock, MapPin, Volume2, ShieldCheck, Zap, Users, Radio, Snowflake, Bell, Gift, TriangleAlert } from 'lucide-react';
 import { RaceEvent } from '../types';
 import { SnowfallOverlay } from './SnowfallOverlay';
 
@@ -117,6 +117,18 @@ export const PreRaceLobby: React.FC<PreRaceLobbyProps> = ({ raceData, onReady, t
                 <h1 className={`text-4xl md:text-6xl font-black mb-2 tracking-tighter drop-shadow-sm ${theme.text}`}>
                     {raceData.name}
                 </h1>
+                
+                {isZombie && (
+                    <div className="mt-2 mb-4 bg-red-900/30 border border-red-500/30 p-3 rounded-lg max-w-xs mx-auto animate-in fade-in slide-in-from-bottom-2">
+                        <div className="flex items-center justify-center gap-2 text-red-400 font-bold text-xs uppercase tracking-widest mb-1">
+                            <TriangleAlert className="w-4 h-4" /> Varning
+                        </div>
+                        <p className="text-red-200 text-xs leading-relaxed">
+                            Detta spel innehåller plötsliga ljud (jump scares) och stressmoment. Spela inte i trafiken.
+                        </p>
+                    </div>
+                )}
+
                 <p className={`${theme.subText} font-medium mb-12`}>
                     Välkommen, <span className={`font-bold ${theme.accent}`}>{teamName}</span>
                 </p>
