@@ -86,40 +86,33 @@ const MapClickHandler: React.FC<{ onClick?: (coord: Coordinate) => void, isActiv
 };
 
 // Component to fly to new start location when race data updates
-// IMPROVED: Only trigger if location is outside current bounds or first load
 const FlyToCenter: React.FC<{ center: [number, number] }> = ({ center }) => {
   const map = useMap();
   const hasInitialCentered = useRef(false);
 
   useEffect(() => {
-    // 1. Alltid centrera vid första renderingen
     if (!hasInitialCentered.current) {
         map.flyTo(center, 14, { duration: 1.5 });
         hasInitialCentered.current = true;
         return;
     }
 
-    // 2. Vid uppdatering: Flytta bara om punkten är utanför nuvarande vy 
-    // (förhindrar "hopp" och utzoomning vid manuell finjustering)
     const bounds = map.getBounds();
     const latLng = L.latLng(center[0], center[1]);
     
     if (!bounds.contains(latLng)) {
-        // Om vi flyttar långt (t.ex. ny stad), använd standardzoom 14
         map.flyTo(center, 14, { duration: 1.5 });
     } else {
-        // Om vi bara finjusterar inom vyn, behåll användarens zoomnivå men panorera mjukt
         map.panTo(center, { animate: true, duration: 0.5 });
     }
   }, [center[0], center[1], map]);
   return null;
 };
 
-// Component to handle Map Resizing (Fix for "Map not loading full screen")
+// Component to handle Map Resizing
 const MapResizeHandler = () => {
   const map = useMap();
   useEffect(() => {
-    // Invalidate size immediately on mount and after a short delay to catch layout shifts
     map.invalidateSize();
     setTimeout(() => map.invalidateSize(), 100);
 
@@ -127,7 +120,6 @@ const MapResizeHandler = () => {
       map.invalidateSize();
     });
     
-    // Observer the map container's parent
     if (map.getContainer().parentElement) {
         observer.observe(map.getContainer().parentElement!);
     }
@@ -139,7 +131,6 @@ const MapResizeHandler = () => {
 
 const TILE_LAYERS = {
   standard: {
-    // OpenStreetMap Standard
     url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     className: '',
@@ -147,7 +138,6 @@ const TILE_LAYERS = {
     maxZoom: 20
   },
   dark: {
-     // CartoDB Dark Matter
     url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
     className: '',
@@ -178,7 +168,6 @@ const TILE_LAYERS = {
 };
 
 export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, activeTool = 'none', onDeleteCheckpoint, onEditCheckpoint, onUpdateLocation, hideLegend = false, onEditSpecial }) => {
-  // Default to Stockholm if no coords
   const startPos: [number, number] = [raceData.startLocation.lat, raceData.startLocation.lng];
   const finishPos: [number, number] = [raceData.finishLocation.lat, raceData.finishLocation.lng];
   
@@ -187,7 +176,6 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
   // Detect Zombie Survival Mode
   const isZombieMode = raceData.category === 'Survival Run' || raceData.mapStyle === 'dark';
 
-  // Calculate route positions - Filter out null/undefined locations strictly!
   const validCheckpoints = raceData.checkpoints.filter(cp => !!cp.location);
   const allCheckpointPositions = validCheckpoints.map(cp => [cp.location!.lat, cp.location!.lng] as [number, number]);
 
@@ -197,7 +185,6 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
     finishPos
   ];
 
-  // Default to google_standard if not specified
   const mapStyle = raceData.mapStyle || 'google_standard';
   const currentLayer = TILE_LAYERS[mapStyle] || TILE_LAYERS.google_standard;
 
@@ -257,7 +244,7 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
               fillOpacity: 0.2,
               dashArray: '5, 10'
           }}
-          radius={raceData.startLocation.radiusMeters || 50}
+          radius={Number(raceData.startLocation.radiusMeters) || 50}
           interactive={false}
         />
         <Marker 
@@ -295,7 +282,7 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
               color: isZombieMode ? '#991b1b' : 'red',
               fillOpacity: 0.4
           }}
-          radius={raceData.finishLocation.radiusMeters}
+          radius={Number(raceData.finishLocation.radiusMeters) || 50}
         />
         <Marker 
             position={finishPos} 
@@ -311,7 +298,7 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
         >
            <Popup>
             <div className="text-gray-800 min-w-[120px]">
-                <strong>Mål:</strong> Radie {raceData.finishLocation.radiusMeters}m
+                <strong>Mål:</strong> Radie {raceData.finishLocation.radiusMeters || 50}m
                 {!raceData.finishLocationConfirmed && <div className="text-red-500 font-bold text-[10px] mt-1 uppercase">Ej bekräftad (Preliminär)</div>}
                 <div className="text-xs text-gray-500 mt-1 mb-2">Dra för att flytta</div>
                 <button 
@@ -326,29 +313,26 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
 
         {/* Checkpoints */}
         {validCheckpoints.map((cp, index) => {
-          // Determine color: Explicit color -> Type fallback
           const isMandatory = cp.type === 'mandatory';
           let cpColor = cp.color || (isMandatory ? '#3b82f6' : '#9B59B6');
           
           let CustomIcon = createCheckpointIcon(cpColor, index + 1);
 
-          // OVERRIDE FOR ZOMBIE MODE
           if (isZombieMode) {
              const isZombieNest = cp.name.includes('ZOMBIE') || (cp.points && cp.points < 0);
              const isSafeHouse = cp.name.includes('Safe House');
              
              if (isZombieNest) {
                  CustomIcon = createZombieIcon();
-                 cpColor = '#EF4444'; // Red for circle
+                 cpColor = '#EF4444';
              } else if (isSafeHouse) {
                  CustomIcon = createSafeHouseIcon(index + 1);
-                 cpColor = '#10B981'; // Green for circle
+                 cpColor = '#10B981';
              }
           }
 
           return (
             <React.Fragment key={cp.id}>
-               {/* Visual Circle (Not interactive, just shows radius) */}
                <Circle 
                   center={[cp.location!.lat, cp.location!.lng]}
                   pathOptions={{ 
@@ -357,11 +341,10 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
                       fillOpacity: 0.3,
                       dashArray: '5, 10'
                   }}
-                  radius={cp.radiusMeters}
+                  radius={Number(cp.radiusMeters) || 25}
                   interactive={false} 
               />
               
-              {/* Draggable Anchor/Handle Marker */}
               <Marker
                 position={[cp.location!.lat, cp.location!.lng]}
                 icon={CustomIcon}
@@ -374,7 +357,6 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
                     }
                 }}
               >
-                {/* Show Points OR Time Bonus directly on the marker */}
                 {cp.timeModifierSeconds !== undefined && cp.timeModifierSeconds !== 0 ? (
                     <Tooltip 
                         permanent 
@@ -383,7 +365,7 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
                         className="custom-point-tooltip"
                     >
                         {cp.timeModifierSeconds < 0 
-                            ? `${cp.timeModifierSeconds/60}m` // -10m
+                            ? `${cp.timeModifierSeconds/60}m`
                             : `+${cp.timeModifierSeconds/60}m`
                         }
                     </Tooltip>
@@ -451,32 +433,24 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
 
       </MapContainer>
       
-      {/* Legend / Overlay */}
       {!isEditing && !hideLegend && (
         <div className="absolute bottom-4 left-4 bg-gray-900/90 backdrop-blur text-xs p-3 rounded-lg border border-gray-700 z-[1000] text-gray-300 shadow-xl pointer-events-none">
             <div className="font-bold mb-2 text-gray-400 uppercase tracking-wider text-[10px]">Taktisk Översikt</div>
             <div className="space-y-2">
-                
-                {/* Start */}
                 <div className="flex items-center gap-2">
                      <div className="w-4 h-4 flex items-center justify-center text-lg leading-none">▶️</div>
                      <span>Startplats</span>
                 </div>
-
-                {/* Mål */}
                 <div className="flex items-center gap-2">
                      <div className="w-4 h-4 flex items-center justify-center text-lg leading-none">🏁</div>
                      <span>Målområde</span>
                 </div>
-
-                {/* Line for Sequential */}
                 {raceData.checkpointOrder === 'sequential' && (
                     <div className="flex items-center gap-2">
                         <span className="w-6 h-1 bg-[#3b82f6] rounded block shadow-sm"></span> 
                         <span>Bansträckning</span>
                     </div>
                 )}
-                
                 {isZombieMode ? (
                      <>
                         <div className="flex items-center gap-2">
@@ -500,7 +474,6 @@ export const MapVisualizer = memo<MapVisualizerProps>(({ raceData, onMapClick, a
                         </div>
                     </>
                 )}
-                
                 <div className="mt-2 pt-2 border-t border-gray-700 text-[10px] text-gray-400 italic">
                 {raceData.checkpointOrder === 'sequential' ? 'Ordning: Sekventiell (1-2-3...)' : 'Ordning: Valfri / Rogaining'}
                 </div>
