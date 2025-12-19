@@ -28,233 +28,119 @@ interface MissionControlPanelProps {
   className?: string;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  // Props for Builder & Content Studio
   cpConfig: CheckpointConfig;
   setCpConfig: (config: CheckpointConfig) => void;
   onGenerateContent: (prompt: string) => void;
-  // New Action Props
   onTestRun: () => void;
   onSettings: () => void;
   onShare: () => void;
-  onStartPlacing: (id: string) => void; // New prop for draft mode
+  onStartPlacing: (id: string) => void;
 }
 
 const StatusBadge: React.FC<{ status: EventStatus }> = ({ status }) => {
     let colorClass = 'text-gray-400 border-gray-600 bg-gray-800';
     let label = 'Utkast';
-    
     if (status === 'active') { colorClass = 'text-blue-400 border-blue-500/50 bg-blue-900/20 animate-pulse'; label = 'Pågående'; }
     else if (status === 'published') { colorClass = 'text-green-400 border-green-500/50 bg-green-900/20'; label = 'Publicerad'; }
-    else if (status === 'completed') { colorClass = 'text-purple-300 border-purple-500/50 bg-purple-900/20'; label = 'Avslutad'; }
-
-    return (
-        <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-bold border ${colorClass}`}>
-            {label}
-        </span>
-    );
+    return <span className={`text-[9px] px-1.5 py-0.5 rounded-full uppercase font-bold border ${colorClass}`}>{label}</span>;
 };
 
-// --- AI ARCHITECT TYPES & DATA ---
 type BlueprintId = 'mystery' | 'quiz' | 'action' | 'family';
-
-interface Blueprint {
-    id: BlueprintId;
-    title: string;
-    description: string;
-    icon: React.ElementType;
-    colorFrom: string;
-    colorTo: string;
-    promptTemplate: string;
-}
+interface Blueprint { id: BlueprintId; title: string; description: string; icon: React.ElementType; colorFrom: string; colorTo: string; promptTemplate: string; }
 
 const BLUEPRINTS: Blueprint[] = [
-    {
-        id: 'mystery',
-        title: 'Mysterium & Story',
-        description: 'En sammanhängande berättelse där varje checkpoint är ett kapitel.',
-        icon: Search,
-        colorFrom: 'from-purple-600',
-        colorTo: 'to-indigo-900',
-        promptTemplate: "Skapa ett mysterium/äventyr med en sammanhängande story. Varje checkpoint ska vara ett kapitel. Beskrivningen ska föra handlingen framåt. Lägg till en gåta eller fråga på varje plats som är kopplad till storyn."
-    },
-    {
-        id: 'quiz',
-        title: 'Tematiskt Quiz',
-        description: 'Tipspromenad med frågor.',
-        icon: BrainCircuit,
-        colorFrom: 'from-blue-600',
-        colorTo: 'to-cyan-800',
-        promptTemplate: "Skapa en tipspromenad (Quiz). Varje checkpoint ska ha en engagerande fråga med 3-4 svarsalternativ. Fokusera på kunskap och fakta inom temat."
-    },
-    {
-        id: 'action',
-        title: 'Action & Uppdrag',
-        description: 'Fysiska utmaningar.',
-        icon: Rocket,
-        colorFrom: 'from-orange-500',
-        colorTo: 'to-red-800',
-        promptTemplate: "Skapa ett action-fyllt event. Varje checkpoint ska innehålla en 'Challenge' (fysiskt uppdrag eller foto-uppdrag). Ingen storytext, rakt på sak. T.ex. 'Bygg en pyramid', 'Ta en selfie med en hund'."
-    },
-    {
-        id: 'family',
-        title: 'Familjeskoj',
-        description: 'Enkel mix för alla åldrar.',
-        icon: Smile,
-        colorFrom: 'from-green-500',
-        colorTo: 'to-emerald-800',
-        promptTemplate: "Skapa ett familjevänligt äventyr. Blanda enkla frågor för barn med roliga små uppdrag (t.ex. 'Hitta en kotte'). Håll tonen lekfull och uppmuntrande."
-    }
+    { id: 'mystery', title: 'Mysterium', description: 'En story där varje plats är ett kapitel.', icon: Search, colorFrom: 'from-purple-600', colorTo: 'to-indigo-900', promptTemplate: "Skapa ett mysterium med en sammanhängande story." },
+    { id: 'quiz', title: 'Quiz', description: 'Klassisk tipspromenad med frågor.', icon: BrainCircuit, colorFrom: 'from-blue-600', colorTo: 'to-cyan-800', promptTemplate: "Skapa en tipspromenad med engagerande frågor." },
+    { id: 'action', title: 'Action', description: 'Fysiska utmaningar och uppdrag.', icon: Rocket, colorFrom: 'from-orange-500', colorTo: 'to-red-800', promptTemplate: "Skapa ett action-fyllt event med fysiska utmaningar." },
+    { id: 'family', title: 'Familj', description: 'Enkel mix för alla åldrar.', icon: Smile, colorFrom: 'from-green-500', colorTo: 'to-emerald-800', promptTemplate: "Skapa ett familjevänligt äventyr." }
 ];
 
 export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
-  raceData,
-  onUpdateRace,
-  onExit,
-  onEditCheckpoint,
-  onDeleteCheckpoint,
-  activeTool,
-  setActiveTool,
-  onPublish,
-  isOpen,
-  setIsOpen,
-  cpConfig,
-  setCpConfig,
-  onGenerateContent,
-  onTestRun,
-  onSettings,
-  onShare,
-  onStartPlacing
+  raceData, onUpdateRace, onExit, onEditCheckpoint, onDeleteCheckpoint, activeTool, setActiveTool, onPublish, isOpen, setIsOpen, cpConfig, setCpConfig, onGenerateContent, onTestRun, onSettings, onShare, onStartPlacing
 }) => {
-  const [activeTab, setActiveTab] = useState<'guide' | 'build' | 'layers'>('build');
-  
-  // Architect State
+  const [activeTab, setActiveTab] = useState<'build' | 'layers'>('build');
   const [selectedBlueprint, setSelectedBlueprint] = useState<BlueprintId | null>(null);
   const [themeInput, setThemeInput] = useState('');
-  const [audience, setAudience] = useState('Vuxna / Blandat');
+  const [audience, setAudience] = useState('Vuxna');
   const [cpCount, setCpCount] = useState(5);
-
-  // Manual Tools State
   const [showManualStory, setShowManualStory] = useState(false);
   const [showManualBulk, setShowManualBulk] = useState(false);
   const [manualText, setManualText] = useState('');
 
-  // Checklist State
   const hasStart = !!raceData.startLocationConfirmed;
   const hasFinish = !!raceData.finishLocationConfirmed;
   const hasCheckpoints = raceData.checkpoints.length > 0;
   const isPublished = raceData.status === 'published' || raceData.status === 'active';
-  const isSequential = raceData.checkpointOrder === 'sequential';
 
-  // Filter Checkpoints
   const draftCheckpoints = raceData.checkpoints.filter(cp => !cp.location);
   const placedCheckpoints = raceData.checkpoints.filter(cp => !!cp.location);
 
-  const handleUnplace = (id: string) => {
-      const updated = raceData.checkpoints.map(cp => 
-          cp.id === id ? { ...cp, location: null } : cp
-      );
-      onUpdateRace({ checkpoints: updated });
-  };
+  const ChecklistItem = ({ done, label, onClick, isActive, icon: Icon }: { done: boolean, label: string, onClick?: () => void, isActive?: boolean, icon: any }) => (
+    <button 
+      onClick={onClick} 
+      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border transition-all ${isActive ? 'bg-blue-900/20 border-blue-500 shadow-md scale-[1.01]' : done ? 'bg-green-900/5 border-green-900/10' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}
+    >
+      <div className="flex items-center gap-2.5">
+        <div className={`p-1.5 rounded ${done ? 'bg-green-500/20 text-green-500' : isActive ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-500'}`}>
+          <Icon className="w-3.5 h-3.5" />
+        </div>
+        <div className={`text-[11px] font-black uppercase tracking-tight ${done ? 'text-green-500/60' : 'text-slate-200'}`}>{label}</div>
+      </div>
+      <div className={`${done ? 'text-green-500' : isActive ? 'text-blue-400' : 'text-slate-700'}`}>
+        {done ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+      </div>
+    </button>
+  );
 
   const handleArchitectRun = () => {
-      if (!selectedBlueprint) return;
-      const bp = BLUEPRINTS.find(b => b.id === selectedBlueprint);
-      if (!bp) return;
-
-      const prompt = `
-        ROLE: Du är "Adventure Architect", en expert på att skapa engagerande upplevelser.
-        UPPGIFT: Skapa ett komplett äventyr baserat på följande specifikation.
-        
-        BLUEPRINT: ${bp.title}
-        TEMA: ${themeInput || 'Allmänt/Blandat'}
-        MÅLGRUPP: ${audience}
-        ANTAL CHECKPOINTS: ${cpCount}
-        
-        INSTRUKTIONER FÖR BLUEPRINT (${bp.id}):
-        ${bp.promptTemplate}
-        
-        GENERELLA REGLER:
-        1. Använd verktyget 'update_race_plan'.
-        2. Generera ${cpCount} checkpoints.
-        3. VIKTIGT: Sätt 'location' till null (Draft Mode) på alla checkpoints så användaren får placera ut dem själv. Ge dem unika och beskrivande namn.
-        4. Språket ska vara Svenska.
-      `;
-
-      onGenerateContent(prompt);
-      // Reset logic handled by parent (loader)
+    if (!selectedBlueprint) return;
+    const blueprint = BLUEPRINTS.find(b => b.id === selectedBlueprint);
+    onGenerateContent(`${blueprint?.promptTemplate} Tema: ${themeInput || 'Blandat'}. Målgrupp: ${audience}. Antal: ${cpCount}.`);
   };
 
   const handleManualStoryApply = () => {
-      if (!manualText.trim()) return;
-      const chapters = manualText.split(/\n\s*\n/).filter(t => t.trim().length > 0);
-      const newCheckpoints = [...raceData.checkpoints];
-      
-      chapters.forEach((chapter, i) => {
-          const cpName = `Kapitel ${i + 1}`;
-          newCheckpoints.push({
-              id: `story-${Date.now()}-${i}`,
-              name: cpName,
-              location: null,
-              radiusMeters: 20,
-              type: 'mandatory',
-              description: chapter,
-              color: '#8b5cf6',
-              points: 10
-          });
+    if (!manualText.trim()) return;
+    const chapters = manualText.split(/\n\s*\n/).filter(t => t.trim().length > 0);
+    const newCheckpoints = [...raceData.checkpoints];
+    chapters.forEach((chapter, i) => {
+      newCheckpoints.push({
+        id: `manual-st-${Date.now()}-${i}`,
+        name: `Kapitel ${i + 1}`,
+        location: null,
+        radiusMeters: 25,
+        type: 'mandatory',
+        description: chapter,
+        points: 10
       });
-      onUpdateRace({ checkpoints: newCheckpoints });
-      setManualText('');
-      setShowManualStory(false);
+    });
+    onUpdateRace({ checkpoints: newCheckpoints });
+    setManualText('');
+    setShowManualStory(false);
   };
 
   const handleManualBulkApply = () => {
-      if (!manualText.trim()) return;
-      try {
-          const lines = manualText.split('\n').filter(l => l.trim().length > 0);
-          const newCheckpoints = [...raceData.checkpoints];
-          
-          lines.forEach((line, index) => {
-              const parts = line.split('|');
-              if (parts.length < 2) return;
-              const question = parts[0].trim();
-              const options = parts[1].split(',').map(o => o.trim());
-              const correctIdx = parts[2] ? parseInt(parts[2].trim()) : 0;
-              while (options.length < 2) options.push("Ja"); 
-
-              const quizData: QuizData = {
-                  question: question,
-                  options: options,
-                  correctOptionIndex: (correctIdx >= 0 && correctIdx < options.length) ? correctIdx : 0
-              };
-
-              newCheckpoints.push({
-                  id: `quiz-cp-${Date.now()}-${index}`,
-                  name: `Fråga ${index + 1}`,
-                  location: null, 
-                  radiusMeters: 25,
-                  type: 'mandatory',
-                  description: 'Svara rätt!',
-                  color: '#3b82f6',
-                  points: 10,
-                  quiz: quizData
-              });
-          });
-          onUpdateRace({ checkpoints: newCheckpoints });
-          setManualText('');
-          setShowManualBulk(false);
-      } catch (e) {
-          alert("Kunde inte tolka texten. Kontrollera formatet.");
-      }
+    if (!manualText.trim()) return;
+    const lines = manualText.split('\n').filter(l => l.includes('|'));
+    const newCheckpoints = [...raceData.checkpoints];
+    lines.forEach((line, i) => {
+      const [q, opts, correct] = line.split('|');
+      newCheckpoints.push({
+        id: `manual-qz-${Date.now()}-${i}`,
+        name: `Fråga ${i + 1}`,
+        location: null,
+        radiusMeters: 25,
+        type: 'mandatory',
+        quiz: {
+          question: q.trim(),
+          options: opts.split(',').map(o => o.trim()),
+          correctOptionIndex: parseInt(correct) || 0
+        }
+      });
+    });
+    onUpdateRace({ checkpoints: newCheckpoints });
+    setManualText('');
+    setShowManualBulk(false);
   };
-
-  const ChecklistItem = ({ done, label, onClick, isActive }: { done: boolean, label: string, onClick?: () => void, isActive?: boolean }) => (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left group ${isActive ? 'bg-blue-900/20 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.2)]' : 'bg-gray-800/50 border-gray-700 hover:bg-gray-800'}`}>
-      <div className={`shrink-0 ${done ? 'text-green-500' : isActive ? 'text-blue-400' : 'text-gray-500'}`}>
-        {done ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
-      </div>
-      <span className={`text-sm font-medium ${done ? 'text-gray-400 line-through' : 'text-gray-200'}`}>{label}</span>
-    </button>
-  );
 
   return (
     <>
@@ -264,364 +150,188 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({
         </button>
       )}
 
-      <aside className={`fixed inset-y-0 left-0 z-40 w-full md:w-[400px] bg-slate-950 border-r border-slate-800 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
+      <aside className={`fixed inset-y-0 left-0 z-40 w-full md:w-[380px] bg-slate-950 border-r border-slate-800 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
         
-        {/* --- HEADER (New Action Bar Layout) --- */}
-        <div className="p-4 border-b border-slate-800 bg-slate-900/95 backdrop-blur-md shrink-0">
-          
-          {/* Row 1: Nav & Actions */}
-          <div className="flex items-center justify-between mb-4">
-            <button 
-                onClick={onExit} 
-                className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors text-xs font-bold uppercase tracking-wider group"
-            >
-              <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Tillbaka
+        {/* --- COMPACT HEADER --- */}
+        <div className="p-4 border-b border-slate-800 bg-slate-900/50 shrink-0">
+          <div className="flex items-center justify-between mb-2.5">
+            <button onClick={onExit} className="flex items-center gap-1 text-gray-500 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest group">
+              <ChevronLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" /> Dashboard
             </button>
+            <div className="flex items-center gap-1.5">
+                <button onClick={onSettings} className="p-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-white transition-colors border border-gray-700" title="Inställningar"><Settings2 className="w-3.5 h-3.5" /></button>
+                <button onClick={onTestRun} className="p-1.5 rounded-lg bg-gray-800 text-green-500 hover:bg-green-900/30 transition-colors border border-gray-700" title="Testkör"><Play className="w-3.5 h-3.5 fill-current" /></button>
+                {isPublished ? <button onClick={onShare} className="p-1.5 rounded-lg bg-blue-600 text-white shadow-lg shadow-blue-900/30"><Share2 className="w-3.5 h-3.5" /></button> : null}
+                <button onClick={() => setIsOpen(false)} className="md:hidden ml-1 text-gray-500"><PanelLeftClose className="w-5 h-5" /></button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+              <h1 className="text-xs font-black text-white truncate uppercase tracking-tight">{raceData.name}</h1>
+              <StatusBadge status={raceData.status} />
+          </div>
+        </div>
+
+        {/* --- SUPER COMPACT CHECKLIST --- */}
+        <div className="px-4 py-3 bg-slate-900/40 border-b border-slate-800 shrink-0 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Checklista</span>
+              <div className="h-px flex-1 bg-slate-800/50 ml-3"></div>
+            </div>
             
-            <div className="flex items-center gap-2">
-                <button 
-                    onClick={onSettings}
-                    className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white transition-colors border border-gray-700"
-                    title="Inställningar"
-                >
-                    <Settings2 className="w-4 h-4" />
-                </button>
-                <button 
-                    onClick={onTestRun}
-                    className="p-2 rounded-lg bg-gray-800 text-green-400 hover:bg-green-900/30 hover:text-green-300 transition-colors border border-gray-700 hover:border-green-800"
-                    title="Testkör"
-                >
-                    <Play className="w-4 h-4 fill-current" />
-                </button>
-                {isPublished ? (
-                    <button 
-                        onClick={onShare}
-                        className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-900/30"
-                        title="Dela Event"
-                    >
-                        <Share2 className="w-4 h-4" />
-                    </button>
-                ) : (
-                    <button 
-                        onClick={onPublish}
-                        disabled={!hasStart || !hasFinish || !hasCheckpoints}
-                        className={`p-2 rounded-lg transition-colors border ${(!hasStart || !hasFinish || !hasCheckpoints) ? 'bg-gray-800 text-gray-600 border-gray-700 cursor-not-allowed' : 'bg-gray-800 text-blue-400 hover:bg-gray-700 hover:text-white border-gray-700'}`}
-                        title="Publicera"
-                    >
-                        <Globe className="w-4 h-4" />
-                    </button>
-                )}
-                
-                <button onClick={() => setIsOpen(false)} className="md:hidden ml-2 text-gray-500 hover:text-white"><PanelLeftClose className="w-5 h-5" /></button>
+            <div className="grid grid-cols-1 gap-1.5">
+                <ChecklistItem done={hasStart} label="Placera Start" icon={PlayCircle} isActive={activeTool === 'start'} onClick={() => setActiveTool('start')} />
+                <ChecklistItem done={hasFinish} label="Placera Mål" icon={Flag} isActive={activeTool === 'finish'} onClick={() => setActiveTool('finish')} />
+                <ChecklistItem done={hasCheckpoints} label="Checkpoints" icon={MapPin} isActive={activeTool === 'checkpoint'} onClick={() => setActiveTool('checkpoint')} />
             </div>
-          </div>
-
-          {/* Row 2: Title & Status */}
-          <div className="flex flex-col gap-2">
-              <h1 className="text-xl font-black text-white tracking-tight leading-tight line-clamp-2">
-                  {raceData.name}
-              </h1>
-              <div className="flex items-center gap-2">
-                  <StatusBadge status={raceData.status} />
-                  <span className="text-[10px] text-gray-500 font-mono uppercase tracking-wide">Mission Control</span>
-              </div>
-          </div>
+            
+            {!isPublished && (
+                <button 
+                    onClick={onPublish} 
+                    disabled={!hasStart || !hasFinish || !hasCheckpoints}
+                    className={`w-full py-2 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${(!hasStart || !hasFinish || !hasCheckpoints) ? 'bg-slate-800 text-slate-600 cursor-not-allowed opacity-50 border border-slate-700' : 'bg-green-600 hover:bg-green-500 text-white shadow-lg active:scale-95'}`}
+                >
+                    <Globe className="w-3 h-3" /> Publicera Event
+                </button>
+            )}
         </div>
 
-        {/* --- TABS --- */}
-        <div className="flex border-b border-slate-800 bg-slate-950">
-          <button onClick={() => setActiveTab('guide')} className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'guide' ? 'border-green-500 text-green-400 bg-green-900/10' : 'border-transparent text-gray-500 hover:text-gray-300'}`}><ListTodo className="w-4 h-4" /><span className="text-xs font-bold uppercase">Guide</span></button>
-          <button onClick={() => setActiveTab('build')} className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'build' ? 'border-blue-500 text-blue-400 bg-blue-900/10' : 'border-transparent text-gray-500 hover:text-gray-300'}`}><Hammer className="w-4 h-4" /><span className="text-xs font-bold uppercase">Bygg</span></button>
-          <button onClick={() => setActiveTab('layers')} className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'layers' ? 'border-purple-500 text-purple-400 bg-purple-900/10' : 'border-transparent text-gray-500 hover:text-gray-300'}`}><LayoutList className="w-4 h-4" /><span className="text-xs font-bold uppercase">Lager</span></button>
+        {/* --- MINI TABS --- */}
+        <div className="flex bg-slate-950 shrink-0 border-b border-slate-800">
+          <button onClick={() => setActiveTab('build')} className={`flex-1 py-2.5 text-[9px] font-black uppercase tracking-widest transition-all border-b-2 ${activeTab === 'build' ? 'border-blue-500 text-blue-400 bg-blue-900/10' : 'border-transparent text-gray-600'}`}>
+            <div className="flex items-center justify-center gap-1.5"><Hammer className="w-3 h-3" /> Bygg</div>
+          </button>
+          <button onClick={() => setActiveTab('layers')} className={`flex-1 py-2.5 text-[9px] font-black uppercase tracking-widest transition-all border-b-2 ${activeTab === 'layers' ? 'border-purple-500 text-purple-400 bg-purple-900/10' : 'border-transparent text-gray-600'}`}>
+            <div className="flex items-center justify-center gap-1.5"><LayoutList className="w-3 h-3" /> Checkpoints ({raceData.checkpoints.length})</div>
+          </button>
         </div>
 
-        {/* --- CONTENT --- */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 min-h-0 bg-slate-950">
+        {/* --- SCROLLABLE WORKSPACE --- */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 bg-slate-950 space-y-6">
           
-          {/* TAB: GUIDE (Checklist) */}
-          {activeTab === 'guide' && (
-            <div className="space-y-3 animate-in fade-in duration-300">
-              <div className="text-xs font-bold text-gray-500 uppercase mb-2">Checklista</div>
-              <ChecklistItem done={hasStart} label="Placera Start" isActive={activeTool === 'start'} onClick={() => { setActiveTool('start'); setActiveTab('build'); }} />
-              <ChecklistItem done={hasFinish} label="Placera Mål" isActive={activeTool === 'finish'} onClick={() => { setActiveTool('finish'); setActiveTab('build'); }} />
-              <ChecklistItem done={hasCheckpoints} label="Lägg till Checkpoints" isActive={activeTool === 'checkpoint'} onClick={() => { setActiveTool('checkpoint'); setActiveTab('build'); }} />
-              
-              {!isPublished && (
-                  <>
-                    <div className="my-4 border-t border-slate-800"></div>
-                    <div className="text-xs font-bold text-gray-500 uppercase mb-2">Slutför</div>
-                    <button onClick={onPublish} disabled={!hasStart || !hasFinish || !hasCheckpoints} className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all ${(!hasStart || !hasFinish || !hasCheckpoints) ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500 text-white animate-pulse'}`}>
-                        <Sparkles className="w-5 h-5" />
-                        Publicera Event
-                    </button>
-                  </>
-              )}
-            </div>
-          )}
-
-          {/* TAB: BUILD (Tools & Content) */}
           {activeTab === 'build' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-                
-                {/* TOOLBAR */}
-                <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Verktyg</label>
-                    <div className="grid grid-cols-4 gap-2">
-                        <button onClick={() => setActiveTool('none')} className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${activeTool === 'none' ? 'bg-gray-700 text-white shadow-inner' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
-                            <MousePointer2 className="w-5 h-5" />
-                            <span className="text-[9px] font-bold uppercase">Nav</span>
-                        </button>
-                        <button onClick={() => setActiveTool('start')} className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${activeTool === 'start' ? 'bg-green-600 text-white shadow-lg' : 'bg-gray-800 text-gray-400 hover:text-green-400 hover:bg-gray-700'}`}>
-                            <PlayCircle className="w-5 h-5" />
-                            <span className="text-[9px] font-bold uppercase">Start</span>
-                        </button>
-                        <button onClick={() => setActiveTool('finish')} className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${activeTool === 'finish' ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-800 text-gray-400 hover:text-red-400 hover:bg-gray-700'}`}>
-                            <Flag className="w-5 h-5" />
-                            <span className="text-[9px] font-bold uppercase">Mål</span>
-                        </button>
-                        <button onClick={() => setActiveTool('checkpoint')} className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${activeTool === 'checkpoint' ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-800 text-gray-400 hover:text-blue-400 hover:bg-gray-700'}`}>
-                            <Plus className="w-5 h-5" />
-                            <span className="text-[9px] font-bold uppercase">CP</span>
-                        </button>
+            <div className="space-y-6 animate-in fade-in duration-200 pb-10">
+                {/* TOOL TOGGLES (When none of the fixed guide tools are active) */}
+                {activeTool === 'none' && (
+                    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center py-6 text-center border-dashed">
+                        <MousePointer2 className="w-6 h-6 text-slate-600 mb-1.5" />
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Navigeringsläge</span>
+                        <p className="text-[9px] text-slate-600 mt-0.5">Använd checklistan för att placera objekt.</p>
                     </div>
-                </div>
+                )}
 
-                {/* CP CONFIG (Visible only when CP tool is active) */}
+                {/* CP QUICK CONFIG */}
                 {activeTool === 'checkpoint' && (
-                    <div className="bg-blue-900/10 border border-blue-500/20 rounded-xl p-4 animate-in slide-in-from-top-2">
-                        <div className="flex justify-between items-center mb-3">
-                            <span className="text-xs font-bold text-blue-400 uppercase">Nästa Checkpoint</span>
-                            <span className="text-[10px] bg-blue-900/30 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">Klicka på kartan</span>
+                    <div className="bg-blue-900/10 border border-blue-500/20 rounded-xl p-3 animate-in slide-in-from-top-2">
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Checkpoint-info</span>
                         </div>
-                        
-                        <div className="space-y-3">
-                            <input value={cpConfig.name} onChange={e => setCpConfig({...cpConfig, name: e.target.value})} className="w-full bg-slate-900 border border-blue-500/30 rounded p-2 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="Namn (t.ex. CP 1)" />
-                            
-                            {/* Type Selector - Hidden if Sequential */}
-                            {!isSequential && (
-                                <div className="flex bg-slate-900 rounded p-1 border border-blue-500/30">
-                                    <button 
-                                        onClick={() => setCpConfig({...cpConfig, type: 'mandatory'})}
-                                        className={`flex-1 py-1.5 text-xs font-bold rounded transition-colors ${cpConfig.type === 'mandatory' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-                                    >
-                                        Obligatorisk
-                                    </button>
-                                    <button 
-                                        onClick={() => setCpConfig({...cpConfig, type: 'optional'})}
-                                        className={`flex-1 py-1.5 text-xs font-bold rounded transition-colors ${cpConfig.type === 'optional' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}
-                                    >
-                                        Valfri (Extra)
-                                    </button>
-                                </div>
-                            )}
-
+                        <div className="space-y-2.5">
+                            <input value={cpConfig.name} onChange={e => setCpConfig({...cpConfig, name: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:border-blue-500" placeholder="Namn" />
                             <div className="flex gap-2">
-                                <input type="number" value={cpConfig.points} onChange={e => setCpConfig({...cpConfig, points: parseInt(e.target.value)})} className="w-1/3 bg-slate-900 border border-blue-500/30 rounded p-2 text-sm text-white text-center font-mono" placeholder="Poäng" />
-                                <div className="flex-1 flex gap-1 bg-slate-900 rounded border border-blue-500/30 p-1">
+                                <input type="number" value={cpConfig.points} onChange={e => setCpConfig({...cpConfig, points: parseInt(e.target.value) || 0})} className="w-1/3 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white text-center font-mono" placeholder="Poäng" />
+                                <div className="flex-1 flex gap-1 bg-slate-950 rounded-lg border border-slate-800 p-1">
                                     {['#3b82f6', '#10B981', '#F59E0B', '#EF4444'].map(c => (
-                                        <button key={c} onClick={() => setCpConfig({...cpConfig, color: c})} className={`flex-1 rounded transition-transform ${cpConfig.color === c ? 'scale-90 ring-2 ring-white' : ''}`} style={{backgroundColor: c}}></button>
+                                        <button key={c} onClick={() => setCpConfig({...cpConfig, color: c})} className={`flex-1 rounded transition-transform ${cpConfig.color === c ? 'scale-75 ring-2 ring-white shadow-lg' : 'opacity-30'}`} style={{backgroundColor: c}}></button>
                                     ))}
                                 </div>
                             </div>
+                            <button onClick={() => setActiveTool('none')} className="w-full py-1.5 text-[9px] font-bold text-slate-500 uppercase hover:text-white transition-colors bg-slate-900 rounded-lg">Avbryt</button>
                         </div>
                     </div>
                 )}
 
-                <div className="border-t border-slate-800 my-2"></div>
+                <div className="border-t border-slate-800"></div>
 
-                {/* AI ADVENTURE ARCHITECT */}
+                {/* AI ARCHITECT */}
                 <div>
                     <div className="flex items-center gap-2 mb-3">
-                        <Wand2 className="w-4 h-4 text-purple-400" />
-                        <label className="text-xs font-bold text-gray-500 uppercase">AI Adventure Architect</label>
+                      <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">AI Arkitekt</label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        {BLUEPRINTS.map(bp => (
+                            <button key={bp.id} onClick={() => setSelectedBlueprint(selectedBlueprint === bp.id ? null : bp.id)} className={`p-3 rounded-xl border text-left transition-all ${selectedBlueprint === bp.id ? 'bg-purple-900/20 border-purple-500 shadow-lg' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}>
+                                <bp.icon className={`w-4 h-4 mb-1.5 ${selectedBlueprint === bp.id ? 'text-purple-400' : 'text-slate-500'}`} />
+                                <div className="text-[10px] font-bold text-gray-200">{bp.title}</div>
+                            </button>
+                        ))}
                     </div>
                     
-                    <div className="space-y-2">
-                        {BLUEPRINTS.map(bp => {
-                            const isSelected = selectedBlueprint === bp.id;
-                            const Icon = bp.icon;
-                            
-                            return (
-                                <div key={bp.id} className={`border rounded-xl transition-all duration-300 overflow-hidden ${isSelected ? 'bg-slate-900 border-purple-500 shadow-lg' : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'}`}>
-                                    <button 
-                                        onClick={() => setSelectedBlueprint(isSelected ? null : bp.id)}
-                                        className="w-full flex items-center p-3 text-left"
-                                    >
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-gradient-to-br ${bp.colorFrom} ${bp.colorTo}`}>
-                                            <Icon className="w-4 h-4 text-white" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="text-sm font-bold text-gray-200">{bp.title}</div>
-                                            {!isSelected && <div className="text-[10px] text-gray-500 truncate">{bp.description}</div>}
-                                        </div>
-                                        {isSelected ? <ChevronDown className="w-4 h-4 text-purple-400" /> : <ChevronRight className="w-4 h-4 text-gray-600" />}
-                                    </button>
-                                    
-                                    {isSelected && (
-                                        <div className="p-3 pt-0 animate-in slide-in-from-top-2">
-                                            <div className="text-xs text-gray-400 mb-3 leading-relaxed">{bp.description}</div>
-                                            
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Tema</label>
-                                                    <input 
-                                                        value={themeInput}
-                                                        onChange={(e) => setThemeInput(e.target.value)}
-                                                        className="w-full bg-black/30 border border-slate-700 rounded p-2 text-sm text-white focus:border-purple-500 outline-none"
-                                                        placeholder="T.ex. Spökhus, 80-tal..."
-                                                    />
-                                                </div>
-                                                
-                                                <div className="flex gap-2">
-                                                    <div className="flex-1">
-                                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Målgrupp</label>
-                                                        <select 
-                                                            value={audience}
-                                                            onChange={(e) => setAudience(e.target.value)}
-                                                            className="w-full bg-black/30 border border-slate-700 rounded p-2 text-xs text-white"
-                                                        >
-                                                            <option>Barn</option>
-                                                            <option>Ungdom</option>
-                                                            <option>Vuxna</option>
-                                                            <option>Företag</option>
-                                                        </select>
-                                                    </div>
-                                                    <div className="w-16">
-                                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Antal</label>
-                                                        <input 
-                                                            type="number" 
-                                                            value={cpCount} 
-                                                            onChange={(e) => setCpCount(parseInt(e.target.value))} 
-                                                            className="w-full bg-black/30 border border-slate-700 rounded p-2 text-sm text-white text-center"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <button 
-                                                    onClick={handleArchitectRun}
-                                                    className={`w-full py-2 rounded font-bold text-xs uppercase tracking-wider text-white shadow-lg bg-gradient-to-r ${bp.colorFrom} ${bp.colorTo} hover:opacity-90 transition-opacity flex items-center justify-center gap-2`}
-                                                >
-                                                    <Wand2 className="w-3 h-3" /> Generera Utkast
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* MANUAL TOOLS */}
-                <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Manuella Verktyg</label>
-                    <div className="grid grid-cols-2 gap-2">
-                        <button 
-                            onClick={() => { setShowManualStory(!showManualStory); setShowManualBulk(false); }}
-                            className={`p-2 rounded border text-xs font-bold transition-all flex items-center justify-center gap-2 ${showManualStory ? 'bg-green-900/20 border-green-600 text-green-400' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
-                        >
-                            <BookOpen className="w-3 h-3" /> Story Paste
-                        </button>
-                        <button 
-                            onClick={() => { setShowManualBulk(!showManualBulk); setShowManualStory(false); }}
-                            className={`p-2 rounded border text-xs font-bold transition-all flex items-center justify-center gap-2 ${showManualBulk ? 'bg-blue-900/20 border-blue-600 text-blue-400' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
-                        >
-                            <FileSpreadsheet className="w-3 h-3" /> Bulk Import
-                        </button>
-                    </div>
-
-                    {showManualStory && (
-                        <div className="mt-2 p-3 bg-gray-900 border border-green-900/30 rounded-xl animate-in slide-in-from-top-2">
-                            <textarea 
-                                value={manualText}
-                                onChange={(e) => setManualText(e.target.value)}
-                                className="w-full h-24 bg-black/30 border border-slate-700 rounded p-2 text-xs text-white mb-2 resize-none focus:border-green-500 outline-none"
-                                placeholder="Klistra in story. Dubbel radbrytning = Ny CP."
-                            />
-                            <button onClick={handleManualStoryApply} className="w-full bg-green-700 hover:bg-green-600 text-white text-xs font-bold py-1.5 rounded">Skapa CPs</button>
+                    {selectedBlueprint && (
+                        <div className="mt-2.5 p-3 bg-slate-900 border border-purple-500/30 rounded-xl space-y-3 animate-in slide-in-from-top-2 shadow-2xl">
+                            <input value={themeInput} onChange={e => setThemeInput(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:border-purple-500" placeholder="Tema (t.ex. Spioner)" />
+                            <div className="flex gap-2">
+                                <select value={audience} onChange={e => setAudience(e.target.value)} className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] text-white outline-none"><option>Barn</option><option>Vuxna</option><option>Företag</option></select>
+                                <input type="number" value={cpCount} onChange={e => setCpCount(parseInt(e.target.value))} className="w-12 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white text-center font-bold" />
+                            </div>
+                            <button onClick={handleArchitectRun} className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-lg hover:from-purple-500 hover:to-indigo-500 transition-all flex items-center justify-center gap-1.5">
+                              <Wand2 className="w-3 h-3" /> Generera
+                            </button>
                         </div>
                     )}
+                </div>
 
-                    {showManualBulk && (
-                        <div className="mt-2 p-3 bg-gray-900 border border-blue-900/30 rounded-xl animate-in slide-in-from-top-2">
-                            <div className="text-[10px] text-gray-500 mb-1 font-mono">Format: Fråga | Alt1, Alt2 | RättIndex</div>
-                            <textarea 
-                                value={manualText}
-                                onChange={(e) => setManualText(e.target.value)}
-                                className="w-full h-24 bg-black/30 border border-slate-700 rounded p-2 text-xs text-white mb-2 resize-none focus:border-blue-500 outline-none font-mono"
-                                placeholder="Fråga... | A, B, C | 0"
-                            />
-                            <button onClick={handleManualBulkApply} className="w-full bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold py-1.5 rounded">Importera</button>
+                {/* MANUAL INGEST */}
+                <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <PenTool className="w-3.5 h-3.5 text-blue-500" />
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Import</label>
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={() => { setShowManualStory(!showManualStory); setShowManualBulk(false); }} className={`flex-1 p-2 rounded-lg border text-[9px] font-bold transition-all flex items-center justify-center gap-1.5 ${showManualStory ? 'bg-green-900/20 border-green-500 text-green-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}><BookOpen className="w-3 h-3" /> Story</button>
+                        <button onClick={() => { setShowManualBulk(!showManualBulk); setShowManualStory(false); }} className={`flex-1 p-2 rounded-lg border text-[9px] font-bold transition-all flex items-center justify-center gap-1.5 ${showManualBulk ? 'bg-blue-900/20 border-blue-500 text-blue-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}><FileSpreadsheet className="w-3 h-3" /> Quiz</button>
+                    </div>
+                    {(showManualStory || showManualBulk) && (
+                        <div className="mt-2 p-3 bg-slate-900 border border-slate-700 rounded-xl shadow-xl space-y-2">
+                            <textarea value={manualText} onChange={e => setManualText(e.target.value)} className="w-full h-20 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white resize-none outline-none" placeholder={showManualStory ? "Klistra in story..." : "Fråga | Svar... | Index"} />
+                            <button onClick={showManualStory ? handleManualStoryApply : handleManualBulkApply} className="w-full bg-slate-800 hover:bg-slate-700 text-white text-[9px] font-bold py-2 rounded-lg uppercase tracking-widest">Klar</button>
                         </div>
                     )}
                 </div>
             </div>
           )}
 
-          {/* TAB: LAYERS (List with Draft Support) */}
           {activeTab === 'layers' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-              
-              {/* Drafts Section */}
+            <div className="space-y-6 animate-in fade-in duration-200 pb-10">
               {draftCheckpoints.length > 0 && (
                   <div>
-                      <h4 className="text-xs font-bold text-purple-400 uppercase mb-3 flex items-center gap-2">
-                          <Wand2 className="w-3 h-3" /> Att Placera ({draftCheckpoints.length})
+                      <h4 className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5">
+                        <span className="w-1 h-1 rounded-full bg-purple-500 animate-pulse"></span>
+                        Oplacerade ({draftCheckpoints.length})
                       </h4>
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                           {draftCheckpoints.map((cp, idx) => (
-                              <div key={cp.id} className="bg-purple-900/10 border border-purple-500/30 rounded-xl p-3 flex items-center gap-3 group hover:bg-purple-900/20 transition-colors">
-                                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-purple-300 bg-purple-900/50 border border-purple-500/50">
-                                      {idx + 1}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                      <div className="font-bold text-purple-200 text-sm truncate">{cp.name}</div>
-                                      <div className="text-[10px] text-purple-400/70 truncate flex items-center gap-1">
-                                          {(cp.quiz || cp.challenge) && <Sparkles className="w-3 h-3" />}
-                                          {cp.quiz ? 'Quiz' : cp.challenge ? 'Utmaning' : 'Checkpoint'}
-                                      </div>
-                                  </div>
-                                  <button 
-                                    onClick={() => onStartPlacing(cp.id)}
-                                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg shadow-lg flex items-center gap-1 transition-transform active:scale-95"
-                                  >
-                                      <MapPin className="w-3 h-3" /> Placera
-                                  </button>
-                                  <button onClick={() => onEditCheckpoint(cp.id)} className="p-1.5 text-gray-400 hover:text-white hover:bg-slate-700 rounded"><Edit2 className="w-4 h-4" /></button>
+                              <div key={cp.id} className="bg-purple-900/5 border border-purple-500/20 rounded-lg p-2 flex items-center gap-2.5 group">
+                                  <div className="w-6 h-6 rounded bg-purple-900/30 flex items-center justify-center text-[9px] font-bold text-purple-400 border border-purple-500/20 shrink-0">{idx+1}</div>
+                                  <div className="flex-1 min-w-0"><div className="font-bold text-purple-100 text-[11px] truncate">{cp.name}</div></div>
+                                  <button onClick={() => onStartPlacing(cp.id)} className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white text-[8px] font-black uppercase rounded shadow-sm">Placera</button>
+                                  <button onClick={() => onEditCheckpoint(cp.id)} className="text-slate-600 hover:text-white transition-colors"><Edit2 className="w-3 h-3" /></button>
                               </div>
                           ))}
                       </div>
                   </div>
               )}
-
-              {/* Placed Section */}
               <div>
-                  <h4 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2">
-                      <MapPin className="w-3 h-3" /> På Kartan ({placedCheckpoints.length})
-                  </h4>
-                  {placedCheckpoints.length === 0 && <div className="text-center py-8 text-gray-500 text-sm italic">Kartan är tom.</div>}
-                  <div className="space-y-2">
+                  <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2.5">Placerade ({placedCheckpoints.length})</h4>
+                  <div className="space-y-1.5">
                       {placedCheckpoints.map((cp, idx) => (
-                           <div key={cp.id} className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex items-center gap-3 group hover:border-slate-500 transition-colors">
-                              <div className="flex flex-col items-center gap-1">
-                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm" style={{ backgroundColor: cp.color || '#3b82f6' }}>{idx + 1}</div>
-                              </div>
+                           <div key={cp.id} className="bg-slate-900 border border-slate-800 rounded-lg p-2 flex items-center gap-2.5 group hover:border-slate-600 transition-colors">
+                              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm shrink-0" style={{ backgroundColor: cp.color || '#3b82f6' }}>{idx + 1}</div>
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2"><span className="font-bold text-gray-200 text-sm truncate">{cp.name}</span>{(cp.quiz || cp.challenge) && <Sparkles className="w-3 h-3 text-yellow-500" />}</div>
-                                <div className="text-[10px] text-gray-500 truncate flex items-center gap-2">
-                                    <span>{cp.points} poäng</span>
-                                    {cp.type === 'optional' && !isSequential && (
-                                        <span className="text-purple-400 border border-purple-500/30 px-1 rounded bg-purple-900/20">Valfri</span>
-                                    )}
-                                </div>
+                                <div className="font-bold text-gray-200 text-[11px] truncate">{cp.name}</div>
+                                <div className="text-[8px] text-slate-600 font-bold uppercase truncate">{cp.points}p</div>
                               </div>
-                              <div className="flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => handleUnplace(cp.id)} className="p-1.5 text-gray-400 hover:text-yellow-400 hover:bg-slate-700 rounded" title="Ta bort från kartan (Gör till utkast)"><XCircle className="w-4 h-4" /></button>
-                                <button onClick={() => onEditCheckpoint(cp.id)} className="p-1.5 text-gray-400 hover:text-white hover:bg-slate-700 rounded"><Edit2 className="w-4 h-4" /></button>
-                                <button onClick={() => onDeleteCheckpoint(cp.id)} className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-900/30 rounded"><Trash2 className="w-4 h-4" /></button>
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => onEditCheckpoint(cp.id)} className="p-1 bg-slate-800 rounded text-slate-500 hover:text-white" title="Redigera"><Edit2 className="w-3 h-3" /></button>
+                                <button onClick={() => onDeleteCheckpoint(cp.id)} className="p-1 bg-slate-800 rounded text-slate-500 hover:text-red-400" title="Ta bort"><Trash2 className="w-3 h-3" /></button>
                               </div>
                            </div>
                       ))}
+                      {placedCheckpoints.length === 0 && (
+                        <div className="text-center py-6 border border-slate-800 border-dashed rounded-xl">
+                          <span className="text-[9px] text-slate-600 uppercase font-bold tracking-widest">Tomt på kartan</span>
+                        </div>
+                      )}
                   </div>
               </div>
             </div>
