@@ -7,26 +7,25 @@ const cors = require("cors")({ origin: true });
 require('dotenv').config();
 
 // --- CONFIG ---
-// When using secrets, process.env.API_KEY is automatically populated from the secret store
 const API_KEY = process.env.API_KEY || process.env.GEMINI_API_KEY;
 
 // --- TOOL DEFINITIONS ---
 const updateRacePlanTool = {
   name: "update_race_plan",
-  description: "Updates the current race/event plan with new details, checkpoints, quizzes, challenges, locations, or participant results.",
+  description: "Uppdaterar den aktuella banplanen med nya detaljer, checkpoints, quiz, utmaningar eller platser. SKA användas för alla ändringar av banans data.",
   parameters: {
     type: "OBJECT",
     properties: {
-      name: { type: "STRING", description: "Name of the event" },
+      name: { type: "STRING", description: "Namnet på eventet" },
       eventType: { 
           type: "STRING", 
-          description: "Type of activity, e.g., 'Lopp', 'Tävling', 'Event', 'Spel', 'Äventyr'",
+          description: "Typ av aktivitet",
           enum: ["Lopp", "Tävling", "Event", "Spel", "Äventyr", "Jakt", "Utmaning"]
       },
-      language: { type: "STRING", enum: ["sv", "en", "de", "es", "fr"], description: "The language for the event content." },
-      description: { type: "STRING", description: "General instructions or description" },
-      category: { type: "STRING", description: "Category of the race" },
-      startDateTime: { type: "STRING", description: "ISO string for start time" },
+      language: { type: "STRING", enum: ["sv", "en"], description: "Språket för innehållet." },
+      description: { type: "STRING", description: "Allmänna instruktioner eller beskrivning" },
+      category: { type: "STRING", description: "Kategori för loppet" },
+      startDateTime: { type: "STRING", description: "ISO-sträng för starttid" },
       startMode: { type: "STRING", enum: ["mass_start", "self_start"] },
       manualStartEnabled: { type: "BOOLEAN" },
       startLocation: {
@@ -58,7 +57,7 @@ const updateRacePlanTool = {
             color: { type: "STRING" },
             challenge: { type: "STRING" },
             timeModifierSeconds: { type: "NUMBER" },
-            requiresPhoto: { type: "BOOLEAN", description: "If true, user must upload a photo to complete this checkpoint." },
+            requiresPhoto: { type: "BOOLEAN" },
             quiz: {
               type: "OBJECT",
               properties: {
@@ -70,15 +69,14 @@ const updateRacePlanTool = {
           },
           required: ["name", "type"]
         }
-      },
-      results: { type: "ARRAY", items: { type: "OBJECT", properties: { /* minimal result schema */ } } }
+      }
     }
   }
 };
 
 const provideRaceAnalysisTool = {
   name: "provide_race_analysis",
-  description: "Provides a structured quality analysis and feedback on the current race plan.",
+  description: "Ger en strukturerad kvalitetsanalys och feedback på den aktuella banplanen.",
   parameters: {
     type: "OBJECT",
     properties: {
@@ -96,75 +94,77 @@ const provideRaceAnalysisTool = {
 
 // --- SYSTEM INSTRUCTIONS ---
 const AI_INSTRUCTION_BASE = `
-Role: You are the Quest Master (QM), the AI engine behind the app "Quester".
-Din viktigaste uppgift är att sköta logiken för banläggning via verktyget \`update_race_plan\`.
+Roll: Du är Quest Master (QM), den kreativa hjärnan bakom "Quester".
+Ditt uppdrag är att hjälpa arrangörer att bygga banor.
 
-**CONTENT GENERATION (QUIZ/CHALLENGES):**
-Om användaren ber om att lägga till frågor (quiz) eller utmaningar, och inte specificerar en plats:
-1. Skapa checkpoints i "Draft Mode" genom att helt UTELÄMNA fältet \`location\` i objektet. Använd INTE null.
-2. Detta låter användaren placera ut dem manuellt senare.
-3. För Quiz: Måste innehålla \`question\`, \`options\` (3-4 alternativ) och \`correctOptionIndex\`.
-
-**UPPDATERA EXISTERNADE:**
-Om du lägger till en fråga på en existerande checkpoint, kopiera exakt samma koordinater som du fick i input om de finns.
-
-**GEOGRAFI:** Utgå alltid från angivna Start/Mål koordinater om du ska placera ut nya checkpoints på kartan (inte drafts).
-**BILDER:** Om användaren vill ha bildbevis, sätt \`requiresPhoto: true\` på checkpoints.
+**KRITISKT:** 
+1. För att ändra eller skapa banans innehåll (namn, beskrivning, checkpoints, quiz), MÅSTE du anropa verktyget 'update_race_plan'. 
+2. Bekräfta ALDRIG en ändring enbart med text. Om du inte anropar verktyget har ingen ändring skett.
+3. Om du skapar checkpoints utan plats (Draft Mode), utelämna helt fältet 'location'.
+4. Svara alltid på svenska.
 `;
 
-// --- MAIN FUNCTION (GEN 1 - Node 20 Compatible) ---
+// --- MAIN FUNCTION (GEN 1) ---
 exports.generateAdventure = functions
   .region("us-central1")
   .runWith({ 
     timeoutSeconds: 60, 
     memory: "512MB",
-    secrets: ["API_KEY"] // <--- ENABLES SECURE KEY ACCESS
+    secrets: ["API_KEY"]
   })
   .https.onRequest((req, res) => {
     return cors(req, res, async () => {
-      // 1. Metod-check
       if (req.method !== "POST") {
         res.status(405).send("Method Not Allowed");
         return;
       }
 
       try {
-        const { message, tier, history } = req.body;
+        const { message, tier, history, forceTool } = req.body;
 
-        // 2. API Key Check
         if (!API_KEY) {
-          console.error("CRITICAL: Server API Key is missing. Make sure to run 'firebase functions:secrets:set API_KEY'.");
-          res.status(500).json({ error: "Server Configuration Error: API Key missing." });
+          res.status(500).json({ error: "Server API Key missing." });
           return;
         }
 
-        // 3. Initiera Gemini
-        const genAI = new GoogleGenAI({ apiKey: API_KEY });
-        // UPGRADED MODEL: gemini-2.5-flash
-        const modelId = "gemini-2.5-flash"; 
+        const ai = new GoogleGenAI({ apiKey: API_KEY });
+        const modelName = "gemini-3-pro-preview";
 
-        const chat = genAI.chats.create({
-          model: modelId,
-          config: {
-            systemInstruction: AI_INSTRUCTION_BASE + (tier === 'CREATOR' ? "\nBe Creative." : "\nBe Simple."),
+        const contents = [];
+        if (history && Array.isArray(history)) {
+            history.forEach(item => {
+                contents.push({
+                    role: item.role,
+                    parts: [{ text: item.parts[0].text }]
+                });
+            });
+        }
+        contents.push({ role: 'user', parts: [{ text: message }] });
+
+        // Build Config
+        const config = {
+            systemInstruction: AI_INSTRUCTION_BASE + `\nUSER_TIER: ${tier}.`,
             tools: [{ functionDeclarations: [updateRacePlanTool, provideRaceAnalysisTool] }],
             temperature: 0.7,
-          },
-          history: history || []
+        };
+
+        // FORCE TOOL CALL IF REQUESTED (Silver Bullet fix)
+        if (forceTool) {
+            config.toolConfig = {
+                functionCallingConfig: {
+                    mode: 'ANY'
+                }
+            };
+        }
+
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: contents,
+          config: config
         });
-
-        // 4. Skicka meddelande
-        const result = await chat.sendMessage({ message });
         
-        // 5. Hantera svar
-        const functionCalls = result.functionCalls || [];
-        const textResponse = result.text || "";
-
-        // Formatera för frontend
-        const toolCalls = functionCalls.map(fc => ({
-            name: fc.name,
-            args: fc.args
-        }));
+        const toolCalls = response.functionCalls || [];
+        const textResponse = response.text || (toolCalls.length > 0 ? "Jag har uppdaterat kartan." : "Jag förstod inte riktigt, kan du precisera?");
 
         res.status(200).json({
           textResponse,
@@ -172,21 +172,8 @@ exports.generateAdventure = functions
         });
 
       } catch (error) {
-        console.error("Gemini Backend Error:", error);
-        
-        // Improve error reporting for detecting Leaked Keys (403)
-        if (error.toString().includes("403") || error.toString().includes("leaked")) {
-             res.status(403).json({ 
-                error: "API Key Permission Denied. The key may be invalid or flagged as leaked by Google.",
-                details: error.message 
-            });
-            return;
-        }
-
-        res.status(500).json({ 
-            error: error.message || "Internal Server Error",
-            details: error.toString() 
-        });
+        console.error("Gemini Engine Error:", error);
+        res.status(500).json({ error: error.message });
       }
     });
   });

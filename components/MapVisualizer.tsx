@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, memo } from 'react';
+import React, { useEffect, useMemo, memo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, Tooltip, useMap, useMapEvents, Polyline, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import { RaceEvent, Coordinate } from '../types';
@@ -86,15 +86,32 @@ const MapClickHandler: React.FC<{ onClick?: (coord: Coordinate) => void, isActiv
 };
 
 // Component to fly to new start location when race data updates
+// IMPROVED: Only trigger if location is outside current bounds or first load
 const FlyToCenter: React.FC<{ center: [number, number] }> = ({ center }) => {
   const map = useMap();
+  const hasInitialCentered = useRef(false);
+
   useEffect(() => {
-    // Small delay to ensure container is ready
-    const timer = setTimeout(() => {
+    // 1. Alltid centrera vid första renderingen
+    if (!hasInitialCentered.current) {
         map.flyTo(center, 14, { duration: 1.5 });
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [center[0], center[1]]);
+        hasInitialCentered.current = true;
+        return;
+    }
+
+    // 2. Vid uppdatering: Flytta bara om punkten är utanför nuvarande vy 
+    // (förhindrar "hopp" och utzoomning vid manuell finjustering)
+    const bounds = map.getBounds();
+    const latLng = L.latLng(center[0], center[1]);
+    
+    if (!bounds.contains(latLng)) {
+        // Om vi flyttar långt (t.ex. ny stad), använd standardzoom 14
+        map.flyTo(center, 14, { duration: 1.5 });
+    } else {
+        // Om vi bara finjusterar inom vyn, behåll användarens zoomnivå men panorera mjukt
+        map.panTo(center, { animate: true, duration: 0.5 });
+    }
+  }, [center[0], center[1], map]);
   return null;
 };
 
