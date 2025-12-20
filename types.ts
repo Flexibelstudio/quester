@@ -10,6 +10,8 @@ export interface QuizData {
   correctOptionIndex: number; // 0-based index
 }
 
+export type CheckInMode = 'active' | 'passive';
+
 export interface Checkpoint {
   id: string;
   name: string;
@@ -20,6 +22,7 @@ export interface Checkpoint {
   level?: number;
   points?: number;
   color?: string;
+  checkInMode?: CheckInMode; // NEW: active = popup, passive = auto-pass
   // New features for "Tipspromenad" and Challenges
   quiz?: QuizData;
   challenge?: string;

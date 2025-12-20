@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Checkpoint, QuizData, CheckpointOrder } from '../types';
-import { X, Save, HelpCircle, Zap, MapPin, List, CheckCircle2, Clock, Timer, Camera, Flag } from 'lucide-react';
+import { Checkpoint, QuizData, CheckpointOrder, CheckInMode } from '../types';
+import { X, Save, HelpCircle, Zap, MapPin, List, CheckCircle2, Clock, Timer, Camera, Flag, MousePointer2, ZapOff } from 'lucide-react';
 
 interface CheckpointEditorDialogProps {
   checkpoint: Checkpoint | null;
@@ -22,7 +22,7 @@ export const CheckpointEditorDialog: React.FC<CheckpointEditorDialogProps> = ({ 
 
   useEffect(() => {
     if (checkpoint) {
-      setData({ ...checkpoint });
+      setData({ ...checkpoint, checkInMode: checkpoint.checkInMode || 'active' });
       if (checkpoint.quiz) setInteractionType('quiz');
       else if (checkpoint.challenge) setInteractionType('challenge');
       else setInteractionType('none');
@@ -113,7 +113,7 @@ export const CheckpointEditorDialog: React.FC<CheckpointEditorDialogProps> = ({ 
         {/* Content */}
         <div className="p-6 overflow-y-auto custom-scrollbar">
             {activeTab === 'general' ? (
-                <div className="space-y-4">
+                <div className="space-y-6">
                     {/* Special Header for Start/Finish Context */}
                     {isSpecial && (
                         <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-xl flex items-start gap-3 mb-4">
@@ -133,14 +133,35 @@ export const CheckpointEditorDialog: React.FC<CheckpointEditorDialogProps> = ({ 
                     )}
 
                     {!isSpecial && (
-                        <div>
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Namn</label>
-                            <input
-                                type="text"
-                                value={data.name}
-                                onChange={(e) => setData({ ...data, name: e.target.value })}
-                                className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Namn</label>
+                                <input
+                                    type="text"
+                                    value={data.name}
+                                    onChange={(e) => setData({ ...data, name: e.target.value })}
+                                    className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Incheckningsläge</label>
+                                <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-700">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setData({...data, checkInMode: 'active'})}
+                                        className={`flex-1 py-1.5 px-3 rounded-md text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 ${data.checkInMode === 'active' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500'}`}
+                                    >
+                                        <MousePointer2 className="w-3 h-3" /> Aktiv
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setData({...data, checkInMode: 'passive'})}
+                                        className={`flex-1 py-1.5 px-3 rounded-md text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 ${data.checkInMode === 'passive' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-500'}`}
+                                    >
+                                        <Zap className="w-3 h-3" /> Passiv
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     )}
                     

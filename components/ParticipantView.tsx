@@ -1519,7 +1519,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                 const hitRadius = Math.max(cp.radiusMeters || 20, 30); // Increased min radius to 30m
                 
                 if (dist <= hitRadius && !cp.requiresPhoto) { 
-                    performCheckIn(cp); 
+                    setInteractingCheckpoint(cp); 
                 }
             });
 
@@ -1613,7 +1613,7 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                          </div>
                      </div>
                      <h1 className={`text-4xl font-black mb-8 ${isZombieMode ? 'text-red-500' : isChristmasMode ? 'text-slate-900' : 'text-white'}`}>{teamNameInput}</h1>
-                     <button onClick={handleEnterRace} className={`w-full font-black py-4 rounded-xl shadow-lg hover:scale-105 transition-transform ${isZombieMode ? 'text-black bg-red-600 border border-red-400' : isChristmasMode ? 'bg-red-600 text-white hover:bg-red-500 shadow-red-200' : 'bg-white text-black'}`}>{isZombieMode ? 'START SURVIVAL' : isChristmasMode ? 'STARTA JAKTEN' : 'ÖPPNA KARTAN'}</button>
+                     <button onClick={handleEnterRace} className={`w-full font-black py-4 rounded-xl shadow-lg hover:scale-105 transition-transform ${isZombieMode ? 'text-black bg-red-600 border border-red-400' : isChristmasMode ? 'bg-red-600 text-white hover:bg-red-500 shadow-red-200' : 'bg-white text-black'}`}>{isZombieMode ? 'STARTA ÖVERLEVNAD' : isChristmasMode ? 'STARTA JAKTEN' : 'ÖPPNA KARTAN'}</button>
                  </div>
              )}
         </div>
@@ -1782,13 +1782,13 @@ export const ParticipantView: React.FC<ParticipantViewProps> = ({ raceData, onEx
                         <Volume2 className="w-10 h-10" />
                     </div>
                     <h2 className="text-2xl font-black uppercase tracking-widest mb-2">
-                        {isChristmasMode ? 'AKTIVERA MAGISK HÖRSEL' : 'AUDIO REQUIRED'}
+                        {isChristmasMode ? 'AKTIVERA MAGISK HÖRSEL' : 'LJUD KRÄVS'}
                     </h2>
                     <p className={`mb-8 font-mono text-sm opacity-80 ${isChristmasMode ? 'text-slate-600' : 'text-gray-400'}`}>
-                        {isChristmasMode ? 'För att höra tomtens bjällror och hitta paketen måste du slå på ljudet.' : 'Tap to activate survival audio systems.'}
+                        {isChristmasMode ? 'För att höra tomtens bjällror och hitta paketen måste du slå på ljudet.' : 'Tryck för att aktivera ljudsystemet.'}
                     </p>
                     <button onClick={toggleAudio} className={`w-full py-4 font-black uppercase tracking-[0.2em] rounded-xl active:scale-95 transition-all flex items-center justify-center gap-3 shadow-lg ${isChristmasMode ? 'bg-red-500 hover:bg-red-400 text-white' : 'bg-red-600 hover:bg-red-500 text-black'}`}>
-                        <Play className="w-5 h-5 fill-current" /> {isChristmasMode ? 'STARTA RADAR' : 'ENGAGE'}
+                        <Play className="w-5 h-5 fill-current" /> {isChristmasMode ? 'STARTA RADAR' : 'AKTIVERA'}
                     </button>
                 </div>
             </div>

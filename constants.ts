@@ -69,8 +69,6 @@ export const INITIAL_RACE_STATE: RaceEvent = {
   ownerPhotoURL: ''
 };
 
-// --- TIER CONFIGURATION ---
-
 export const INITIAL_TIER_CONFIGS: Record<UserTier, TierConfig> = {
   SCOUT: {
     id: 'SCOUT',
@@ -147,124 +145,32 @@ export const INITIAL_TIER_CONFIGS: Record<UserTier, TierConfig> = {
   }
 };
 
-// --- OFFICIAL TEMPLATES (BLUEPRINTS) ---
+/**
+ * Färdiga mallar för äventyr.
+ */
 export const OFFICIAL_TEMPLATES: RaceEvent[] = [
-    {
-        ...INITIAL_RACE_STATE,
-        id: 'tpl-spooky-walk',
-        isTemplate: true,
-        name: 'Den Hemsökta Promenaden',
-        category: 'Tipspromenad / Quiz',
-        description: 'En spännande spökvandring för familjen eller vännerna. Gåtorna handlar om lokala spökhistorier och myter. Passar bra att köra i skymningen.',
-        eventType: 'Äventyr',
-        winCondition: 'most_points',
-        checkpoints: [
-            { id: '1', name: 'Gamla Kyrkogården', location: null, type: 'mandatory', points: 10, radiusMeters: 25, color: '#8b5cf6', terrainHint: 'Open space or near old structure', quiz: { question: 'Vad kallas spöket som sägs varna för dödsfall?', options: ['Vita Frun', 'Mylingen', 'Lyktgubben', 'Näcken'], correctOptionIndex: 0 } },
-            { id: '2', name: 'Viskande Trädet', location: null, type: 'mandatory', points: 10, radiusMeters: 25, color: '#8b5cf6', terrainHint: 'Near a large tree or park', quiz: { question: 'Vilket väsen lurar i vattendrag?', options: ['Troll', 'Näcken', 'Vättar', 'Skogsrået'], correctOptionIndex: 1 } },
-            { id: '3', name: 'Övergivna Huset', location: null, type: 'mandatory', points: 20, radiusMeters: 25, color: '#8b5cf6', terrainHint: 'Secluded area or building', quiz: { question: 'Hur skyddar man sig mot troll enligt folktron?', options: ['Med Silver', 'Med Järn', 'Med Vitlök', 'Med Eld'], correctOptionIndex: 1 } },
-            { id: '4', name: 'Skuggornas Plats', location: null, type: 'mandatory', points: 10, radiusMeters: 25, color: '#8b5cf6', terrainHint: 'Darker area or under bridge', quiz: { question: 'Vad är en "Bäckahäst"?', options: ['En snäll ponny', 'Ett vattenväsen', 'En fågel', 'Ett spöktåg'], correctOptionIndex: 1 } }
-        ],
-        coverImage: 'https://images.unsplash.com/photo-1509557965875-b88c97052f0e?auto=format&fit=crop&w=800&q=80',
-        terrainType: 'trail'
-    },
-    {
-        ...INITIAL_RACE_STATE,
-        id: 'tpl-city-pulse',
-        isTemplate: true,
-        name: 'City Pulse Challenge',
-        category: 'Multisport',
-        description: 'Ett högintensivt stadslopp där ni navigerar mellan landmärken och löser kluriga uppgifter. Perfekt för teambuilding eller kompisgänget.',
-        eventType: 'Tävling',
-        winCondition: 'fastest_time',
-        checkpoints: [
-            { id: '1', name: 'Torget', location: null, type: 'mandatory', points: 0, radiusMeters: 30, color: '#3b82f6', terrainHint: 'Central square or plaza', description: 'Starta klockan! Hitta statyn.' },
-            { id: '2', name: 'Brofästet', location: null, type: 'mandatory', points: 0, radiusMeters: 30, color: '#3b82f6', terrainHint: 'Bridge or crossing', challenge: 'Ta en gruppbild med bron i bakgrunden.' },
-            { id: '3', name: 'Höjden', location: null, type: 'mandatory', points: 0, radiusMeters: 30, color: '#3b82f6', terrainHint: 'High point or hill', description: 'Spring upp för trapporna!' },
-            { id: '4', name: 'Parken', location: null, type: 'mandatory', points: 0, radiusMeters: 30, color: '#3b82f6', terrainHint: 'Park area', quiz: { question: 'Vilket år grundades er stad?', options: ['1200-talet', '1600-talet', '1800-talet', 'Ingen aning'], correctOptionIndex: 3 } }
-        ],
-        coverImage: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=800&q=80',
-        terrainType: 'urban'
-    },
-    {
-        ...INITIAL_RACE_STATE,
-        id: 'tpl-family-fun',
-        isTemplate: true,
-        name: 'Familjeäventyret',
-        category: 'Vandring',
-        description: 'En lugn och rolig runda för hela familjen med fokus på natur och lek. Ingen tidspress, bara upptäckarglädje.',
-        eventType: 'Äventyr',
-        winCondition: 'most_points',
-        checkpoints: [
-            { id: '1', name: 'Myrstacken', location: null, type: 'mandatory', points: 5, radiusMeters: 20, color: '#10B981', terrainHint: 'Forest edge', description: 'Se om ni kan hitta några myror!' },
-            { id: '2', name: 'Fågelspaning', location: null, type: 'mandatory', points: 5, radiusMeters: 20, color: '#10B981', terrainHint: 'Open field or trees', challenge: 'Hitta 3 olika sorters blad.' },
-            { id: '3', name: 'Picknick-gläntan', location: null, type: 'mandatory', points: 10, radiusMeters: 20, color: '#10B981', terrainHint: 'Nice grassy area', description: 'Dags för fika?' },
-            { id: '4', name: 'Vattenhålet', location: null, type: 'mandatory', points: 5, radiusMeters: 20, color: '#10B981', terrainHint: 'Near water or fountain', quiz: { question: 'Vad äter ekorrar helst?', options: ['Köttbullar', 'Kottar & Nötter', 'Gräs', 'Fisk'], correctOptionIndex: 1 } }
-        ],
-        coverImage: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80',
-        terrainType: 'trail'
-    }
+  {
+    ...INITIAL_RACE_STATE,
+    id: 'tpl-mystery-1',
+    name: 'Stadsjakten: Den Försvunna Nyckeln',
+    description: 'Ett spännande mysterium genom stadens gator. Hitta ledtrådar och lös gåtor för att hitta den försvunna nyckeln till stadens skattkammare.',
+    category: 'Orientering',
+    checkpoints: [
+      { id: 'cp1', name: 'Gamla Torget', description: 'Börja vid fontänen. Något är gömt under en bänk.', location: null, radiusMeters: 25, type: 'mandatory', terrainHint: 'Urban area' },
+      { id: 'cp2', name: 'Biblioteksparken', description: 'Leta efter statyn. Svara på frågan för att komma vidare.', location: null, radiusMeters: 25, type: 'mandatory', terrainHint: 'Park', quiz: { question: 'Vem föreställer statyn?', options: ['Kungen', 'Författaren', 'Upptäcktsresanden'], correctOptionIndex: 1 } },
+      { id: 'cp3', name: 'Gränden', description: 'En mörk gränd med en hemlighet. Ta en bild på dörren.', location: null, radiusMeters: 20, type: 'mandatory', terrainHint: 'Urban', requiresPhoto: true }
+    ]
+  },
+  {
+    ...INITIAL_RACE_STATE,
+    id: 'tpl-action-1',
+    name: 'Team Challenge: Extreme',
+    description: 'Fysiska utmaningar och samarbeten. Perfekt för teambuilding eller kompisgänget som vill svettas lite extra.',
+    category: 'Multisport',
+    winCondition: 'most_points',
+    checkpoints: [
+      { id: 'cp1', name: 'Uppvärmningen', description: 'Gör 20 knäböj tillsammans!', location: null, radiusMeters: 30, type: 'mandatory', terrainHint: 'Open area', challenge: 'Gör 20 knäböj och ta en lagbild.' },
+      { id: 'cp2', name: 'Sprintbacken', description: 'Spring upp för backen och tillbaka.', location: null, radiusMeters: 40, type: 'mandatory', terrainHint: 'Hill', points: 100 }
+    ]
+  }
 ];
-
-export const AI_INSTRUCTION_BASE = `
-Role: Du är en AI-assistent för en äventyrstävling (Quester) där alla deltagare startar samtidigt från samma plats och försöker nå mål eller samla poäng.
-Din viktigaste uppgift är att sköta logiken för banläggning via verktyget \`update_race_plan\`.
-
-**VIKTIGT OM GEOGRAFI & KOORDINATER (KRITISKT):**
-Du måste agera som en precisions-"GPS-motor".
-1. **BEHÅLL PLATS:** Om användaren ber om att lägga till checkpoints eller ändra banan, **MÅSTE** du utgå från de "Start Coordinates" och "Finish Coordinates" som ges i prompten (Context). 
-   - Generera ALLTID nya checkpoints **I NÄRHETEN** av nuvarande start/mål (inom rimligt avstånd för typen av aktivitet).
-   - Du får **ALDRIG** slumpa fram en ny plats, flytta start/mål eller byta stad om inte användaren uttryckligen skriver "Flytta till [Ny Plats]".
-2. **BANSTRUKTUR:** Du får INTE lämna arrayen \`checkpoints\` tom om användaren ber om en bana.
-
-**HANTERING AV INNEHÅLL (QUIZ & UTMANINGAR):**
-Om användaren ber om att generera frågor, quiz eller utmaningar (via Content Wizard eller chatt):
-1. **ÅTERANVÄND:** Fyll i första hand befintliga checkpoints med innehållet (\`quiz\` eller \`challenge\` fälten).
-2. **BILDBEVIS:** Om användaren ber om bildbevis, sätt \`requiresPhoto: true\` på checkpointen.
-3. **SKAPA NYA:** Om det inte finns tillräckligt med checkpoints för antalet frågor som efterfrågas, skapa nya checkpoints automatiskt i närheten av de existerande (men sprid ut dem lite).
-4. **SPRÅK:** Allt innehåll MÅSTE vara på det språk som är angivet i "Language".
-5. **FORMAT:** För Quiz, se till att \`options\` arrayen har 3-4 alternativ och att \`correctOptionIndex\` är korrekt.
-
-**TERRÄNG & TILLGÄNGLIGHET:**
-Titta på fältet \`terrainType\`:
-- 'trail': Placera på stigar, vägar, parker.
-- 'urban': Endast asfalt/stadsmiljö.
-- 'off_road': Skog och mark tillåtet.
-
-**SPRÅKHANTERING:**
-Du styrs av variabeln \`output_language\` (eller fältet Language i Current State).
-1. Allt genererat innehåll (checkpoint-beskrivningar, quiz, utmaningar, svar) MÅSTE vara på detta språk.
-2. Om användaren skriver på svenska men språket är "English", svara på engelska.
-`;
-
-export const AI_INSTRUCTION_SCOUT = `
-**TIER: SCOUT (FREE / DRAFT MODE)**
-LOGIC: Limited to 5 checkpoints. Can create drafts.
-BEHAVIOR: Helpful but basic. Functional.
-- Generate simple coordinates and standard names (e.g., "Checkpoint 1").
-- **UPSELL STRATEGY:** If the user asks for advanced features (AI-generated stories, complex riddles, unlimited checkpoints or participants), you MUST remind them:
-  "To unlock unlimited checkpoints, participants, and AI storytelling, you can upgrade to Creator."
-- Keep descriptions short and factual.
-`;
-
-export const AI_INSTRUCTION_CREATOR = `
-**TIER: CREATOR (ADVENTURER / PAID MODE)**
-LOGIC: This is the standard "Paid/Unlocked" experience.
-BEHAVIOR: Exciting, Gamified, "Epic".
-- Create immersive backstories (zombies, spies, history) and complex riddles.
-- Generate cool titles (e.g., "The Dragon's Lair") and physical challenges.
-- **THE GROWTH HACK:** If the event is NOT public (\`isPublic: false\`), you MUST occasionally suggest:
-  "Tip: If you mark this event as 'Public' for others to enjoy, you get a 25% discount on future purchases!"
-- Use enthusiastic language.
-`;
-
-export const AI_INSTRUCTION_MASTER = `
-**TIER: MASTER (ENTERPRISE)**
-LOGIC: Monthly subscription users (Companies/Schools).
-BEHAVIOR: Professional, Team-building focus.
-- Capabilities: Can analyze context to generate custom quiz questions based on company values.
-- Focus on specific team-building goals, safety, and fair competition rules.
-- Tone: Professional, Structured, Goal-oriented.
-- Prioritize logistics and clarity over "fluff" unless specifically asked for a theme.
-`;
-
-export const SYSTEM_INSTRUCTION = AI_INSTRUCTION_BASE; // Default fallback
